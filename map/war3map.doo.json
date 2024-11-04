@@ -1,0 +1,1685 @@
+[
+  [
+    {
+      "type": "LTlt",
+      "variation": 0,
+      "position": [
+        -1088,
+        -64,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.076,
+        1.076,
+        1.076
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 0
+    },
+    {
+      "type": "LTlt",
+      "variation": 2,
+      "position": [
+        -1280,
+        -64,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.892,
+        0.892,
+        0.892
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 1
+    },
+    {
+      "type": "LTlt",
+      "variation": 6,
+      "position": [
+        -1472,
+        -64,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.094,
+        1.094,
+        1.094
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 2
+    },
+    {
+      "type": "LTlt",
+      "variation": 0,
+      "position": [
+        -1472,
+        -320,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.874,
+        0.874,
+        0.874
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 3
+    },
+    {
+      "type": "LTlt",
+      "variation": 3,
+      "position": [
+        -1472,
+        128,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.098,
+        1.098,
+        1.098
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 4
+    },
+    {
+      "type": "LTlt",
+      "variation": 0,
+      "position": [
+        -1664,
+        256,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.861,
+        0.861,
+        0.861
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 5
+    },
+    {
+      "type": "LTlt",
+      "variation": 9,
+      "position": [
+        -1728,
+        0,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.855,
+        0.855,
+        0.855
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 6
+    },
+    {
+      "type": "LTlt",
+      "variation": 0,
+      "position": [
+        -1728,
+        -320,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.116,
+        1.116,
+        1.116
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 7
+    },
+    {
+      "type": "LTlt",
+      "variation": 9,
+      "position": [
+        -1536,
+        -448,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.886,
+        0.886,
+        0.886
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 8
+    },
+    {
+      "type": "LTlt",
+      "variation": 2,
+      "position": [
+        -1856,
+        64,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.986,
+        0.986,
+        0.986
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 9
+    },
+    {
+      "type": "LTlt",
+      "variation": 4,
+      "position": [
+        -1856,
+        320,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.051,
+        1.051,
+        1.051
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 10
+    },
+    {
+      "type": "LTlt",
+      "variation": 6,
+      "position": [
+        -1920,
+        -192,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.93,
+        0.93,
+        0.93
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 11
+    },
+    {
+      "type": "LTlt",
+      "variation": 7,
+      "position": [
+        -1344,
+        384,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.132,
+        1.132,
+        1.132
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 12
+    },
+    {
+      "type": "LTlt",
+      "variation": 3,
+      "position": [
+        -1728,
+        576,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.991,
+        0.991,
+        0.991
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 13
+    },
+    {
+      "type": "LTlt",
+      "variation": 9,
+      "position": [
+        -1920,
+        640,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.165,
+        1.165,
+        1.165
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 14
+    },
+    {
+      "type": "LTlt",
+      "variation": 1,
+      "position": [
+        -2048,
+        832,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.175,
+        1.175,
+        1.175
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 15
+    },
+    {
+      "type": "LTlt",
+      "variation": 7,
+      "position": [
+        -2176,
+        704,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.075,
+        1.075,
+        1.075
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 16
+    },
+    {
+      "type": "LTlt",
+      "variation": 0,
+      "position": [
+        -2240,
+        576,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.833,
+        0.833,
+        0.833
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 17
+    },
+    {
+      "type": "LTlt",
+      "variation": 0,
+      "position": [
+        -2368,
+        448,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.892,
+        0.892,
+        0.892
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 18
+    },
+    {
+      "type": "LTlt",
+      "variation": 5,
+      "position": [
+        -2112,
+        320,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.044,
+        1.044,
+        1.044
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 19
+    },
+    {
+      "type": "LTlt",
+      "variation": 5,
+      "position": [
+        -2240,
+        64,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.961,
+        0.961,
+        0.961
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 20
+    },
+    {
+      "type": "LTlt",
+      "variation": 0,
+      "position": [
+        -2432,
+        256,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.183,
+        1.183,
+        1.183
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 21
+    },
+    {
+      "type": "LTlt",
+      "variation": 7,
+      "position": [
+        -2496,
+        0,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.128,
+        1.128,
+        1.128
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 22
+    },
+    {
+      "type": "LTlt",
+      "variation": 3,
+      "position": [
+        -2432,
+        -256,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.117,
+        1.117,
+        1.117
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 23
+    },
+    {
+      "type": "LTlt",
+      "variation": 2,
+      "position": [
+        -2240,
+        -320,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.825,
+        0.825,
+        0.825
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 24
+    },
+    {
+      "type": "LTlt",
+      "variation": 6,
+      "position": [
+        -2048,
+        -512,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.157,
+        1.157,
+        1.157
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 25
+    },
+    {
+      "type": "LTlt",
+      "variation": 2,
+      "position": [
+        -2048,
+        -192,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.009,
+        1.009,
+        1.009
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 26
+    },
+    {
+      "type": "LTlt",
+      "variation": 9,
+      "position": [
+        -1792,
+        -576,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.804,
+        0.804,
+        0.804
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 27
+    },
+    {
+      "type": "LTlt",
+      "variation": 0,
+      "position": [
+        -1536,
+        512,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.095,
+        1.095,
+        1.095
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 28
+    },
+    {
+      "type": "LTlt",
+      "variation": 2,
+      "position": [
+        -1344,
+        704,
+        0.188
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.985,
+        0.985,
+        0.985
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 29
+    },
+    {
+      "type": "LTlt",
+      "variation": 6,
+      "position": [
+        -1152,
+        320,
+        0
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.193,
+        1.193,
+        1.193
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 30
+    },
+    {
+      "type": "LTlt",
+      "variation": 8,
+      "position": [
+        704,
+        2240,
+        256
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 31
+    },
+    {
+      "type": "LTlt",
+      "variation": 9,
+      "position": [
+        576,
+        2240,
+        256
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.175,
+        1.175,
+        1.175
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 32
+    },
+    {
+      "type": "LTlt",
+      "variation": 7,
+      "position": [
+        448,
+        2240,
+        256
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.994,
+        0.994,
+        0.994
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 33
+    },
+    {
+      "type": "LTlt",
+      "variation": 9,
+      "position": [
+        320,
+        2240,
+        256
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.032,
+        1.032,
+        1.032
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 34
+    },
+    {
+      "type": "LTlt",
+      "variation": 1,
+      "position": [
+        192,
+        2240,
+        256
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.812,
+        0.812,
+        0.812
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 35
+    },
+    {
+      "type": "LTlt",
+      "variation": 5,
+      "position": [
+        0,
+        2240,
+        256
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.926,
+        0.926,
+        0.926
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 36
+    },
+    {
+      "type": "LTlt",
+      "variation": 6,
+      "position": [
+        -192,
+        2240,
+        256
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.1,
+        1.1,
+        1.1
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 37
+    },
+    {
+      "type": "LTlt",
+      "variation": 9,
+      "position": [
+        -320,
+        2240,
+        256
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.053,
+        1.053,
+        1.053
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 38
+    },
+    {
+      "type": "LTlt",
+      "variation": 3,
+      "position": [
+        -448,
+        2240,
+        256
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.115,
+        1.115,
+        1.115
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 39
+    },
+    {
+      "type": "LTlt",
+      "variation": 9,
+      "position": [
+        -576,
+        2240,
+        256
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.031,
+        1.031,
+        1.031
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 40
+    },
+    {
+      "type": "LTlt",
+      "variation": 8,
+      "position": [
+        -704,
+        2240,
+        256
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.864,
+        0.864,
+        0.864
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 41
+    },
+    {
+      "type": "LTlt",
+      "variation": 9,
+      "position": [
+        -832,
+        2240,
+        256
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.147,
+        1.147,
+        1.147
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 42
+    },
+    {
+      "type": "LTlt",
+      "variation": 3,
+      "position": [
+        -768,
+        1856,
+        128
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.977,
+        0.977,
+        0.977
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 43
+    },
+    {
+      "type": "LTlt",
+      "variation": 8,
+      "position": [
+        -576,
+        1856,
+        128
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.17,
+        1.17,
+        1.17
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 44
+    },
+    {
+      "type": "LTlt",
+      "variation": 8,
+      "position": [
+        -448,
+        1856,
+        128
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.866,
+        0.866,
+        0.866
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 45
+    },
+    {
+      "type": "LTlt",
+      "variation": 4,
+      "position": [
+        320,
+        1856,
+        128
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.129,
+        1.129,
+        1.129
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 46
+    },
+    {
+      "type": "LTlt",
+      "variation": 1,
+      "position": [
+        512,
+        1856,
+        128
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.947,
+        0.947,
+        0.947
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 47
+    },
+    {
+      "type": "LTlt",
+      "variation": 8,
+      "position": [
+        704,
+        1856,
+        128
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.905,
+        0.905,
+        0.905
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 48
+    },
+    {
+      "type": "LTlt",
+      "variation": 6,
+      "position": [
+        2432,
+        -1152,
+        -117.5
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.927,
+        0.927,
+        0.927
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 49
+    },
+    {
+      "type": "LTlt",
+      "variation": 0,
+      "position": [
+        2240,
+        -1536,
+        -89
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.878,
+        0.878,
+        0.878
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 50
+    },
+    {
+      "type": "LTlt",
+      "variation": 5,
+      "position": [
+        1984,
+        -1280,
+        -162.875
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.123,
+        1.123,
+        1.123
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 51
+    },
+    {
+      "type": "LTlt",
+      "variation": 2,
+      "position": [
+        2048,
+        -896,
+        -215.75
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.19,
+        1.19,
+        1.19
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 52
+    },
+    {
+      "type": "LTlt",
+      "variation": 5,
+      "position": [
+        2304,
+        -896,
+        -167.25
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.932,
+        0.932,
+        0.932
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 53
+    },
+    {
+      "type": "LTlt",
+      "variation": 3,
+      "position": [
+        1728,
+        -1024,
+        -158.5
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.156,
+        1.156,
+        1.156
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 54
+    },
+    {
+      "type": "LTlt",
+      "variation": 0,
+      "position": [
+        -2560,
+        -4800,
+        255.5
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.907,
+        0.907,
+        0.907
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 55
+    },
+    {
+      "type": "LTlt",
+      "variation": 4,
+      "position": [
+        -2816,
+        -4928,
+        313.85
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.01,
+        1.01,
+        1.01
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": false,
+        "solid": false
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 56
+    },
+    {
+      "type": "LTlt",
+      "variation": 8,
+      "position": [
+        -3072,
+        -5184,
+        208.125
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.063,
+        1.063,
+        1.063
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 57
+    },
+    {
+      "type": "LTlt",
+      "variation": 3,
+      "position": [
+        -2816,
+        -5376,
+        219.25
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.04,
+        1.04,
+        1.04
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 58
+    },
+    {
+      "type": "LTlt",
+      "variation": 5,
+      "position": [
+        -1792,
+        -5312,
+        220.5
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.063,
+        1.063,
+        1.063
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 59
+    },
+    {
+      "type": "LTlt",
+      "variation": 5,
+      "position": [
+        -1600,
+        -5120,
+        329.75
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.984,
+        0.984,
+        0.984
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 60
+    },
+    {
+      "type": "LTlt",
+      "variation": 8,
+      "position": [
+        -1792,
+        -4992,
+        345.75
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.891,
+        0.891,
+        0.891
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 61
+    },
+    {
+      "type": "LTlt",
+      "variation": 9,
+      "position": [
+        -1344,
+        -5120,
+        171.75
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        0.901,
+        0.901,
+        0.901
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 62
+    },
+    {
+      "type": "LTlt",
+      "variation": 5,
+      "position": [
+        -1408,
+        -5440,
+        65.5
+      ],
+      "angle": 269.9777130656439,
+      "scale": [
+        1.198,
+        1.198,
+        1.198
+      ],
+      "skinId": "LTlt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 63
+    },
+    {
+      "type": "LTbr",
+      "variation": 0,
+      "position": [
+        -2784,
+        -5024,
+        319.047
+      ],
+      "angle": 22.975607584746015,
+      "scale": [
+        1.424,
+        1.424,
+        1.424
+      ],
+      "skinId": "LTbr",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 64
+    },
+    {
+      "type": "LTbr",
+      "variation": 0,
+      "position": [
+        -1696,
+        -5152,
+        323.859
+      ],
+      "angle": 317.9915762976069,
+      "scale": [
+        1.276,
+        1.276,
+        1.276
+      ],
+      "skinId": "LTbr",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 65
+    },
+    {
+      "type": "LTrt",
+      "variation": 0,
+      "position": [
+        -2880,
+        -5568,
+        80.313
+      ],
+      "angle": 180.02333923010465,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "skinId": "LTrt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 66
+    },
+    {
+      "type": "LTrt",
+      "variation": 0,
+      "position": [
+        -1472,
+        -5632,
+        8.125
+      ],
+      "angle": 211.02035594668217,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "skinId": "LTrt",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 67
+    },
+    {
+      "type": "LTrc",
+      "variation": 0,
+      "position": [
+        -1344,
+        -5568,
+        11.5
+      ],
+      "angle": 266.0243042792412,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "skinId": "LTrc",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 68
+    },
+    {
+      "type": "LTrc",
+      "variation": 4,
+      "position": [
+        -1984,
+        -4288,
+        6.313
+      ],
+      "angle": 138.99956109873773,
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "skinId": "LTrc",
+      "flags": {
+        "visible": true,
+        "solid": true
+      },
+      "life": 100,
+      "randomItemSetPtr": -1,
+      "droppedItemSets": [],
+      "id": 69
+    }
+  ],
+  []
+]

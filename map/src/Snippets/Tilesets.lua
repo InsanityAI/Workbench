@@ -1,0 +1,220 @@
+if Debug then Debug.beginFile "Tilesets" end
+OnInit.module("Tilesets", function()
+    Tilesets = {
+        LORDAERON_SUMMER = {
+            DIRT = FourCC('Ldrt'),
+            ROUGH_DIRT = FourCC('Ldro'),
+            GRASSY_DIRT = FourCC('Ldrg'),
+            ROCK = FourCC('Lrok'),
+            GRASS = FourCC('Lgrs'),
+            DARK_GRASS = FourCC('Lgrd'),
+            DIRT_CLIFF = FourCC('cLc2'),
+            GRASS_CLIFF = FourCC('cLc1')
+        },
+        LORDAERON_FALL = {
+            DIRT = FourCC('Fdrt'),
+            ROUGH_DIRT = FourCC('Fdro'),
+            GRASSY_DIRT = FourCC('Fdrg'),
+            ROCK = FourCC('Frok'),
+            GRASS = FourCC('Fgrs'),
+            DARK_GRASS = FourCC('Fgrd'),
+            DIRT_CLIFF = FourCC('cFc2'),
+            GRASS_CLIFF = FourCC('cFc1')
+        },
+        LORDAERON_WINTER = {
+            DIRT = FourCC('Wdrt'),
+            ROUGH_DIRT = FourCC('Wdro'),
+            GRASSY_SNOW = FourCC('Wsng'),
+            ROCK = FourCC('Wrok'),
+            GRASS = FourCC('Wgrs'),
+            SNOW = FourCC('Wsnw'),
+            GRASS_CLIFF = FourCC('cWc2'),
+            SNOW_CLIFF = FourCC('cWc1')
+        },
+        BARRENS = {
+            DIRT = FourCC('Bdrt'),
+            ROUGH_DIRT = FourCC('Bdrh'),
+            PEBBLES = FourCC('Bdrr'),
+            GRASSY_DIRT = FourCC('Bdrg'),
+            DESERT = FourCC('Bdsr'),
+            DARK_DESERT = FourCC('Bdsd'),
+            ROCK = FourCC('Bflr'),
+            GRASS = FourCC('Bgrr'),
+            DESERT_CLIFF = FourCC('cBc2'),
+            GRASS_CLIFF = FourCC('cBc1')
+        },
+        ASHENVALE = {
+            DIRT = FourCC('Adrt'),
+            ROUGH_DIRT = FourCC('Adrd'),
+            GRASS = FourCC('Agrs'),
+            ROCK = FourCC('Arck'),
+            LUMPY_GRASS = FourCC('Agrd'),
+            VINES = FourCC('Avin'),
+            GRASSY_DIRT = FourCC('Adrg'),
+            LEAVES = FourCC('Alvd'),
+            DIRT_CLIFF = FourCC('cAc2'),
+            GRASS_CLIFF = FourCC('cAc1')
+        },
+        FELWOOD = {
+            DIRT = FourCC('Cdrt'),
+            ROUGH_DIRT = FourCC('Cdrd'),
+            POISON = FourCC('Cpos'),
+            ROCK = FourCC('Crck'),
+            VINES = FourCC('Cvin'),
+            GRASS = FourCC('Cgrs'),
+            LEAVES = FourCC('Clvg'),
+            DIRT_CLIFF = FourCC('cCc2'),
+            GRASS_CLIFF = FourCC('cCc1')
+        },
+        NORTHREND = {
+            DIRT = FourCC('Ndrt'),
+            DARK_DIRT = FourCC('Ndrd'),
+            ROCK = FourCC('Nrck'),
+            GRASS = FourCC('Ngrs'),
+            ICE = FourCC('Nice'),
+            SNOW = FourCC('Nsnw'),
+            ROCKY_SNOW = FourCC('Nsnr'),
+            DIRT_CLIFF = FourCC('cNc2'),
+            SNOW_CLIFF = FourCC('cNc1')
+        },
+        CITYSCAPE = {
+            DIRT = FourCC('Ydrt'),
+            ROUGH_DIRT = FourCC('Ydtr'),
+            BLACK_MARBLE = FourCC('Yblm'),
+            BRICK = FourCC('Ybtl'),
+            SQUARE_TILES = FourCC('Ysqd'),
+            ROUND_TILES = FourCC('Yrtl'),
+            GRASS = FourCC('Ygsb'),
+            GRASS_TRIM = FourCC('Yhdg'),
+            WHITE_MARBLE = FourCC('Ywmb'),
+            DIRT_CLIFF = FourCC('cYc2'),
+            SQUARE_TILES_CLIFF = FourCC('cYc1')
+        },
+        VILLAGE = {
+            DIRT = FourCC('Vdrt'),
+            ROUGH_DIRT = FourCC('Vdrr'),
+            CROPS = FourCC('Vcrp'),
+            COBBLE_PATH = FourCC('Vcbp'),
+            STONE_PATH = FourCC('Vstp'),
+            SHORT_GRASS = FourCC('Vgrs'),
+            ROCKS = FourCC('Vrck'),
+            THICK_GRASS = FourCC('Vgrt'),
+            DIRT_CLIFF = FourCC('cVc2'),
+            GRASS_THICK_CLIFF = FourCC('cVc1')
+        },
+        VILLAGE_FALL = {
+            DIRT = FourCC('Qdrt'),
+            ROUGH_DIRT = FourCC('Qdrr'),
+            CROPS = FourCC('Qcrp'),
+            COBBLE_PATH = FourCC('Qcbp'),
+            STONE_PATH = FourCC('Qstp'),
+            SHORT_GRASS = FourCC('Qgrs'),
+            ROCKS = FourCC('Qrck'),
+            THICK_GRASS = FourCC('Qgrt'),
+            DIRT_CLIFF = FourCC('cQc2'),
+            GRASS_THICK_CLIFF = FourCC('cQc1')
+        },
+        DALARAN = {
+            DIRT = FourCC('Xdrt'),
+            ROUGH_DIRT = FourCC('Xdtr'),
+            BLACK_MARBLE = FourCC('Xblm'),
+            BRICK_TILES = FourCC('Xbtl'),
+            SQUARE_TILES = FourCC('Xsqd'),
+            ROUND_TILES = FourCC('Xrtl'),
+            GRASS = FourCC('Xgsb'),
+            TRIM_GRASS = FourCC('Xhdg'),
+            WHITE_MARBLE = FourCC('Xwmb'),
+            DIRT_CLIFF = FourCC('cXc2'),
+            SQUARE_TILES_CLIFF = FourCC('cXc1')
+        },
+        DUNGEON = {
+            DIRT = FourCC('Ddrt'),
+            BRICK = FourCC('Dbrk'),
+            RED_STONES = FourCC('Drds'),
+            LAVA_CRACKS = FourCC('Dlvc'),
+            LAVA = FourCC('Dlav'),
+            DARK_ROCKS = FourCC('Ddkr'),
+            GREY_STONES = FourCC('Dgrs'),
+            SQUARE_TILES = FourCC('Dsqd'),
+            DIRT_CLIFF = FourCC('cDc2'),
+            SQUARE_TILES_CLIFF = FourCC('cDc1')
+        },
+        UNDERGROUND = {
+            DIRT = FourCC('Zdrt'),
+            ROUGH_DIRT = FourCC('Zdtr'),
+            GRASSY_DIRT = FourCC('Zdrg'),
+            SMALL_BRICKS = FourCC('Zbks'),
+            SAND = FourCC('Zsan'),
+            LARGE_BRICKS = FourCC('Zbkl'),
+            ROUND_TILES = FourCC('Ztil'),
+            GRASS = FourCC('Zgrs'),
+            DARK_GRASS = FourCC('Zvin'),
+            DIRT_CLIFF = FourCC('cGc2'),
+            SQUARE_TILES_CLIFF = FourCC('cGc1')
+        },
+        SUNKEN_RUINS = {
+            DIRT = FourCC('Zdrt'),
+            ROUGH_DIRT = FourCC('Zdtr'),
+            GRASSY_DIRT = FourCC('Zdrg'),
+            SMALL_BRICKS = FourCC('Zbks'),
+            SAND = FourCC('Zsan'),
+            LARGE_BRICKS = FourCC('Zbkl'),
+            ROUND_TILES = FourCC('Ztil'),
+            GRASS = FourCC('Zgrs'),
+            DARK_GRASS = FourCC('Zvin'),
+            DIRT_CLIFF = FourCC('cZc2'),
+            LARGE_BRICKS_CLIFF = FourCC('cZc1')
+        },
+        ICECROWN_GLACIER = {
+            DIRT = FourCC('Idrt'),
+            ROUGH_DIRT = FourCC('Idtr'),
+            DARK_ICE = FourCC('Idki'),
+            BLACK_BRICKS = FourCC('Ibkb'),
+            RUNE_BRICKS = FourCC('Irbk'),
+            TILED_BRICKS = FourCC('Itbk'),
+            ICE = FourCC('Iice'),
+            BLACK_SQUARES = FourCC('Ibsq'),
+            SNOW = FourCC('Isnw'),
+            RUNE_BRICKS_CLIFF = FourCC('cIc2'),
+            SNOW_CLIFF = FourCC('cIc1')
+        },
+        OUTLAND = {
+            DIRT = FourCC('Odrt'),
+            LIGHT_DIRT = FourCC('Odtr'),
+            ROUGH_DIRT = FourCC('Osmb'),
+            CRACKED_DIRT = FourCC('Ofst'),
+            FLAT_STONES = FourCC('Olgb'),
+            ROCK = FourCC('Orok'),
+            LIGHT_FLAT_STONES = FourCC('Ofsl'),
+            ABYSS = FourCC('Oaby'),
+            ABYSS_CLIFF = FourCC('cOc1'),
+            ROUGH_DIRT_CLIFF = FourCC('cOc2')
+        },
+        BLACK_CITADEL = {
+            DIRT = FourCC('Kdrt'),
+            LIGHT_DIRT = FourCC('Kfsl'),
+            ROUGH_DIRT = FourCC('Kdtr'),
+            FLAT_STONES = FourCC('Kfst'),
+            SMALL_BRICKS = FourCC('Ksmb'),
+            LARGE_BRICKS = FourCC('Klgb'),
+            SQUARE_TILES = FourCC('Ksqt'),
+            DARK_TILES = FourCC('Kdkt'),
+            DIRT_CLIFF = FourCC('cKc1'),
+            DARK_TILES_CLIFF = FourCC('cKc2')
+        },
+        DALARAN_RUINS = {
+            DIRT = FourCC('Jdrt'),
+            ROUGH_DIRT = FourCC('Jdtr'),
+            BLACK_MARBLE = FourCC('Jblm'),
+            BRICK_TILES = FourCC('Jbtl'),
+            SQUARE_TILES = FourCC('Jsqd'),
+            ROUND_TILES = FourCC('Jrtl'),
+            GRASS = FourCC('Jgsb'),
+            TRIM_GRASS = FourCC('Jhdg'),
+            WHITE_MARBLE = FourCC('Jwmb'),
+            DIRT_CLIFF = FourCC('cJc2'),
+            SQUARE_TILES_CLIFF = FourCC('cJc1')
+        }
+    }
+end)
+if Debug then Debug.endFile() end

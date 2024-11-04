@@ -1,0 +1,1693 @@
+{
+  "original": {},
+  "custom": {
+    "A000:ANcl": [
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 1,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 2,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 3,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "alev",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 1,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 99999
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 1,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 1,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "aord",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 1,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "arac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "human"
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 4,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 2,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 3,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 4,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 2,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 3,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 4,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 2,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 3,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 4,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 2,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 3,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 4,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 2,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 3,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 4,
+        "column": 0,
+        "value": 5000
+      }
+    ],
+    "A001:ANcl": [
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 1,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 2,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 3,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "alev",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 1,
+        "column": 2,
+        "value": 2
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 99999
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 1,
+        "column": 3,
+        "value": 3
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 1,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "aord",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "tornado"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 1,
+        "column": 6,
+        "value": "tornado"
+      },
+      {
+        "id": "arac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "human"
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 4,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 2,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 3,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 4,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 2,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 3,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 4,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 2,
+        "column": 6,
+        "value": "tornado"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 3,
+        "column": 6,
+        "value": "tornado"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 4,
+        "column": 6,
+        "value": "tornado"
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 2,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 3,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 4,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 2,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 3,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 4,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aare",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 350
+      }
+    ],
+    "A002:ANcl": [
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 1,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 2,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 3,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "alev",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 1,
+        "column": 2,
+        "value": 2
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 99999
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 1,
+        "column": 3,
+        "value": 3
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 1,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "aord",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "unavengerform"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 1,
+        "column": 6,
+        "value": "unavengerform"
+      },
+      {
+        "id": "arac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "human"
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 4,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 2,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 3,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 4,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 2,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 3,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 4,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 2,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 3,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 4,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 2,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 3,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 4,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 2,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 3,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 4,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aare",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 600
+      }
+    ],
+    "A003:ANcl": [
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 1,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 2,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 3,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "alev",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 1,
+        "column": 2,
+        "value": 2
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 99999
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 1,
+        "column": 3,
+        "value": 3
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 1,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "aord",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "undivineshield"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 1,
+        "column": 6,
+        "value": "undivineshield"
+      },
+      {
+        "id": "arac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "human"
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 4,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 2,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 3,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 4,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 2,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 3,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 4,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 2,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 3,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 4,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 2,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 3,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 4,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 2,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 3,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 4,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aare",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 450
+      }
+    ],
+    "A004:ANcl": [
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 1,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 2,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 3,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "alev",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 1,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 99999
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 1,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 1,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "aord",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "unimmolation"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 1,
+        "column": 6,
+        "value": "unimmolation"
+      },
+      {
+        "id": "arac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "human"
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 4,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 2,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 3,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 4,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 2,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 3,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 4,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 2,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 3,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 4,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 2,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 3,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 4,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 2,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 3,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 4,
+        "column": 0,
+        "value": 5000
+      }
+    ],
+    "A005:ANcl": [
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 1,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 2,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 3,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "alev",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 1,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "aord",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "unrobogoblin"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 1,
+        "column": 6,
+        "value": "unrobogoblin"
+      },
+      {
+        "id": "arac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "human"
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 4,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 2,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 3,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 4,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 2,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 3,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 4,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 2,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 3,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 4,
+        "column": 6,
+        "value": "thunderbolt"
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 2,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 3,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 4,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 2,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 3,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 4,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 0
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 1,
+        "column": 3,
+        "value": 1
+      }
+    ],
+    "A006:ANcl": [
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 1,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 2,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 3,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "alev",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 1,
+        "column": 2,
+        "value": 2
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 99999
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 1,
+        "column": 3,
+        "value": 3
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 1,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "aord",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "unroot"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 1,
+        "column": 6,
+        "value": "unroot"
+      },
+      {
+        "id": "arac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "human"
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 4,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 2,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 3,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 4,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 2,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 3,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 4,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 2,
+        "column": 6,
+        "value": "tornado"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 3,
+        "column": 6,
+        "value": "tornado"
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 4,
+        "column": 6,
+        "value": "tornado"
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 2,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 3,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 4,
+        "column": 2,
+        "value": 3
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 2,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 3,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 4,
+        "column": 0,
+        "value": 5000
+      },
+      {
+        "id": "aare",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 350
+      }
+    ],
+    "A007:ANcl": [
+      {
+        "id": "aher",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 0
+      },
+      {
+        "id": "alev",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 1,
+        "column": 2,
+        "value": 2
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 1,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 1,
+        "column": 6,
+        "value": "antimagicshell"
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 1,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 1,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 99999
+      },
+      {
+        "id": "arac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      },
+      {
+        "id": "achd",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 0
+      },
+      {
+        "id": "Ncl4",
+        "type": "unreal",
+        "level": 1,
+        "column": 4,
+        "value": 0
+      },
+      {
+        "id": "aord",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "antimagicshell"
+      }
+    ],
+    "A008:ANcl": [
+      {
+        "id": "aher",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 0
+      },
+      {
+        "id": "alev",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "Ncl2",
+        "type": "int",
+        "level": 1,
+        "column": 2,
+        "value": 2
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 1,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 1,
+        "column": 6,
+        "value": "awaken"
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 1,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 1,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 99999
+      },
+      {
+        "id": "arac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      },
+      {
+        "id": "achd",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 0
+      },
+      {
+        "id": "Ncl4",
+        "type": "unreal",
+        "level": 1,
+        "column": 4,
+        "value": 0
+      },
+      {
+        "id": "aord",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "awaken"
+      }
+    ],
+    "A009:ANcl": [
+      {
+        "id": "aher",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 0
+      },
+      {
+        "id": "alev",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 1,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 1,
+        "column": 6,
+        "value": "acidbomb"
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 1,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 1,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 99999
+      },
+      {
+        "id": "arac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      },
+      {
+        "id": "achd",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 0
+      },
+      {
+        "id": "Ncl4",
+        "type": "unreal",
+        "level": 1,
+        "column": 4,
+        "value": 0
+      },
+      {
+        "id": "aord",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "acidbomb"
+      }
+    ],
+    "A00A:ANcl": [
+      {
+        "id": "aher",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 0
+      },
+      {
+        "id": "alev",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "Ncl1",
+        "type": "unreal",
+        "level": 1,
+        "column": 1,
+        "value": 0
+      },
+      {
+        "id": "Ncl6",
+        "type": "string",
+        "level": 1,
+        "column": 6,
+        "value": "absorb"
+      },
+      {
+        "id": "Ncl5",
+        "type": "int",
+        "level": 1,
+        "column": 5,
+        "value": 0
+      },
+      {
+        "id": "Ncl3",
+        "type": "int",
+        "level": 1,
+        "column": 3,
+        "value": 1
+      },
+      {
+        "id": "aran",
+        "type": "unreal",
+        "level": 1,
+        "column": 0,
+        "value": 99999
+      },
+      {
+        "id": "arac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      },
+      {
+        "id": "achd",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 0
+      },
+      {
+        "id": "Ncl4",
+        "type": "unreal",
+        "level": 1,
+        "column": 4,
+        "value": 0
+      },
+      {
+        "id": "aord",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "absorb"
+      }
+    ]
+  }
+}

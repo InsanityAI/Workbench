@@ -1,0 +1,1562 @@
+[
+  {
+    "type": "sloc",
+    "variation": 0,
+    "position": [
+      0,
+      -64,
+      0
+    ],
+    "rotation": 4.712,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 0,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "sloc",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 0,
+    "targetAcquisition": 0,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 0
+  },
+  {
+    "type": "Hkal",
+    "variation": 0,
+    "position": [
+      -1.2,
+      2.299,
+      0
+    ],
+    "rotation": 5.106,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 100,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "Hkal",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": 4740,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 1
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      1863.562,
+      509.214,
+      0
+    ],
+    "rotation": 4.665,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 18
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      1365.57,
+      146.658,
+      -3.587
+    ],
+    "rotation": 4.838,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 3
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      1521.917,
+      332.416,
+      -0.704
+    ],
+    "rotation": 4.778,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 4
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      1695.741,
+      334.438,
+      -0.77
+    ],
+    "rotation": 4.719,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 5
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      1855.547,
+      325.29,
+      -0.344
+    ],
+    "rotation": 4.665,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 6
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      1852.426,
+      146.104,
+      -4.751
+    ],
+    "rotation": 4.663,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 7
+  },
+  {
+    "type": "ratf",
+    "variation": 0,
+    "position": [
+      -1182.464,
+      -1104.187,
+      0
+    ],
+    "rotation": 4.712,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 0,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "ratf",
+    "inventory": [],
+    "abilities": [],
+    "player": 27,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 0,
+    "targetAcquisition": 0,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 23
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      1687.566,
+      159.219,
+      -5.277
+    ],
+    "rotation": 4.723,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 9
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      1519.149,
+      505.862,
+      -0.01
+    ],
+    "rotation": 4.782,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 10
+  },
+  {
+    "type": "ratf",
+    "variation": 0,
+    "position": [
+      -971.269,
+      -1071.134,
+      0
+    ],
+    "rotation": 4.712,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 0,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "ratf",
+    "inventory": [],
+    "abilities": [],
+    "player": 27,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 0,
+    "targetAcquisition": 0,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 22
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      1523.353,
+      143.925,
+      -5.104
+    ],
+    "rotation": 4.782,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 12
+  },
+  {
+    "type": "ratf",
+    "variation": 0,
+    "position": [
+      -1123.777,
+      -894.443,
+      0
+    ],
+    "rotation": 4.712,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 0,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "ratf",
+    "inventory": [],
+    "abilities": [],
+    "player": 27,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 0,
+    "targetAcquisition": 0,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 20
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      1693.71,
+      507.022,
+      -0.007
+    ],
+    "rotation": 4.72,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 14
+  },
+  {
+    "type": "ratf",
+    "variation": 0,
+    "position": [
+      -1267.208,
+      -752.882,
+      0
+    ],
+    "rotation": 4.712,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 0,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "ratf",
+    "inventory": [],
+    "abilities": [],
+    "player": 27,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 0,
+    "targetAcquisition": 0,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 21
+  },
+  {
+    "type": "ratf",
+    "variation": 0,
+    "position": [
+      -794.883,
+      -1280.569,
+      0
+    ],
+    "rotation": 4.712,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 0,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "ratf",
+    "inventory": [],
+    "abilities": [],
+    "player": 27,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 0,
+    "targetAcquisition": 0,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 19
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      1336.239,
+      491.978,
+      0
+    ],
+    "rotation": 4.833,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 13
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      1349.608,
+      315.23,
+      -0.342
+    ],
+    "rotation": 4.836,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 2
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      -813.345,
+      1710.512,
+      128
+    ],
+    "rotation": 4.924,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 8
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      -633.62,
+      1704.461,
+      128
+    ],
+    "rotation": 4.88,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 11
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      -479.536,
+      1694.416,
+      128
+    ],
+    "rotation": 4.84,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 15
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      -306.493,
+      1708.493,
+      128
+    ],
+    "rotation": 4.795,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 16
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      -130.548,
+      1696.422,
+      128
+    ],
+    "rotation": 4.75,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 17
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      35.666,
+      1692.413,
+      128
+    ],
+    "rotation": 4.706,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 24
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      157.182,
+      1696.421,
+      128
+    ],
+    "rotation": 4.674,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 25
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      294.291,
+      1688.412,
+      128
+    ],
+    "rotation": 4.638,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 26
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      447.645,
+      1694.416,
+      128
+    ],
+    "rotation": 4.599,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 27
+  },
+  {
+    "type": "hfoo",
+    "variation": 0,
+    "position": [
+      635.947,
+      1700.437,
+      128
+    ],
+    "rotation": 4.551,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hfoo",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 28
+  },
+  {
+    "type": "hrif",
+    "variation": 0,
+    "position": [
+      -819.828,
+      2093.615,
+      256
+    ],
+    "rotation": 4.859,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hrif",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 29
+  },
+  {
+    "type": "hrif",
+    "variation": 0,
+    "position": [
+      -680.361,
+      2093.615,
+      256
+    ],
+    "rotation": 4.833,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hrif",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 30
+  },
+  {
+    "type": "hrif",
+    "variation": 0,
+    "position": [
+      -509.885,
+      2083.611,
+      256
+    ],
+    "rotation": 4.8,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hrif",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 31
+  },
+  {
+    "type": "hrif",
+    "variation": 0,
+    "position": [
+      -350.439,
+      2093.615,
+      256
+    ],
+    "rotation": 4.769,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hrif",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 32
+  },
+  {
+    "type": "hrif",
+    "variation": 0,
+    "position": [
+      -140.393,
+      2085.608,
+      256
+    ],
+    "rotation": 4.729,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hrif",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 33
+  },
+  {
+    "type": "hrif",
+    "variation": 0,
+    "position": [
+      30.236,
+      2085.608,
+      256
+    ],
+    "rotation": 4.696,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hrif",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 34
+  },
+  {
+    "type": "hrif",
+    "variation": 0,
+    "position": [
+      172.681,
+      2089.607,
+      256
+    ],
+    "rotation": 4.668,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hrif",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 35
+  },
+  {
+    "type": "hrif",
+    "variation": 0,
+    "position": [
+      327.198,
+      2091.61,
+      256
+    ],
+    "rotation": 4.639,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hrif",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 36
+  },
+  {
+    "type": "hrif",
+    "variation": 0,
+    "position": [
+      479.419,
+      2097.63,
+      256
+    ],
+    "rotation": 4.609,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hrif",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 37
+  },
+  {
+    "type": "hrif",
+    "variation": 0,
+    "position": [
+      647.477,
+      2105.684,
+      256
+    ],
+    "rotation": 4.578,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "hrif",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 38
+  },
+  {
+    "type": "h000",
+    "variation": 0,
+    "position": [
+      185.079,
+      -3488.374,
+      0
+    ],
+    "rotation": 3.026,
+    "scale": [
+      1,
+      1,
+      1
+    ],
+    "hero": {
+      "level": 1,
+      "str": 0,
+      "agi": 0,
+      "int": 0
+    },
+    "skin": "h000",
+    "inventory": [],
+    "abilities": [],
+    "player": 0,
+    "hitpoints": -1,
+    "mana": -1,
+    "randomItemSetPtr": -1,
+    "droppedItemSets": [],
+    "gold": 12500,
+    "targetAcquisition": -1,
+    "random": {
+      "type": 0,
+      "level": 1,
+      "itemClass": 0
+    },
+    "color": -1,
+    "waygate": -1,
+    "id": 39
+  }
+]

@@ -1,0 +1,48 @@
+Frame "SIMPLEFRAME" "ChatSystem Message" {
+    Width 0.8,
+    Height 0.014,
+    UseActiveContext,
+    DecorateFileNames,
+
+    String "ChatSystem Message Timestamp" {
+        Anchor LEFT, 0., 0.,
+        Font "MasterFont", 0.012,
+        FontColor 0.92 0.92 0.92 1.0,
+        FontJustificationH JUSTIFYLEFT,
+        FontJustificationV JUSTIFYMIDDLE,
+        FontJustificationOffset 0.0 0.0,
+        Text "TIMESTAMP",
+    }
+
+    String "ChatSystem Message Type" {
+        SetPoint LEFT, "ChatSystem Message Timestamp", RIGHT , 0.003, 0.,
+        Font "MasterFont", 0.012,
+        FontColor 0.92 0.92 0.92 1.0,
+        FontJustificationH JUSTIFYLEFT,
+        FontJustificationV JUSTIFYMIDDLE,
+        FontJustificationOffset 0.0 0.0,
+        Text "TYPE",
+    }
+
+    Frame "SIMPLEFRAME" "ChatSystem Message Icon Container" {
+        SetPoint LEFT, "ChatSystem Message Type", RIGHT, 0.003, 0.,
+        Width 0.013,
+        Height 0.013,
+        UseActiveContext,
+
+        Texture "ChatSystem Message Icon" {
+            File  "ReplaceableTextures\\CommandButtons\\BTNPeasant.blp",
+        }
+    }
+
+    String "ChatSystem Message Text" {
+        // Relative positioning is handled by ChatSystem/UI/ChatUI > MessageFrame:setContent
+        //  because Message Icon Container might not be used
+        Font "MasterFont", 0.012,
+        FontColor 0.92 0.92 0.92 1.0,
+        FontJustificationH JUSTIFYLEFT,
+        FontJustificationV JUSTIFYMIDDLE,
+        FontJustificationOffset 0.0 0.0,
+        Text "TEXT",
+    }
+}

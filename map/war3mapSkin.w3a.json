@@ -1,0 +1,1126 @@
+{
+  "original": {},
+  "custom": {
+    "A000:ANcl": [
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_028"
+      },
+      {
+        "id": "anam",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_029"
+      },
+      {
+        "id": "ahky",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_180"
+      },
+      {
+        "id": "acat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aeat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_030"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_031"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_034"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_081"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_035"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_036"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_037"
+      },
+      {
+        "id": "abpx",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 0
+      },
+      {
+        "id": "abpy",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 2
+      },
+      {
+        "id": "aart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\CommandButtons\\BTNFireBolt.blp"
+      }
+    ],
+    "A001:ANcl": [
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_181"
+      },
+      {
+        "id": "anam",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_182"
+      },
+      {
+        "id": "ahky",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_174"
+      },
+      {
+        "id": "acat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aeat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_038"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_039"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_040"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_082"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_041"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_044"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_045"
+      },
+      {
+        "id": "abpx",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "abpy",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 2
+      },
+      {
+        "id": "aart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\CommandButtons\\BTNDizzy.blp"
+      }
+    ],
+    "A002:ANcl": [
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_032"
+      },
+      {
+        "id": "anam",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_083"
+      },
+      {
+        "id": "ahky",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_033"
+      },
+      {
+        "id": "acat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aeat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_046"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_047"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_048"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_084"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_049"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_050"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_051"
+      },
+      {
+        "id": "abpy",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 2
+      },
+      {
+        "id": "aart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\CommandButtons\\BTNGolemStormBolt.blp"
+      }
+    ],
+    "A003:ANcl": [
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_085"
+      },
+      {
+        "id": "anam",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_183"
+      },
+      {
+        "id": "ahky",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_043"
+      },
+      {
+        "id": "acat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aeat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_054"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_055"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_056"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_086"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_057"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_058"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_059"
+      },
+      {
+        "id": "abpx",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 3
+      },
+      {
+        "id": "abpy",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 2
+      },
+      {
+        "id": "aart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\CommandButtons\\BTNStormBolt.blp"
+      }
+    ],
+    "A004:ANcl": [
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_052"
+      },
+      {
+        "id": "anam",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_087"
+      },
+      {
+        "id": "ahky",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_053"
+      },
+      {
+        "id": "acat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aeat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_105"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_106"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_107"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_088"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_109"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_110"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_111"
+      },
+      {
+        "id": "abpx",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "abpy",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "aart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\CommandButtons\\BTNPhoenix.blp"
+      }
+    ],
+    "A005:ANcl": [
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_062"
+      },
+      {
+        "id": "anam",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_090"
+      },
+      {
+        "id": "ahky",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_063"
+      },
+      {
+        "id": "acat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aeat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_184"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_185"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_186"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_091"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_187"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_188"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_189"
+      },
+      {
+        "id": "abpy",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "aart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\CommandButtons\\BTNWallOfFire.blp"
+      }
+    ],
+    "A006:ANcl": [
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_103"
+      },
+      {
+        "id": "anam",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_190"
+      },
+      {
+        "id": "ahky",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_191"
+      },
+      {
+        "id": "acat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aeat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_192"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_193"
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_194"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_108"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 2,
+        "column": 0,
+        "value": "TRIGSTR_195"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 3,
+        "column": 0,
+        "value": "TRIGSTR_196"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 4,
+        "column": 0,
+        "value": "TRIGSTR_197"
+      },
+      {
+        "id": "abpx",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 3
+      },
+      {
+        "id": "abpy",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "aart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\CommandButtons\\BTNNeutralManaShieldOff.blp"
+      }
+    ],
+    "A007:ANcl": [
+      {
+        "id": "anam",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_165"
+      },
+      {
+        "id": "aani",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "acat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aeat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\WorldEditUI\\Editor-Ally-LowPriority.blp"
+      },
+      {
+        "id": "atat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "ata0",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_166"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "abpx",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 0
+      },
+      {
+        "id": "abpy",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 2
+      },
+      {
+        "id": "ahky",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_198"
+      }
+    ],
+    "A008:ANcl": [
+      {
+        "id": "anam",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_167"
+      },
+      {
+        "id": "aani",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "acat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aeat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\WorldEditUI\\Editor-Ally-HighPriority.blp"
+      },
+      {
+        "id": "atat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "ata0",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_168"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "abpy",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 2
+      },
+      {
+        "id": "abpx",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 1
+      },
+      {
+        "id": "ahky",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_199"
+      }
+    ],
+    "A009:ANcl": [
+      {
+        "id": "anam",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_169"
+      },
+      {
+        "id": "aani",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "acat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aeat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\CommandButtons\\BTNLoadDwarf.blp"
+      },
+      {
+        "id": "atat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "ata0",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_170"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "abpy",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 2
+      },
+      {
+        "id": "ahky",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_175"
+      }
+    ],
+    "A00A:ANcl": [
+      {
+        "id": "anam",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_200"
+      },
+      {
+        "id": "aani",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "acat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aeat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "aart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\CommandButtons\\BTNUnloadDwarf.blp"
+      },
+      {
+        "id": "atat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "ata0",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "atp1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": "TRIGSTR_201"
+      },
+      {
+        "id": "aub1",
+        "type": "string",
+        "level": 1,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "abpy",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 2
+      },
+      {
+        "id": "abpx",
+        "type": "int",
+        "level": 0,
+        "column": 0,
+        "value": 3
+      },
+      {
+        "id": "ahky",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_176"
+      }
+    ]
+  }
+}

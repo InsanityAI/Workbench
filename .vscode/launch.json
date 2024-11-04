@@ -1,0 +1,46 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "map2json",
+            "program": "patchwork-mapconverter",
+            "request": "launch",
+            "runtimeExecutable": "npx",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "node",
+            "args": [
+                "-d",
+                "-ct",
+                "-td",
+                "./.vscode/triggerdata.txt",
+                "-si",
+                "-p",
+                "war2json",
+                "./build.w3x",
+                "./map"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npx",
+            "name": "json2map",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "patchwork-mapconverter",
+            "args": [
+                "-d",
+                "-ct",
+                "-td",
+                "./.vscode/triggerdata.txt",
+                "-si",
+                "json2war",
+                "./map",
+                "./build.w3x"
+            ]
+        }
+    ]
+}

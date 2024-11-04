@@ -1,0 +1,91 @@
+{
+  "original": {},
+  "custom": {
+    "BU04:BHbn": [
+      {
+        "id": "frac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      }
+    ],
+    "BU10:BEer": [
+      {
+        "id": "frac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      }
+    ],
+    "BU07:BOhx": [
+      {
+        "id": "frac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      }
+    ],
+    "BU08:BUsl": [
+      {
+        "id": "frac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      }
+    ],
+    "BU02:Bcri": [
+      {
+        "id": "frac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      }
+    ],
+    "BU09:Bcyc": [
+      {
+        "id": "frac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      }
+    ],
+    "BU05:Bens": [
+      {
+        "id": "frac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      }
+    ],
+    "BU03:Bslo": [
+      {
+        "id": "frac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      }
+    ],
+    "BU06:Bprg": [
+      {
+        "id": "frac",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "other"
+      }
+    ],
+    "BU00:BNsi": [],
+    "BU01:BPSE": [],
+    "BU11:BNsi": [],
+    "BU12:BNsi": [],
+    "BU13:BNsi": []
+  }
+}

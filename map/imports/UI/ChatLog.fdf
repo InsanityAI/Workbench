@@ -1,0 +1,16 @@
+Frame "SIMPLEFRAME" "ChatLog Message Frame" {
+    Width 0.8,
+    Height 0.014,
+    UseActiveContext,
+    DecorateFileNames,
+
+    String "ChatLog Message" {
+        Anchor LEFT, 0., 0.,
+        Font "MasterFont", 0.012,
+        FontColor 0.92 0.92 0.92 1.0,
+        FontJustificationH JUSTIFYLEFT,
+        FontJustificationV JUSTIFYMIDDLE,
+        FontJustificationOffset 0.0 0.0,
+        Text "TEXT",
+    }
+}

@@ -1,0 +1,6 @@
+[Misc]
+BoneDecayTime=11.0
+MaxHeroLevel=100
+MaxUnitSpeed=522.0
+MinUnitSpeed=0.0
+

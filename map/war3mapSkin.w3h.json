@@ -1,0 +1,299 @@
+{
+  "original": {},
+  "custom": {
+    "BU04:BHbn": [
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_202"
+      },
+      {
+        "id": "ftat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      }
+    ],
+    "BU10:BEer": [
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_203"
+      },
+      {
+        "id": "ftat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      }
+    ],
+    "BU07:BOhx": [
+      {
+        "id": "feat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_114"
+      }
+    ],
+    "BU08:BUsl": [
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_116"
+      },
+      {
+        "id": "ftat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      }
+    ],
+    "BU02:Bcri": [
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_130"
+      },
+      {
+        "id": "ftat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "fube",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_146"
+      }
+    ],
+    "BU09:Bcyc": [
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_131"
+      },
+      {
+        "id": "feat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      }
+    ],
+    "BU05:Bens": [
+      {
+        "id": "fnam",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_132"
+      },
+      {
+        "id": "ftat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      }
+    ],
+    "BU03:Bslo": [
+      {
+        "id": "ftat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_204"
+      },
+      {
+        "id": "fube",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_150"
+      }
+    ],
+    "BU06:Bprg": [
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_205"
+      },
+      {
+        "id": "fube",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_152"
+      },
+      {
+        "id": "ftat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      }
+    ],
+    "BU00:BNsi": [
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_115"
+      },
+      {
+        "id": "ftat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      }
+    ],
+    "BU01:BPSE": [
+      {
+        "id": "fnsf",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_117"
+      },
+      {
+        "id": "ftat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      }
+    ],
+    "BU11:BNsi": [
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_137"
+      },
+      {
+        "id": "ftat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "fart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\CommandButtons\\BTNAttack.blp"
+      },
+      {
+        "id": "fube",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_206"
+      }
+    ],
+    "BU12:BNsi": [
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_139"
+      },
+      {
+        "id": "ftat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "fart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\CommandButtons\\BTNIncinerate.blp"
+      },
+      {
+        "id": "fube",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_207"
+      }
+    ],
+    "BU13:BNsi": [
+      {
+        "id": "ftip",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_208"
+      },
+      {
+        "id": "ftat",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": ""
+      },
+      {
+        "id": "fart",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "ReplaceableTextures\\CommandButtons\\BTNTaunt.blp"
+      },
+      {
+        "id": "fube",
+        "type": "string",
+        "level": 0,
+        "column": 0,
+        "value": "TRIGSTR_163"
+      }
+    ]
+  }
+}
