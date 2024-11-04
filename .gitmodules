@@ -1,0 +1,3 @@
+[submodule "map/src/Personal/DialogQueue"]
+	path = map/src/Personal/DialogQueue
+	url = https://github.com/InsanityAI/DialogQueue.git
