@@ -44,14 +44,14 @@ LinkedListNode API:
     node.value
       - Whatever value might have been assigned from list:insert([value])
 ]]
----@class LinkedList     : table
----@field head LinkedListHead
----@field next LinkedList
----@field prev LinkedList
 ---@class LinkedListNode : LinkedList
 ---@field value any
 ---@class LinkedListHead : LinkedList
 ---@field n integer
+---@class LinkedList     : table
+---@field head LinkedListHead
+---@field next LinkedList
+---@field prev LinkedList
 LinkedList = {}
 LinkedList.__index = LinkedList
 ---Creates a new LinkedList head node.
@@ -143,12 +143,12 @@ end
 ---@param start LinkedList
 ---@param finish? LinkedList
 ---@param backward? boolean
----@return function
+---@return fun():LinkedListNode?
 function LinkedList.loop(start, finish, backward)
     local head = start.head
-    if head.n == 0 then return end
+    if head.n == 0 then return function() end end
     local direction = backward and "prev" or "next"
-    local skip = start ~= head or start == finish
+    local skip = start ~= head or start == finish ---@type boolean|integer?
     if not finish or finish == head then
         return function()
             if skip then
