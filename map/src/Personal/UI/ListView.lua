@@ -1,7 +1,7 @@
 if Debug then Debug.beginFile "ListView" end
 OnInit.module("ListView", function(require)
     require "FrameRecycler"
-    require "DoublyLinkedList"
+    require "LinkedList"
 
     local listViewCount = 0
 

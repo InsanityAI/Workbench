@@ -1,5 +1,5 @@
 if Debug then Debug.beginFile "TerrainTest" end
-OnInit.final("TerrainTest", function(require)
+OnInit.final(function(require)
     require "TerrainIO"
     require "ChatSystem"
 

@@ -1,6 +1,9 @@
 if Debug then Debug.beginFile "VotingDialogTest" end
 OnInit.final(function(require)
-    TimerQueue:callDelayed(9.00, function()
+    require "ChatSystem"
+    require "VotingDialog"
+
+    ChatCommandBuilder.create("voting", function()
         local votingDialog = VotingDialog.create({ ---@type VotingDialog
             title = "Voting Dialog!",
             votingDoneCallback = function(selectedOptions)
@@ -74,6 +77,6 @@ OnInit.final(function(require)
         })
 
         votingDialog:Enqueue(SetUtils.getPlayersAll())
-    end)
+    end):description("Test voting dialog"):showInHelp():register()
 end)
 if Debug then Debug.endFile() end

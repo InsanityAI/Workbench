@@ -1,6 +1,9 @@
 if Debug then Debug.beginFile "MultiOptionDialogTest" end
 OnInit.final(function(require)
-    TimerQueue:callDelayed(6.00, function()
+    require "ChatSystem"
+    require "MultiOptionDialog"
+
+    ChatCommandBuilder.create("multidialog", function()
         local multiOptionDialog = MultiOptionDialog.create()
         multiOptionDialog.commitButton = DialogButtonWrapper.create()
         multiOptionDialog.commitButton.text = "Done"
@@ -63,6 +66,6 @@ OnInit.final(function(require)
         end
 
         multiOptionDialog:Enqueue(SetUtils.getPlayersAll())
-    end)
+    end):description("Test multi option dialog"):showInHelp():register()
 end)
 if Debug then Debug.endFile() end

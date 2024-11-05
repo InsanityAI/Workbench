@@ -1,13 +1,12 @@
 if Debug then Debug.beginFile 'TotalInitialization' end
 --[[——————————————————————————————————————————————————————
-    Total Initialization version 6.0.1
+    Total Initialization version 6.0.0
     Created by: Bribe
     Contributors: Eikonium, HerlySQR, Tasyen, Luashine, Forsakn
     Inspiration: Almia, ScorpioT1000, Troll-Brain
     Hosted at: https://github.com/BribeFromTheHive/Lua/blob/master/TotalInitialization.lua
     Debug library hosted at: https://www.hiveworkshop.com/threads/debug-utils-ingame-console-etc.330758/
 ————————————————————————————————————————————————————————————]]
-
 ---Calls the user's initialization function during the map's loading process. The first argument should either be the init function,
 ---or it should be the string to give the initializer a name (works similarly to a module name/identically to a vJass library name).
 ---
@@ -29,11 +28,8 @@ if Debug then Debug.beginFile 'TotalInitialization' end
 --A way to yield your library to allow other libraries in the same initialization sequence to load, then resume once they have loaded.
 ---@overload async fun(customInitializerName: string)
 OnInit = {}
-
 ---@alias Initializer.Callback fun(require?: Requirement | {[string]: Requirement}):...?
-
 ---@alias Requirement async fun(reqName: string, source?: table): unknown
-
 -- `Require` will yield the calling `OnInit` initialization function until the requirement (referenced as a string) exists. It will check the
 -- global API (for example, does 'GlobalRemap' exist) and then check for any named OnInit resources which might use that same string as its name.
 --
@@ -50,7 +46,6 @@ OnInit = {}
 Require = {}
 do
     local library = {} --You can change this to false if you don't use `Require` nor the `OnInit.library` API.
-
     --CONFIGURABLE LEGACY API FUNCTION:
     ---@param _ENV table
     ---@param OnInit any
@@ -61,12 +56,9 @@ do
         --OnTriggerInit = OnInit.trig; OnInitialization = OnInit.map                                                     --Forsakn's Ordered Indices API
     end
     --END CONFIGURABLES
-
     local _G, rawget, insert =
         _G, rawget, table.insert
-
     local initFuncQueue = {} ---@type table<integer, fun(require: Require)>
-
     ---@param libraryName    string | Initializer.Callback
     ---@param func?          Initializer.Callback
     local function callUserFunc(libraryName, func)
@@ -85,15 +77,12 @@ do
             end
         end
         assert(type(func) == 'function', 'Expected module function. Provided: ' .. tostring(func))
-
         --print('adding user func: ' , initName , libraryName, debugLineNum, incDebugLevel)
-
         coroutine.wrap(func)(Require)
         if library then
             library:resume()
         end
     end
-
     local initKeyNames = {
         root = 'root',
         config = 'config',
@@ -103,7 +92,6 @@ do
         ['RunInitializationTriggers'] = 'map',
         ['MarkGameStarted'] = 'final'
     }
-
     ---@param name string
     ---@param continue? function
     local function runInitializers(name, continue)
@@ -111,7 +99,6 @@ do
         if name ~= 'module' and name ~= 'library' then
             OnInit[initKeyNames[name]] = callUserFunc
         end
-
         if initFuncQueue[name] then
             for _, func in ipairs(initFuncQueue[name]) do
                 coroutine.wrap(func)(Require)
@@ -125,7 +112,6 @@ do
             continue()
         end
     end
-
     local function initEverything()
         ---@param hookName string
         ---@param continue? function
@@ -142,7 +128,6 @@ do
                 runInitializers(hookName, continue)
             end
         end
-
         hook(
             'InitGlobals',
             function()
@@ -154,7 +139,6 @@ do
                 )
             end
         )
-
         hook(
             'MarkGameStarted',
             function()
@@ -171,7 +155,6 @@ do
             end
         )
     end
-
     ---@param initName       string
     ---@param libraryName    string | Initializer.Callback
     ---@param func?          Initializer.Callback
@@ -192,31 +175,15 @@ do
             end
         end
         assert(type(func) == 'function', 'Expected module function. Provided: ' .. tostring(func))
-
         --print('adding user func: ' , initName , libraryName, debugLineNum, incDebugLevel)
-
         initFuncQueue[initName] = initFuncQueue[initName] or {}
         insert(initFuncQueue[initName], func)
-
         if initName == 'root' or initName == 'module' then
             runInitializers(initName)
         end
     end
-
     local success ---@type boolean
-
-    ---@param msg string
-    local errorHandler = function(msg)
-        return "|cFFFF0000OnInit error: " .. msg .. "|r"
-    end
-
-    ---@param func function
-    ---@param ... unknown
-    ---@return boolean success
-    local tryCall = Debug.try or function(func, ...)
-        return xpcall(func, errorHandler, ...)
-    end
-
+    local errorMsg ---@type string?
     ---@param name string
     local function createInit(name)
         ---@async
@@ -225,14 +192,16 @@ do
         ---@param debugLineNum? integer             --If the Debug library is present, you can call Debug.getLine() for this parameter (which should coincide with the last line of your script file). This will neatly tie-in with OnInit's built-in Debug library functionality to define a starting line and an ending line for your module.
         ---@overload async fun(userInitFunc: Initializer.Callback)
         return function(libraryName, userInitFunc, debugLineNum)
-            tryCall(addUserFunc, name, libraryName, userInitFunc, debugLineNum)
+            success, errorMsg = pcall(addUserFunc, name, libraryName, userInitFunc, debugLineNum)
+            if not success then
+                print("|cFFFF0000OnInit error: " .. errorMsg .. "|r")
+            end
         end
     end
     OnInit.global = createInit 'InitGlobals'               -- Called after InitGlobals, and is the standard point to initialize.
     OnInit.trig   = createInit 'InitCustomTriggers'        -- Called after InitCustomTriggers, and is useful for removing hooks that should only apply to GUI events.
     OnInit.map    = createInit 'RunInitializationTriggers' -- Called last in the script's loading screen sequence. Runs after the GUI "Map Initialization" events have run.
     OnInit.final  = createInit 'MarkGameStarted'           -- Called immediately after the loading screen has disappeared, and the game has started.
-
     do
         ---@param self table
         ---@param libraryNameOrInitFunc function | string
@@ -272,13 +241,10 @@ do
         end
         setmetatable(OnInit --[[@as table]], { __call = __call })
     end
-
     do --if you don't need the initializers for 'root', 'config' and 'main', you can delete this do...end block.
         local gmt = getmetatable(_G) or
             getmetatable(setmetatable(_G, {}))
-
         local rawIndex = gmt.__newindex or rawset
-
         local hookMainAndConfig
         ---@param _G table
         ---@param key string
@@ -315,7 +281,6 @@ do
         library.customDeclarationList = {}
         library.yieldedModuleMatrix   = {}
         library.moduleValueMatrix     = {}
-
         function library:pack(name, ...)
             self.moduleValueMatrix[name] = table.pack(...)
         end
@@ -323,13 +288,11 @@ do
         function library:resume()
             if self.queuedInitializerList[1] then
                 local continue, tempQueue, forceOptional
-
                 ::initLibraries::
                 repeat
                     continue = false
                     self.queuedInitializerList, tempQueue =
                         {}, self.queuedInitializerList
-
                     for _, func in ipairs(tempQueue) do
                         if func(forceOptional) then
                             continue = true                          --Something was initialized; therefore further systems might be able to initialize.
@@ -338,7 +301,6 @@ do
                         end
                     end
                 until not continue or not self.queuedInitializerList[1]
-
                 if self.customDeclarationList[1] then
                     self.customDeclarationList, tempQueue =
                         {}, self.customDeclarationList
@@ -360,7 +322,6 @@ do
             library.moduleValueMatrix[name] =
                 initialValue and { true, n = 1 }
         end
-
         function library:create(name, userFunc)
             assert(type(userFunc) == 'function', 'Module function expected! Provided: ' .. tostring(userFunc))
             declareName(name, false)               --declare itself as a non-loaded library.
@@ -375,9 +336,7 @@ do
         ---@async
         function library:declare(name)
             declareName(name, true) --declare itself as a loaded library.
-
             local co = coroutine.running()
-
             insert(
                 self.customDeclarationList,
                 function()
@@ -388,7 +347,6 @@ do
         end
 
         local processRequirement
-
         ---@async
         function processRequirement(
             optional,
@@ -402,10 +360,8 @@ do
                 optional = false                --strict requirement (processed by the __call method)
             end
             local source = explicitSource or _G
-
             assert(type(source) == 'table', 'Requirement source must be a table. Provided: ' .. tostring(source))
             assert(type(requirement) == 'string', 'Requirement must be a string! Provided: ' .. tostring(requirement))
-
             ::reindex::
             local subSource, subReq =
                 requirement:match("([\x25w_]+)\x25.(.+)") --Check if user is requiring using "table.property" syntax
@@ -414,7 +370,6 @@ do
                 requirement =
                     processRequirement(subSource, source), --If the container is nil, yield until it is not.
                     subReq
-
                 if type(source) == 'table' then
                     explicitSource = source
                     goto reindex --check for further nested properties ("table.property.subProperty.anyOthers").
@@ -435,9 +390,7 @@ do
                 end
                 return package
             end
-
             local co, loaded
-
             local function checkReqs(forceOptional, printErrors)
                 if not loaded then
                     loaded = loadRequirement()
@@ -451,7 +404,6 @@ do
                     end
                 end
             end
-
             if not checkReqs() then --only yield if the requirement doesn't already exist.
                 co = coroutine.running()
                 insert(library.queuedInitializerList, checkReqs)
@@ -459,7 +411,6 @@ do
                     error("Missing Requirement: " .. requirement) --handle the error within the user's function to get an accurate stack trace via the `try` function.
                 end
             end
-
             return loadRequirement(true)
         end
 
@@ -474,9 +425,7 @@ do
                 return processRequirement
             end
         })
-
         local module  = createInit 'module'
-
         --- `OnInit.module` will only call the OnInit function if the module is required by another resource, rather than being called at a pre-
         --- specified point in the loading process. It works similarly to Go, in that including modules in your map that are not actually being
         --- required will throw an error message.
@@ -488,24 +437,20 @@ do
                 local userFunc = func
                 func = function(require)
                     local co = coroutine.running()
-
                     library.yieldedModuleMatrix[name] =
                         function(failure)
                             library.yieldedModuleMatrix[name] = nil
                             coroutine.resume(co, failure)
                         end
-
                     if coroutine.yield() then
                         error("Module declared but not required: " .. name)
                     end
-
                     return userFunc(require)
                 end
             end
             module(name, func, debugLineNum)
         end
     end
-
     if assignLegacyAPI then --This block handles legacy code.
         ---Allows packaging multiple requirements into one table and queues the initialization for later.
         ---@deprecated
@@ -513,10 +458,8 @@ do
         ---@param userFunc function
         function OnInit.library(initList, userFunc)
             local typeOf = type(initList)
-
             assert(typeOf == 'table' or typeOf == 'string')
             assert(type(userFunc) == 'function')
-
             local function caller(use)
                 if typeOf == 'string' then
                     use(initList)
@@ -539,20 +482,16 @@ do
         end
 
         local legacyTable = {}
-
         assignLegacyAPI(legacyTable, OnInit)
-
         for key, func in pairs(legacyTable) do
             rawset(_G, key, func)
         end
-
         OnInit.final(function()
             for key in pairs(legacyTable) do
                 rawset(_G, key, nil)
             end
         end)
     end
-
     initEverything()
 end
 if Debug then Debug.endFile() end

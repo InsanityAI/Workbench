@@ -1,5 +1,5 @@
 if Debug then Debug.beginFile "TerrainMasterPrint" end
-OnInit.final("TerrainMasterPrint", function(require)
+OnInit.final(function(require)
     require "SetUtils"
     require "TimerQueue"
     local singleTileResolution = TileResolution.get()
