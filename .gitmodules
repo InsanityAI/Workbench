@@ -16,3 +16,6 @@
 [submodule "map/src/Personal/ChatSystem"]
 	path = map/src/Personal/ChatSystem
 	url = https://github.com/InsanityAI/ChatSystem.git
+[submodule "map/src/Personal/TaskProcessor"]
+	path = map/src/Personal/TaskProcessor
+	url = https://github.com/InsanityAI/TaskProcessor.git
