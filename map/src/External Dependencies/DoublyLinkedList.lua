@@ -71,18 +71,19 @@ end
 ---@param insertAfter? boolean
 ---@return LinkedListNode new_node
 function LinkedList:insert(value, insertAfter)
-    local node = {} ---@type LinkedListNode
-    setmetatable(node, LinkedList)
     local from = insertAfter and self.next or self
-    from.prev.next = node
-    node.prev = from.prev
-    from.prev = node
-    node.next = from
-
-    node.value = value
     local head = from.head
-    node.head = head
     head.n = head.n + 1
+
+    local node = setmetatable({
+        value = value,
+        prev = from.prev,
+        next = from,
+        head = head
+    }, LinkedList)
+
+    from.prev.next = node
+    from.prev = node
     return node
 end
 

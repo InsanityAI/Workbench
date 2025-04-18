@@ -1,0 +1,165 @@
+if Debug then Debug.beginLine "Length" end
+OnInit.root("Length", function()
+    ---@param a Length|integer
+    ---@param b Length|integer
+    ---@return integer, integer
+    local function readPrimitives(a, b)
+        if type(a) == 'table' and a._class == 'PseudoNumber' then
+            return a._len, b
+        else
+            return a, b._len
+        end
+    end
+
+    local pseudoNumberMetatable = {
+        -- Arithmetic operations
+
+        __add = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a + b
+        end,
+        __sub = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a - b
+        end,
+        __mul = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a * b
+        end,
+        __div = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a / b
+        end,
+        __unm = function(a)
+            return -a._len
+        end,
+        __mod = function(a, b)
+            a, b = readPrimitives(a, b)
+            return math.fmod(a, b)
+        end,
+        __pow = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a ^ b
+        end,
+        __idiv = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a // b
+        end,
+
+        -- Bitwise Operations
+
+        __band = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a & b
+        end,
+        __bor = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a | b
+        end,
+        __bxor = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a ~ b
+        end,
+        __bnot = function(a)
+            return ~a._len
+        end,
+        __shl = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a << b
+        end,
+        __shr = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a >> b
+        end,
+
+        -- Equation operators
+
+        __eq = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a == b
+        end,
+        __lt = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a < b
+        end,
+        __le = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a <= b
+        end,
+
+        -- Miscellaneous operators
+        __concat = function(a, b)
+            a, b = readPrimitives(a, b)
+            return a .. b
+        end,
+        __len = function(a)
+            return a
+        end,
+        __tostring = function(self)
+            return tostring(self._len)
+        end,
+        __index = function(self, key)
+            if key == 'length' or key == 'Length' 
+            or key == 'len' or key == 'Len' 
+            or key == 'n' or key == 'N'
+            or key == 'size' or key == 'Size' 
+            or key == 'l' or key == 'L'
+            or key == 'sizeof' or key == 'Sizeof'
+            or key == 'sizeOf' or key == 'SizeOf'
+            then
+                return self
+            else
+                error('Unknown field ' .. key .. ' for PseudoNumber')
+            end
+        end,
+        __call = function(self)
+            return self
+        end
+    }
+
+    ---@alias Length integer|fun():integer
+
+    -- For when you can't remember which language uses which method to fetch array size
+    ---@class LengthReader
+    ---@field private _obj table|string
+    ---@field private _len integer
+    ---@field length Length
+    ---@field Length Length
+    ---@field len Length
+    ---@field Len Length
+    ---@field n Length
+    ---@field N Length
+    ---@field size Length
+    ---@field Size Length
+    ---@field sizeof Length
+    ---@field Sizeof Length
+    ---@field sizeOf Length
+    ---@field SizeOf Length
+    ---@field l Length
+    ---@field L Length
+    LengthReader = {}
+    LengthReader.__index = LengthReader
+
+    ---@param obj table|string
+    ---@return LengthReader
+    function LengthReader.of(obj)
+        local length ---@type integer
+        if type(obj) == 'string' then
+            length = string.len(obj)
+        else
+            length = #obj
+        end
+        return setmetatable({ _obj = obj, _len = length, _class = 'PseudoNumber' }, pseudoNumberMetatable)
+    end
+
+    function sizeof(obj)
+        return LengthReader.of(obj)
+    end
+
+    sizeOf = sizeof
+    Sizeof = sizeof
+    SizeOf = sizeof
+
+    return LengthReader
+end)
+if Debug then Debug.endFile() end

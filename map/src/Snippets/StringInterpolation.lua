@@ -5,13 +5,16 @@ if Debug then Debug.beginFile "StringInterpolation" end
 -- modified by InsanityAI to not create anonymous functions like cray-cray
 
 --[[
-    print( interp("\x25(key)s is \x25(val)7.2f\x25"), {key = "concentration", val = 56.2795} )
+    print( interp("\x25(key)s is \x25(val)7.2f\x25", {key = "concentration", val = 56.2795} )
     outputs "concentration is   56.28\x25"
 ]]
 OnInit.module("StringInterpolation", function(require)
     local currentParams = nil ---@type table<string, unknown>
+
+    ---@param k string
+    ---@param fmt string
     local function substitutePlaceholders(k, fmt)
-        return currentParams[k] and ("\x25" .. fmt):format(currentParams[k]) or '\x25(' .. k .. ')' .. fmt
+        return currentParams[k] and ("\x25" .. fmt):format(currentParams[k]) or string.format('\x25\x25(\x25s)\x25s', k, fmt)
     end
 
     ---@param stringPattern string

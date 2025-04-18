@@ -2,6 +2,7 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
     --[[
      -------------------------
      -- | Debug Utils 2.2 | --
+     -- modified for C# shenanigans by InsanityAI
      -------------------------
     
      --> https://www.hiveworkshop.com/threads/lua-debug-utils-incl-ingame-console.353720/
@@ -335,10 +336,14 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
     
         ---Message Handler to be used by the try-function below.
         ---Adds stack trace plus formatting to the message and prints it.
-        ---@param errorMsg string
+        ---@param errorMsg string|{getMessage: fun(self: table): string}
         ---@param startDepth? integer default: 4 for use in xpcall
         local function errorHandler(errorMsg, startDepth)
             startDepth = startDepth or 4 --xpcall doesn't specify this param, so it must default to 4 for this case
+            if type(errorMsg) == "table" then
+                startDepth = startDepth + 2
+                errorMsg = "war3map.lua:" .. Debug.getLine(startDepth) .. errorMsg:getMessage()
+            end
             errorMsg = convertToLocalErrorMsg(errorMsg)
             --Print original error message and stack trace.
             print("|cffff5555ERROR at " .. errorMsg .. "|r")
@@ -712,10 +717,21 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
             end
         end
         if settings.USE_TRY_ON_COROUTINES then
+            local function getCoroutineCreateTryWrapper(func)
+                if func then
+                    tryWrappers[func] = tryWrappers[func] or function(...) return xpcall(func, errorHandler, ...) end
+                end
+                return tryWrappers[func] --returns nil for func = nil (important for TimerStart overwrite below)
+            end
             local originalCoroutineCreate = coroutine.create
             ---@diagnostic disable-next-line: duplicate-set-field
             coroutine.create = function(f)
-                return originalCoroutineCreate(getTryWrapper(f))
+                return originalCoroutineCreate(getCoroutineCreateTryWrapper(f))
+            end
+            local originalCoroutineResume = coroutine.resume
+            ---@diagnostic disable-next-line: duplicate-set-field
+            coroutine.resume = function(thread, ...)
+                return select(2, originalCoroutineResume(thread, ...))
             end
             local originalCoroutineWrap = coroutine.wrap
             ---@diagnostic disable-next-line: duplicate-set-field

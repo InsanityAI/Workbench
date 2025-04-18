@@ -74,7 +74,7 @@ OnInit.final(function(require)
                     }
                 }
             }
-        })
+        } --[[@as unknown]]--[[@as VotingDialog]])
 
         votingDialog:Enqueue(SetUtils.getPlayersAll())
     end):description("Test voting dialog"):showInHelp():register()
