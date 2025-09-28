@@ -32,6 +32,28 @@ do
     local _G                = _G
     local unpack            = table.unpack
     local assert            = assert
+
+    local fakeTypes         = {
+        FakeLocation  = { __name = 'userdata' },
+        FakeHashtable = { __name = 'userdata' },
+        FakeGroup     = { __name = 'userdata' },
+        FakeForce     = { __name = 'userdata' },
+        FakeRect      = { __name = 'userdata' }
+    }
+    do
+        local oldType = type
+        --[[ Type extender - if object being checked is a table, check if it's one of the replacements for userdata --]]
+        ---@param obj unknown
+        ---@return string typeName
+        function type(obj)
+            local thisType = oldType(obj)
+            if thisType == 'table' and obj.__type then
+                return obj.__type.__name
+            end
+            return thisType
+        end
+    end
+
     do
         --[[-----------------------------------------------------------------------------------------
     __jarray expander by Bribe
@@ -46,7 +68,7 @@ do
         ---@param default? any
         ---@param tab? table
         ---@return table
-        __jarray = function(default, tab)
+        function __jarray(default, tab)
             local mt
             if default then
                 mts[default] = mts[default] or {
@@ -61,6 +83,7 @@ do
             end
             return setmetatable(tab or {}, mt)
         end
+
         --have to do a wide search for all arrays in the variable editor. The WarCraft 3 _G table is HUGE,
         --and without editing the war3map.lua file manually, it is not possible to rewrite it in advance.
         for k, v in pairs(_G) do
@@ -143,7 +166,9 @@ do
 
         ---@return table
         function InitHashtableBJ()
-            last = __jarray(); return last
+            last = __jarray();
+            last.__type = fakeTypes.FakeHashtable
+            return last
         end
 
         ---@param value unknown?
@@ -246,11 +271,11 @@ do
         ---@param whichHashTable FakeHashtable
         function FlushParentHashtableBJ(whichHashTable)
             assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
-            whichHashTable.boolean = {}
-            whichHashTable.integer = {}
-            whichHashTable.real = {}
-            whichHashTable.string = {}
-            whichHashTable.handle = {}
+            whichHashTable.boolean = nil
+            whichHashTable.integer = nil
+            whichHashTable.real = nil
+            whichHashTable.string = nil
+            whichHashTable.handle = nil
         end
 
         ---@param whichHashTable FakeHashtable
@@ -273,6 +298,16 @@ do
 
         local oldLocation = Location
         local location
+
+        ---@param x number
+        ---@param y number
+        ---@return FakeLocation
+        function Location(x, y)
+            assert(x ~= nil, 'x cannot be nil')
+            assert(y ~= nil, 'y cannot be nil')
+            return { x, y, __type = fakeTypes.FakeLocation }
+        end
+
         do
             local oldRemove = RemoveLocation
             local oldGetX   = GetLocationX
@@ -284,22 +319,13 @@ do
             function GetUnitRallyPoint(unit)
                 assert(unit ~= nil, 'unit cannot be nil')
                 local removeThis = oldRally(unit) --Actually needs to create a location for a brief moment, as there is no GetUnitRallyX/Y
-                local loc = { oldGetX(removeThis), oldGetY(removeThis) }
+                local loc = Location(oldGetX(removeThis), oldGetY(removeThis))
                 oldRemove(removeThis)
                 return loc
             end
         end
 
         RemoveLocation = DoNothing ---@type fun(location: FakeLocation)
-
-        ---@param x number
-        ---@param y number
-        ---@return FakeLocation
-        function Location(x, y)
-            assert(x ~= nil, 'x cannot be nil')
-            assert(y ~= nil, 'y cannot be nil')
-            return { x, y }
-        end
 
         do
             local oldMoveLoc = MoveLocation
@@ -309,14 +335,15 @@ do
             ---@param y number
             ---@return number z
             function GUI.getCoordZ(x, y)
-                assert(x ~= nil, 'x cannot be nil')
-                assert(y ~= nil, 'y cannot be nil')
-                GUI.getCoordZ = function(x, y)
+                function GUI.getCoordZ(x, y)
+                    assert(x ~= nil, 'x cannot be nil')
+                    assert(y ~= nil, 'y cannot be nil')
                     oldMoveLoc(location, x, y)
                     return oldGetZ(location)
                 end
+
                 location = oldLocation(x, y)
-                return oldGetZ(location)
+                return GUI.getCoordZ(x, y)
             end
         end
 
@@ -355,7 +382,7 @@ do
         local function fakeCreate(varName, suffix)
             local getX = _G[varName .. "X"]
             local getY = _G[varName .. "Y"]
-            _G[varName .. (suffix or "Loc")] = function(obj) return { getX(obj), getY(obj) } end
+            _G[varName .. (suffix or "Loc")] = function(obj) return Location(getX(obj), getY(obj)) end
         end
         fakeCreate("GetUnit")
         fakeCreate("GetOrderPoint")
@@ -368,7 +395,7 @@ do
 
         ---@param effect effect
         ---@param loc FakeLocation
-        BlzSetSpecialEffectPositionLoc = function(effect, loc)
+        function BlzSetSpecialEffectPositionLoc(effect, loc)
             assert(effect ~= nil, 'effect cannot be nil')
             assert(loc ~= nil, 'loc cannot be nil')
             local x, y = loc[1], loc[2]
@@ -436,7 +463,7 @@ do
         ---@param whichRect rect
         ---@param min FakeLocation
         ---@param max FakeLocation
-        SetRectFromLoc = function(whichRect, min, max)
+        function SetRectFromLoc(whichRect, min, max)
             assert(min ~= nil, 'min cannot be nil')
             assert(max ~= nil, 'max cannot be nil')
             SetRect(whichRect, min[1], min[2], max[1], max[2])
@@ -457,7 +484,7 @@ do
 
         ---@return FakeGroup
         function CreateGroup()
-            return { indexOf = {} }
+            return { indexOf = {}, __type = fakeTypes.FakeGroup }
         end
 
         bj_lastCreatedGroup = CreateGroup()
@@ -685,7 +712,7 @@ do
 
         ---@param group FakeGroup
         ---@return boolean
-        IsUnitGroupEmptyBJ = function(group)
+        function IsUnitGroupEmptyBJ(group)
             assert(group ~= nil, 'group cannot be nil')
             return not group[1]
         end
@@ -732,7 +759,7 @@ do
             assert(minY ~= nil, 'minY cannot be nil')
             assert(maxX ~= nil, 'maxX cannot be nil')
             assert(maxY ~= nil, 'maxY cannot be nil')
-            return { minX, minY, maxX, maxY }
+            return { minX, minY, maxX, maxY, __type = fakeTypes.FakeRect }
         end
 
         local oldSetRect = SetRect
@@ -767,10 +794,10 @@ do
             function GetWorldBounds()
                 if not newWorld then
                     local w = oldWorld()
-                    newWorld = { getMinX(w), getMinY(w), getMaxX(w), getMaxY(w) }
+                    newWorld = Rect(getMinX(w), getMinY(w), getMaxX(w), getMaxY(w))
                     remover(w)
                 end
-                return { unpack(newWorld) }
+                return Rect(unpack(newWorld))
             end
 
             GetEntireMapRect = GetWorldBounds
@@ -887,7 +914,7 @@ do
 
         ---@return FakeForce
         function CreateForce()
-            return { indexOf = {} }
+            return { indexOf = {}, __type = fakeTypes.FakeForce }
         end
 
         DestroyForce = DoNothing ---@type fun(force: FakeForce)
@@ -909,15 +936,8 @@ do
             ---@param player player
             ---@param force FakeForce
             ---@param flag boolean
-            function CripplePlayer(player, force, flag)
-                initForce()
-
-                ---@param player player
-                ---@param force FakeForce
-                ---@param flag boolean
-                function CripplePlayer(player, force, flag)
-                    assert(player ~= nil, 'player cannot be nil')
-                    assert(force ~= nil, 'force cannot be nil')
+            function GUI.cripplePlayer(player, force, flag)
+                function GUI.cripplePlayer(player, force, flag)
                     for _, val in ipairs(force) do
                         oldAdd(mainForce --[[@ as force]], val)
                     end
@@ -925,7 +945,17 @@ do
                     oldClear(mainForce --[[@ as force]])
                 end
 
-                CripplePlayer(player, force, flag)
+                initForce()
+                GUI.cripplePlayer(player, force, flag)
+            end
+
+            ---@param player player
+            ---@param force FakeForce
+            ---@param flag boolean
+            function CripplePlayer(player, force, flag)
+                assert(player ~= nil, 'player cannot be nil')
+                assert(force ~= nil, 'force cannot be nil')
+                GUI.cripplePlayer(player, force, flag)
             end
         end
 
@@ -1011,7 +1041,6 @@ do
         local function funnelEnum(force)
             assert(force ~= nil, 'force cannot be nil')
             ForceClear(force)
-            initForce()
             oldForForce(mainForce, function()
                 ForceAddPlayer(force, oldEnumPlayer())
             end)
@@ -1020,11 +1049,19 @@ do
         ---@param varStr string
         local function hookEnum(varStr)
             local old = _G[varStr]
+            local deferred
+            function deferred(force, ...)
+                function deferred(force, ...)
+                    old(mainForce, ...)
+                    funnelEnum(force)
+                end
+                initForce()
+                _G[varStr](force, ...)
+            end
+
             _G[varStr] = function(force, ...)
                 assert(force ~= nil, 'force cannot be nil')
-                initForce()
-                old(mainForce, ...)
-                funnelEnum(force)
+                deferred(force, ...)
             end
         end
         hookEnum("ForceEnumPlayers")
