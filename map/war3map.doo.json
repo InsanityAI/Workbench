@@ -16,8 +16,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -40,8 +41,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -64,8 +66,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -88,8 +91,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -112,8 +116,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -136,8 +141,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -160,8 +166,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -184,8 +191,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -208,8 +216,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -232,8 +241,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -256,8 +266,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -280,8 +291,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -304,8 +316,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -328,8 +341,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -352,8 +366,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -376,8 +391,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -400,8 +416,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -424,8 +441,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -448,8 +466,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -472,8 +491,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -496,8 +516,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -520,8 +541,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -544,8 +566,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -568,8 +591,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -592,8 +616,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -616,8 +641,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -640,8 +666,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -664,8 +691,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -688,8 +716,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -712,8 +741,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -736,8 +766,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -760,8 +791,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -784,8 +816,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -808,8 +841,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -832,8 +866,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -856,8 +891,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -880,8 +916,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -904,8 +941,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -928,8 +966,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -952,8 +991,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -976,8 +1016,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1000,8 +1041,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1024,8 +1066,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1048,8 +1091,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1072,8 +1116,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1096,8 +1141,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1120,8 +1166,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1144,8 +1191,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1168,8 +1216,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1192,8 +1241,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1216,8 +1266,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1240,8 +1291,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1264,8 +1316,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1288,8 +1341,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1312,8 +1366,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1336,8 +1391,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1350,7 +1406,7 @@
       "position": [
         -2816,
         -4928,
-        313.85
+        320.25
       ],
       "angle": 269.9777130656439,
       "scale": [
@@ -1360,8 +1416,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": false,
-        "solid": false
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1384,8 +1441,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1408,8 +1466,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1432,8 +1491,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1456,8 +1516,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1480,8 +1541,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1504,8 +1566,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1528,8 +1591,9 @@
       ],
       "skinId": "LTlt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1552,8 +1616,9 @@
       ],
       "skinId": "LTbr",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1576,8 +1641,9 @@
       ],
       "skinId": "LTbr",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1600,8 +1666,9 @@
       ],
       "skinId": "LTrt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1624,8 +1691,9 @@
       ],
       "skinId": "LTrt",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1648,8 +1716,9 @@
       ],
       "skinId": "LTrc",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,
@@ -1672,8 +1741,9 @@
       ],
       "skinId": "LTrc",
       "flags": {
-        "visible": true,
-        "solid": true
+        "fixedZ": false,
+        "notUsedInScript": true,
+        "inUnplayableArea": false
       },
       "life": 100,
       "randomItemSetPtr": -1,

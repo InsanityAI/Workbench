@@ -28,7 +28,11 @@
       "useItemClassificationSystem": true,
       "enableWaterTinting": false,
       "useAccurateProbabilityForCalculations": false,
-      "useCustomAbilitySkins": false
+      "useCustomAbilitySkins": false,
+      "disableDenyIcon": false,
+      "forceDefaultCameraZoom": false,
+      "forceMaxCameraZoom": false,
+      "forceMinCameraZoom": false
     }
   },
   "loadingScreen": {
@@ -104,15 +108,18 @@
       "name": "TRIGSTR_008"
     }
   ],
-  "saves": 1425,
-  "editorVersion": 6115,
+  "saves": 1426,
+  "editorVersion": 6116,
   "scriptLanguage": 1,
   "supportedModes": 3,
+  "forcedDefaultCamDistance": 0,
+  "forcedMaxCamDistance": 0,
+  "forcedMinCamDistance": 0,
   "gameVersion": {
-    "major": 1,
-    "minor": 36,
-    "patch": 2,
-    "build": 21498
+    "major": 2,
+    "minor": 0,
+    "patch": 3,
+    "build": 23101
   },
   "globalWeather": 0,
   "customSoundEnvironment": "",

@@ -1,4 +1,4 @@
-if Debug then Debug "Railgun" end
+if Debug then Debug.beginFile "Railgun" end
 --==================================================================================================
 -----------------------------------Railgun-----by-Insanity_AI---------------------------------------
 --==================================================================================================
@@ -157,6 +157,7 @@ OnInit.module("Railgun", function(require)
             beamStepDelta = beamStepDelta,
             beamWidth = beamWidth,
             unitFilter = unitFilter,
+            aimVisuals = {},
             destructableFilter = destructableFilter or defaultDestructFilter,
             beamConstructor = beamConstructor or defaultBeamConstructor,
             beamDestructor = beamDestructor or defaultBeamDestructor,
