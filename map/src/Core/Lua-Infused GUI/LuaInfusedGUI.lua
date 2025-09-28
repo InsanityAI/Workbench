@@ -9,10 +9,12 @@
     Provides RegisterAnyPlayerUnitEvent to cut down on handle count and simplify syntax for Lua users while benefitting GUI.
 
     Provides GUI.enumUnitsInRect/InRange/Selected/etc. which replaces the first parameter with a function (which takes a unit), for immediate action without needing a separate group variable.
-    
+
     Provides GUI.loopArray for safe iteration over a __jarray
-    
-    Updated: 7 Nov 2022
+
+    Updated: 28 Sep 2025 by Insanity_AI
+
+    Changes: Added asserts everywhere, EmmyLua annotations and fixed some overrides to actually return booleans and Hashtable to behave like a normal hashtable with primitive types
 
     Uses optionally:
         https://github.com/BribeFromTheHive/Lua-Core/blob/main/Total_Initialization.lua
@@ -22,595 +24,932 @@
 --]]
 GUI = {}
 do
---Configurables
-local _USE_GLOBAL_REMAP = false --set to true if you want GUI to have extended functionality such as "udg_HashTableArray" (which gives GUI an infinite supply of shared hashtables)
-local _USE_UNIT_EVENT   = false --set to true if you have UnitEvent in your map and want to automatically remove units from their unit groups if they are removed from the game.
+    --Configurables
+    local _USE_GLOBAL_REMAP = false --set to true if you want GUI to have extended functionality such as "udg_HashTableArray" (which gives GUI an infinite supply of shared hashtables)
+    local _USE_UNIT_EVENT   = false --set to true if you have UnitEvent in your map and want to automatically remove units from their unit groups if they are removed from the game.
 
---Define common variables to be utilized throughout the script.
-local _G = _G
-local unpack = table.unpack
-do
-    --[[-----------------------------------------------------------------------------------------
+    --Define common variables to be utilized throughout the script.
+    local _G                = _G
+    local unpack            = table.unpack
+    local assert            = assert
+    do
+        --[[-----------------------------------------------------------------------------------------
     __jarray expander by Bribe
-    
+
     This snippet will ensure that objects used as indices in udg_ arrays will be automatically
     cleaned up when the garbage collector runs, and tries to re-use metatables whenever possible.
     -------------------------------------------------------------------------------------------]]
-    local mts = {}
-    local weakKeys = {__mode="k"} --ensures tables with non-nilled objects as keys will be garbage collected.
+        local mts = {}
+        local weakKeys = { __mode = "k" } --ensures tables with non-nilled objects as keys will be garbage collected.
 
-    ---Re-define __jarray.
-    ---@param default? any
-    ---@param tab? table
-    ---@return table
-    __jarray=function(default, tab)
-        local mt
-        if default then
-            mts[default]=mts[default] or {
-                __index=function()
-                    return default
-                end,
-                __mode="k"
-            }
-            mt=mts[default]
-        else
-            mt=weakKeys
+        ---Re-define __jarray.
+        ---@param default? any
+        ---@param tab? table
+        ---@return table
+        __jarray = function(default, tab)
+            local mt
+            if default then
+                mts[default] = mts[default] or {
+                    __index = function()
+                        return default
+                    end,
+                    __mode = "k"
+                }
+                mt = mts[default]
+            else
+                mt = weakKeys
+            end
+            return setmetatable(tab or {}, mt)
         end
-        return setmetatable(tab or {}, mt)
-    end
-    --have to do a wide search for all arrays in the variable editor. The WarCraft 3 _G table is HUGE,
-    --and without editing the war3map.lua file manually, it is not possible to rewrite it in advance.
-    for k,v in pairs(_G) do
-        if type(v) == "table" and string.sub(k, 1, 4)=="udg_" then
-            __jarray(v[0], v)
+        --have to do a wide search for all arrays in the variable editor. The WarCraft 3 _G table is HUGE,
+        --and without editing the war3map.lua file manually, it is not possible to rewrite it in advance.
+        for k, v in pairs(_G) do
+            if type(v) == "table" and string.sub(k, 1, 4) == "udg_" then
+                __jarray(v[0], v)
+            end
+        end
+        ---Add this safe iterator function for jarrays.
+        ---@param whichTable table
+        ---@param func fun(index:integer, value:any)
+        function GUI.loopArray(whichTable, func)
+            for i = rawget(whichTable, 0) ~= nil and 0 or 1, #whichTable do
+                func(i, rawget(whichTable, i))
+            end
         end
     end
-    ---Add this safe iterator function for jarrays.
-    ---@param whichTable table
-    ---@param func fun(index:integer, value:any)
-    function GUI.loopArray(whichTable, func)
-        for i=rawget(whichTable, 0)~=nil and 0 or 1, #whichTable do
-            func(i, rawget(whichTable, i))
-        end
-    end
-end
---[=============[
-  • HASHTABLES •
---]=============]
-do --[[
-    GUI hashtable converter by Tasyen and Bribe
-    
-    Converts GUI hashtables API into Lua Tables, overwrites StringHashBJ and GetHandleIdBJ to permit
-    typecasting, bypasses the 256 hashtable limit by avoiding hashtables, provides the variable
-    "HashTableArray", which automatically creates hashtables for you as needed (so you don't have to
-    initialize them each time).
-]]
-    function StringHashBJ(s) return s end
-    function GetHandleIdBJ(id) return id end
+    --[=============[
+      • HASHTABLES •
+    --]=============]
+    do
+        --[[ GUI hashtable converter by Tasyen and Bribe
 
-    local function load(whichHashTable,parentKey)
-        local index = whichHashTable[parentKey]
-        if not index then
-            index=__jarray()
-            whichHashTable[parentKey]=index
+        Converts GUI hashtables API into Lua Tables, overwrites StringHashBJ and GetHandleIdBJ to permit
+        typecasting, bypasses the 256 hashtable limit by avoiding hashtables, provides the variable
+        "HashTableArray", which automatically creates hashtables for you as needed (so you don't have to
+        initialize them each time). ]]
+        ---@param s string
+        ---@return string s
+        function StringHashBJ(s)
+            return s or 0
         end
-        return index
-    end
-    if _USE_GLOBAL_REMAP then
-        OnInit(function(import)
-            local remap = import "GlobalRemapArray"
-            local hashes = __jarray()
-            remap("udg_HashTableArray", function(index)
-                return load(hashes, index)
+
+        ---@generic T
+        ---@param id T
+        ---@return T id
+        function GetHandleIdBJ(id)
+            return id or 0
+        end
+
+        ---@alias FakeHashtableBucket<T> {[unknown]: {[unknown]: T}}
+        ---@class FakeHashtable
+        ---@field boolean FakeHashtableBucket<boolean>
+        ---@field integer FakeHashtableBucket<integer>
+        ---@field real FakeHashtableBucket<real>
+        ---@field string FakeHashtableBucket<string>
+        ---@field handle FakeHashtableBucket<handle>
+
+        ---@param whichHashTable FakeHashtable
+        ---@param type 'boolean'|'integer'|'real'|'string'|'handle'
+        ---@param parentKey unknown
+        ---@return unknown
+        local function load(whichHashTable, type, parentKey)
+            local typedTable = whichHashTable[type]
+            if not typedTable then
+                whichHashTable[type] = {}
+            end
+            local index = typedTable[parentKey]
+            if not index then
+                index = __jarray()
+                typedTable[parentKey] = index
+            end
+            return index
+        end
+        if _USE_GLOBAL_REMAP then
+            OnInit(function(import)
+                local remap = import "GlobalRemapArray"
+                local hashes = __jarray()
+                remap("udg_HashTableArray", function(index)
+                    return load(hashes, 'handle', index)
+                end)
             end)
-        end)
-    end
-    
-    local last
-    GetLastCreatedHashtableBJ=function() return last end
-    function InitHashtableBJ() last=__jarray() ; return last end
-    
-    local function saveInto(value, childKey, parentKey, whichHashTable)
-        if childKey and parentKey and whichHashTable then
-            load(whichHashTable, parentKey)[childKey] = value
         end
-    end
-    local function loadFrom(childKey, parentKey, whichHashTable, default)
-        if childKey and parentKey and whichHashTable then
-            local val = load(whichHashTable, parentKey)[childKey]
+
+        local last
+
+        ---@return table
+        function GetLastCreatedHashtableBJ()
+            return last
+        end
+
+        ---@return table
+        function InitHashtableBJ()
+            last = __jarray(); return last
+        end
+
+        ---@param value unknown?
+        ---@param childKey unknown
+        ---@param parentKey unknown
+        ---@param whichHashTable FakeHashtable
+        ---@param type string
+        local function saveInto(value, childKey, parentKey, whichHashTable, type)
+            assert(childKey ~= nil, 'childKey cannot be nil')
+            assert(parentKey ~= nil, 'parentKey cannot be nil')
+            assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
+            load(whichHashTable, type, parentKey)[childKey] = value
+        end
+
+        ---@param childKey unknown
+        ---@param parentKey unknown
+        ---@param whichHashTable FakeHashtable
+        ---@param type string|nil
+        ---@param default unknown|nil
+        ---@return unknown|nil
+        local function loadFrom(childKey, parentKey, whichHashTable, type, default)
+            assert(childKey ~= nil, 'childKey cannot be nil')
+            assert(parentKey ~= nil, 'parentKey cannot be nil')
+            assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
+            local val = load(whichHashTable, type or 'handle', parentKey)[childKey]
             return val ~= nil and val or default
         end
-    end
-    SaveIntegerBJ = saveInto
-    SaveRealBJ = saveInto
-    SaveBooleanBJ = saveInto
-    SaveStringBJ = saveInto
-    
-    local function createDefault(default)
-        return function(childKey, parentKey, whichHashTable)
-            return loadFrom(childKey, parentKey, whichHashTable, default)
-        end
-    end
-    local loadNumber = createDefault(0)
-    LoadIntegerBJ = loadNumber
-    LoadRealBJ = loadNumber
-    LoadBooleanBJ = createDefault(false)
-    LoadStringBJ = createDefault("")
-    
-    do
-        local sub = string.sub
-        for key in pairs(_G) do
-            if sub(key, -8)=="HandleBJ" then
-                local str=sub(key, 1,4)
-                if str=="Save" then     _G[key] = saveInto
-                elseif str=="Load" then _G[key] = loadFrom end
-            end
-        end
-    end
-    function HaveSavedValue(childKey, _, parentKey, whichHashTable)
-        return load(whichHashTable, parentKey)[childKey] ~= nil
-    end
-    FlushParentHashtableBJ = function(whichHashTable)
-        for key in pairs(whichHashTable) do
-            whichHashTable[key]=nil
-        end
-    end
-    function FlushChildHashtableBJ(whichHashTable, parentKey)
-        whichHashTable[parentKey]=nil
-    end
-end
---[===========================[
-  • LOCATIONS (POINTS IN GUI) •
---]===========================]
-do
-    local oldLocation = Location
-    local location
-    do
-        local oldRemove = RemoveLocation
-        local oldGetX   = GetLocationX
-        local oldGetY   = GetLocationY
-        local oldRally  = GetUnitRallyPoint
-        function GetUnitRallyPoint(unit)
-            local removeThis = oldRally(unit) --Actually needs to create a location for a brief moment, as there is no GetUnitRallyX/Y
-            local loc = {oldGetX(removeThis), oldGetY(removeThis)}
-            oldRemove(removeThis)
-            return loc
-        end
-    end
+        SaveIntegerBJ = saveInto ---@type fun(value: integer, childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable)
+        SaveRealBJ = saveInto ---@type fun(value: number, childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable)
+        SaveBooleanBJ = saveInto ---@type fun(value: boolean, childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable)
+        SaveStringBJ = saveInto ---@type fun(value: string, childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable)
 
-    RemoveLocation = DoNothing
-    function Location(x,y)
-        return {x,y}
-    end
-    do
-        local oldMoveLoc = MoveLocation
-        local oldGetZ=GetLocationZ
-        function GUI.getCoordZ(x,y)
-            GUI.getCoordZ = function(x,y)
-                oldMoveLoc(location, x, y)
-                return oldGetZ(location)
-            end
-            location = oldLocation(x,y)
-            return oldGetZ(location)
+        ---@param value unknown|nil
+        ---@param childKey unknown
+        ---@param parentKey unknown
+        ---@param whichHashTable FakeHashtable
+        local function saveHandle(value, childKey, parentKey, whichHashTable)
+            saveInto(value, childKey, parentKey, whichHashTable, 'handle')
         end
-        
-    end
-    function GetLocationX(loc) return loc[1] end
-    function GetLocationY(loc) return loc[2] end
-    function GetLocationZ(loc)
-        return GUI.getCoordZ(loc[1], loc[2])
-    end
-    function MoveLocation(loc, x, y)
-        loc[1]=x
-        loc[2]=y
-    end
-    local function fakeCreate(varName, suffix)
-        local getX=_G[varName.."X"]
-        local getY=_G[varName.."Y"]
-        _G[varName..(suffix or "Loc")]=function(obj) return {getX(obj), getY(obj)} end
-    end
-    fakeCreate("GetUnit")
-    fakeCreate("GetOrderPoint")
-    fakeCreate("GetSpellTarget")
-    fakeCreate("CameraSetupGetDestPosition")
-    fakeCreate("GetCameraTargetPosition")
-    fakeCreate("GetCameraEyePosition")
-    fakeCreate("BlzGetTriggerPlayerMouse", "Position")
-    fakeCreate("GetStartLocation")
 
-    BlzSetSpecialEffectPositionLoc = function(effect, loc)
-        local x,y=loc[1],loc[2]
-        BlzSetSpecialEffectPosition(effect, x, y, GUI.getCoordZ(x,y))
-    end
-    ---@param oldVarName string
-    ---@param newVarName string
-    ---@param index integer needed to determine which of the parameters calls for a location.
-    local function hook(oldVarName, newVarName, index)
-        local new = _G[newVarName]
-        local func
-        if index==1 then
-            func=function(loc, ...)
-                return new(loc[1], loc[2], ...)
-            end
-        elseif index==2 then
-            func=function(a, loc, ...)
-                return new(a, loc[1], loc[2], ...)
-            end
-        else--index==3
-            func=function(a, b, loc, ...)
-                return new(a, b, loc[1], loc[2], ...)
+        ---@param type string
+        ---@param default unknown
+        ---@return fun(childKey: unknown, parentKey: unknown, whichHashTable: table): unknown|nil
+        local function createDefault(type, default)
+            return function(childKey, parentKey, whichHashTable)
+                return loadFrom(childKey, parentKey, whichHashTable, type, default)
             end
         end
-        _G[oldVarName] = func
-    end
-    hook("IsLocationInRegion",                  "IsPointInRegion", 2)
-    hook("IsUnitInRangeLoc",                    "IsUnitInRangeXY", 2)
-    hook("IssuePointOrderLoc",                  "IssuePointOrder", 3)
-          IssuePointOrderLocBJ                  =IssuePointOrderLoc
-    hook("IssuePointOrderByIdLoc",              "IssuePointOrderById", 3)
-    hook("IsLocationVisibleToPlayer",           "IsVisibleToPlayer", 1)
-    hook("IsLocationFoggedToPlayer",            "IsFoggedToPlayer", 1)
-    hook("IsLocationMaskedToPlayer",            "IsMaskedToPlayer", 1)
-    hook("CreateFogModifierRadiusLoc",          "CreateFogModifierRadius", 3)
-    hook("AddSpecialEffectLoc",                 "AddSpecialEffect", 2)
-    hook("AddSpellEffectLoc",                   "AddSpellEffect", 3)
-    hook("AddSpellEffectByIdLoc",               "AddSpellEffectById", 3)
-    hook("SetBlightLoc",                        "SetBlight", 2)
-    hook("DefineStartLocationLoc",              "DefineStartLocation", 2)
-    hook("GroupEnumUnitsInRangeOfLoc",          "GroupEnumUnitsInRange", 2)
-    hook("GroupEnumUnitsInRangeOfLocCounted",   "GroupEnumUnitsInRangeCounted", 2)
-    hook("GroupPointOrderLoc",                  "GroupPointOrder", 3)
-          GroupPointOrderLocBJ                  =GroupPointOrderLoc
-    hook("GroupPointOrderByIdLoc",              "GroupPointOrderById", 3)
-    hook("MoveRectToLoc",                       "MoveRectTo", 2)
-    hook("RegionAddCellAtLoc",                  "RegionAddCell", 2)
-    hook("RegionClearCellAtLoc",                "RegionClearCell", 2)
-    hook("CreateUnitAtLoc",                     "CreateUnit", 3)
-    hook("CreateUnitAtLocByName",               "CreateUnitByName", 3)
-    hook("SetUnitPositionLoc",                  "SetUnitPosition", 2)
-    hook("ReviveHeroLoc",                       "ReviveHero", 2)
-    hook("SetFogStateRadiusLoc",                "SetFogStateRadius", 3)
-    
-    ---@param min table location
-    ---@param max table location
-    ---@return rect newRect
-    RectFromLoc = function(min, max)
-        return Rect(min[1], min[2], max[1], max[2])
-    end
-    ---@param whichRect rect
-    ---@param min table location
-    ---@param max table location
-    SetRectFromLoc = function(whichRect, min, max)
-        SetRect(whichRect, min[1], min[2], max[1], max[2])
-    end
-end
---[=============================[
-  • GROUPS (UNIT GROUPS IN GUI) •
---]=============================]
-do
-    local mainGroup = bj_lastCreatedGroup
-    DestroyGroup(bj_suspendDecayFleshGroup)
-    DestroyGroup(bj_suspendDecayBoneGroup)
-    DestroyGroup=DoNothing
+        LoadIntegerBJ = createDefault('integer', 0) ---@type fun(childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable): integer
+        LoadRealBJ = createDefault('real', 0) ---@type fun(childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable): number
+        LoadBooleanBJ = createDefault('boolean', false) ---@type fun(childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable): boolean
+        LoadStringBJ = createDefault('string', '') ---@type fun(childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable): string
 
-    CreateGroup=function() return {indexOf={}} end
-    bj_lastCreatedGroup=CreateGroup()
-    bj_suspendDecayFleshGroup=CreateGroup()
-    bj_suspendDecayBoneGroup=CreateGroup()
+        ---@param childKey unknown
+        ---@param parentKey unknown
+        ---@param whichHashTable FakeHashtable
+        local function loadHandle(childKey, parentKey, whichHashTable)
+            return loadFrom(childKey, parentKey, whichHashTable, 'handle')
+        end
 
-    local groups
-    if _USE_UNIT_EVENT then
-        groups = {}
-        function GroupClear(group)
-            if group then
-                local u
-                for i=1, #group do
-                    u=group[i]
-                    groups[u]=nil
-                    group.indexOf[u]=nil
-                    group[i]=nil
-                end
-            end
-        end
-    else
-        function GroupClear(group)
-            if group then
-                for i=1, #group do
-                    group.indexOf[group[i]]=nil
-                    group[i]=nil
-                end
-            end
-        end
-    end
-    function GroupAddUnit(group, unit)
-        if group and unit and not group.indexOf[unit] then
-            local pos = #group+1
-            group.indexOf[unit]=pos
-            group[pos]=unit
-            if groups then
-                groups[unit] = groups[unit] or __jarray()
-                groups[unit][group]=true
-            end
-        end
-    end
-    function GroupRemoveUnit(group, unit)
-        local indexOf = group and unit and group.indexOf
-        if indexOf then
-            local pos = indexOf[unit]
-            if pos then
-                local size = #group
-                if pos ~= size then
-                    indexOf[group[size]] = pos
-                end
-                group[size]=nil
-                indexOf[unit]=nil
-                if groups then
-                    groups[unit][group]=nil
-                end
-            end
-        end
-    end
-    function IsUnitInGroup(unit, group)
-        return unit and group and group.indexOf[unit]
-    end
-    function FirstOfGroup(group)
-        return group and group[1]
-    end
-
-    local enumUnit
-    GetEnumUnit=function() return enumUnit end
-
-    function GUI.forGroup(group, code)
-        for i=1, #group do
-            code(group[i])
-        end
-    end
-    ForGroup = function(group, code)
-        if group and code then
-            local old = enumUnit
-            GUI.forGroup(group, function(unit)
-                enumUnit=unit
-                code()
-            end)
-            enumUnit=old
-        end
-    end
-    do
-        local oldUnitAt=BlzGroupUnitAt
-        function BlzGroupUnitAt(group, index)
-            return group and group[index+1]
-        end
-        local oldGetSize=BlzGroupGetSize
-        local function groupAction(code)
-            for i=0, oldGetSize(mainGroup)-1 do
-                code(oldUnitAt(mainGroup, i))
-            end
-        end
-        for _,name in ipairs({
-            "OfType",
-            "OfPlayer",
-            "OfTypeCounted",
-            "InRect",
-            "InRectCounted",
-            "InRange",
-            "InRangeOfLoc",
-            "InRangeCounted",
-            "InRangeOfLocCounted",
-            "Selected"
-        }) do
-            local varStr = "GroupEnumUnits"..name
-            local old=_G[varStr]
-            _G[varStr]=function(group, ...)
-                if group then
-                    old(mainGroup, ...)
-                    GroupClear(group)
-                    groupAction(function(unit)
-                        GroupAddUnit(group, unit)
-                    end)
-                end
-            end
-            --Provide API for Lua users who just want to efficiently run code, without caring about the group itself.
-            GUI["enumUnits"..name]=function(code, ...)
-                old(mainGroup, ...)
-                groupAction(code)
-            end
-        end
-    end
-    
-    for _,name in ipairs {
-        "ImmediateOrder",
-        "ImmediateOrderById",
-        "PointOrder",
-        "PointOrderById",
-        "TargetOrder",
-        "TargetOrderById"
-    } do
-        local new = _G["Issue"..name]
-        _G["Group"..name]=function(group, ...)
-            for i=1, #group do
-                new(group[i], ...)
-            end
-        end
-    end
-    GroupTrainOrderByIdBJ = GroupImmediateOrderById
-
-    BlzGroupGetSize=function(group) return group and #group or 0 end
-    
-    function GroupAddGroup(group, add)
-        if not group or not add then return end
-        GUI.forGroup(add, function(unit)
-            GroupAddUnit(group, unit)
-        end)
-    end
-    function GroupRemoveGroup(group, remove)
-        if not group or not remove then return end
-        GUI.forGroup(remove, function(unit)
-            GroupRemoveUnit(group, unit)
-        end)
-    end
-
-    GroupPickRandomUnit=function(group)
-        return group and group[1] and group[GetRandomInt(1,#group)] or 0
-    end
-    IsUnitGroupEmptyBJ=function(group)
-        return not group or not group[1]
-    end
-    
-    ForGroupBJ=ForGroup
-    CountUnitsInGroup=BlzGroupGetSize
-    BlzGroupAddGroupFast=GroupAddGroup
-    BlzGroupRemoveGroupFast=GroupRemoveGroup
-    GroupPickRandomUnitEnum=nil
-    CountUnitsInGroupEnum=nil
-    GroupAddGroupEnum=nil
-    GroupRemoveGroupEnum=nil
-
-    if groups then
-        OnInit(function(import)
-            import "UnitEvent"
-            UnitEvent.onRemoval(function(data)
-                local u = data.unit
-                local g = groups[u]
-                if g then
-                    for _,group in pairs(g) do
-                        GroupRemoveUnit(group,u)
+        do
+            local sub = string.sub
+            for key in pairs(_G) do
+                if sub(key, -8) == "HandleBJ" then
+                    local str = sub(key, 1, 4)
+                    if str == "Save" then
+                        _G[key] = saveHandle
+                    elseif str == "Load" then
+                        _G[key] = loadHandle
                     end
                 end
-            end)
-        end)
-    end
-end
---[========================[
-  • RECTS (REGIONS IN GUI) •
---]========================]
-do
-    local oldRect, rect = Rect
-    function Rect(...) return {...} end
-    
-    local oldSetRect = SetRect
-    function SetRect(r, mix, miy, max, may)
-        r[1]=mix
-        r[2]=miy
-        r[3]=max
-        r[4]=may
-    end
+            end
+        end
 
+        ---@param childKey unknown
+        ---@param valueType integer
+        ---@param parentKey unknown
+        ---@param whichHashTable FakeHashtable
+        ---@return boolean
+        function HaveSavedValue(childKey, valueType, parentKey, whichHashTable)
+            assert(childKey ~= nil, 'childKey cannot be nil')
+            assert(parentKey ~= nil, 'parentKey cannot be nil')
+            assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
+            if (valueType == bj_HASHTABLE_BOOLEAN) then
+                return load(whichHashTable, 'boolean', parentKey)[childKey] ~= nil
+            elseif (valueType == bj_HASHTABLE_INTEGER) then
+                return load(whichHashTable, 'integer', parentKey)[childKey] ~= nil
+            elseif (valueType == bj_HASHTABLE_REAL) then
+                return load(whichHashTable, 'real', parentKey)[childKey] ~= nil
+            elseif (valueType == bj_HASHTABLE_STRING) then
+                return load(whichHashTable, 'string', parentKey)[childKey] ~= nil
+            elseif (valueType == bj_HASHTABLE_HANDLE) then
+                return load(whichHashTable, 'handle', parentKey)[childKey] ~= nil
+            else
+                --  Unrecognized value type - ignore the request.
+                return false
+            end
+        end
+
+        ---@param whichHashTable FakeHashtable
+        function FlushParentHashtableBJ(whichHashTable)
+            assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
+            whichHashTable.boolean = {}
+            whichHashTable.integer = {}
+            whichHashTable.real = {}
+            whichHashTable.string = {}
+            whichHashTable.handle = {}
+        end
+
+        ---@param whichHashTable FakeHashtable
+        ---@param parentKey unknown
+        function FlushChildHashtableBJ(whichHashTable, parentKey)
+            assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
+            assert(parentKey ~= nil, 'parentKey cannot be nil')
+            whichHashTable.boolean[parentKey] = nil
+            whichHashTable.integer[parentKey] = nil
+            whichHashTable.real[parentKey] = nil
+            whichHashTable.string[parentKey] = nil
+            whichHashTable.handle[parentKey] = nil
+        end
+    end
+    --[===========================[
+      • LOCATIONS (POINTS IN GUI) •
+    --]===========================]
     do
-        local oldWorld = GetWorldBounds
-        local getMinX=GetRectMinX
-        local getMinY=GetRectMinY
-        local getMaxX=GetRectMaxX
-        local getMaxY=GetRectMaxY
-        local remover = RemoveRect
-        RemoveRect=DoNothing
-        local newWorld
-        function GetWorldBounds()
-            if not newWorld then
-                local w = oldWorld()
-                newWorld = {getMinX(w),getMinY(w),getMaxX(w),getMaxY(w)}
-                remover(w)
-            end
-            return {unpack(newWorld)}
-        end
-        GetEntireMapRect = GetWorldBounds
-    end
-    function GetRectMinX(r) return r[1] end
-    function GetRectMinY(r) return r[2] end
-    function GetRectMaxX(r) return r[3] end
-    function GetRectMaxY(r) return r[4] end
-    function GetRectCenterX(r) return (r[1] + r[3])/2 end
-    function GetRectCenterY(r) return (r[2] + r[4])/2 end
+        ---@alias FakeLocation {[1]: number, [2]: number}
 
-    function MoveRectTo(r, x, y)
-        x = x - GetRectCenterX(r)
-        y = y - GetRectCenterY(r)
-        SetRect(r, r[1]+x, r[2]+y, r[3]+x, r[4]+y)
-    end
+        local oldLocation = Location
+        local location
+        do
+            local oldRemove = RemoveLocation
+            local oldGetX   = GetLocationX
+            local oldGetY   = GetLocationY
+            local oldRally  = GetUnitRallyPoint
 
-    ---@param varName string
-    ---@param index integer needed to determine which of the parameters calls for a rect.
-    local function hook(varName, index)
-        local old = _G[varName]
-        local func
-        if index==1 then
-            func=function(rct, ...)
-                oldSetRect(rect, unpack(rct))
-                return old(rect, ...)
-            end
-        elseif index==2 then
-            func=function(a, rct, ...)
-                oldSetRect(rect, unpack(rct))
-                return old(a, rect, ...)
-            end
-        else--index==3
-            func=function(a, b, rct, ...)
-                oldSetRect(rect, unpack(rct))
-                return old(a, b, rect, ...)
+            ---@param unit unit
+            ---@return FakeLocation
+            function GetUnitRallyPoint(unit)
+                assert(unit ~= nil, 'unit cannot be nil')
+                local removeThis = oldRally(unit) --Actually needs to create a location for a brief moment, as there is no GetUnitRallyX/Y
+                local loc = { oldGetX(removeThis), oldGetY(removeThis) }
+                oldRemove(removeThis)
+                return loc
             end
         end
-        _G[varName] = function(...)
-            if not rect then rect = oldRect(0,0,32,32) end
-            _G[varName] = func
-            return func(...)
+
+        RemoveLocation = DoNothing ---@type fun(location: FakeLocation)
+
+        ---@param x number
+        ---@param y number
+        ---@return FakeLocation
+        function Location(x, y)
+            assert(x ~= nil, 'x cannot be nil')
+            assert(y ~= nil, 'y cannot be nil')
+            return { x, y }
         end
-    end
-    hook("EnumDestructablesInRect", 1)
-    hook("EnumItemsInRect", 1)
-    hook("AddWeatherEffect", 1)
-    hook("SetDoodadAnimationRect", 1)
-    hook("GroupEnumUnitsInRect", 2)
-    hook("GroupEnumUnitsInRectCounted", 2)
-    hook("RegionAddRect", 2)
-    hook("RegionClearRect", 2)
-    hook("SetBlightRect", 2)
-    hook("SetFogStateRect", 3)
-    hook("CreateFogModifierRect", 3)
-end
---[===============================[
-  • FORCES (PLAYER GROUPS IN GUI) •
---]===============================]
-do
-    local oldForce, mainForce, initForce = CreateForce
-    initForce = function()
-        initForce = DoNothing
-        mainForce = oldForce()
-    end
-    CreateForce=function() return {indexOf={}} end
-    DestroyForce=DoNothing
-    local oldClear=ForceClear
-    function ForceClear(force)
-        if force then
-            for i,val in ipairs(force) do
-                force.indexOf[val]=nil
-                force[i]=nil
-            end
-        end
-    end
-    do
-        local oldCripple = CripplePlayer
-        local oldAdd=ForceAddPlayer
-        CripplePlayer = function(player,force,flag)
-            if player and force then
-                initForce()
-                for _,val in ipairs(force) do
-                    oldAdd(mainForce, val)
+
+        do
+            local oldMoveLoc = MoveLocation
+            local oldGetZ = GetLocationZ
+
+            ---@param x number
+            ---@param y number
+            ---@return number z
+            function GUI.getCoordZ(x, y)
+                assert(x ~= nil, 'x cannot be nil')
+                assert(y ~= nil, 'y cannot be nil')
+                GUI.getCoordZ = function(x, y)
+                    oldMoveLoc(location, x, y)
+                    return oldGetZ(location)
                 end
-                oldCripple(player, mainForce, flag)
-                oldClear(mainForce)
+                location = oldLocation(x, y)
+                return oldGetZ(location)
             end
         end
-    end
-    function ForceAddPlayer(force, player)
-        if force and player and not force.indexOf[player] then
-            local pos = #force+1
-            force.indexOf[player]=pos
-            force[pos]=player
+
+        ---@param loc FakeLocation
+        ---@return number x
+        function GetLocationX(loc)
+            assert(loc ~= nil, 'loc cannot be nil')
+            return loc[1]
+        end
+
+        ---@param loc FakeLocation
+        ---@return number y
+        function GetLocationY(loc)
+            assert(loc ~= nil, 'loc cannot be nil')
+            return loc[2]
+        end
+
+        ---@param loc FakeLocation
+        ---@return number z
+        function GetLocationZ(loc)
+            assert(loc ~= nil, 'loc cannot be nil')
+            return GUI.getCoordZ(loc[1], loc[2])
+        end
+
+        ---@param loc FakeLocation
+        ---@param x number
+        ---@param y number
+        function MoveLocation(loc, x, y)
+            assert(loc ~= nil, 'loc cannot be nil')
+            loc[1] = x
+            loc[2] = y
+        end
+
+        ---@param varName string
+        ---@param suffix string|nil
+        local function fakeCreate(varName, suffix)
+            local getX = _G[varName .. "X"]
+            local getY = _G[varName .. "Y"]
+            _G[varName .. (suffix or "Loc")] = function(obj) return { getX(obj), getY(obj) } end
+        end
+        fakeCreate("GetUnit")
+        fakeCreate("GetOrderPoint")
+        fakeCreate("GetSpellTarget")
+        fakeCreate("CameraSetupGetDestPosition")
+        fakeCreate("GetCameraTargetPosition")
+        fakeCreate("GetCameraEyePosition")
+        fakeCreate("BlzGetTriggerPlayerMouse", "Position")
+        fakeCreate("GetStartLocation")
+
+        ---@param effect effect
+        ---@param loc FakeLocation
+        BlzSetSpecialEffectPositionLoc = function(effect, loc)
+            assert(effect ~= nil, 'effect cannot be nil')
+            assert(loc ~= nil, 'loc cannot be nil')
+            local x, y = loc[1], loc[2]
+            BlzSetSpecialEffectPosition(effect, x, y, GUI.getCoordZ(x, y))
+        end
+
+        ---@param oldVarName string
+        ---@param newVarName string
+        ---@param index integer needed to determine which of the parameters calls for a location.
+        local function hook(oldVarName, newVarName, index)
+            local new = _G[newVarName]
+            local func
+            if index == 1 then
+                func = function(loc, ...)
+                    return new(loc[1], loc[2], ...)
+                end
+            elseif index == 2 then
+                func = function(a, loc, ...)
+                    return new(a, loc[1], loc[2], ...)
+                end
+            else --index==3
+                func = function(a, b, loc, ...)
+                    return new(a, b, loc[1], loc[2], ...)
+                end
+            end
+            _G[oldVarName] = func
+        end
+        hook("IsLocationInRegion", "IsPointInRegion", 2)
+        hook("IsUnitInRangeLoc", "IsUnitInRangeXY", 2)
+        hook("IssuePointOrderLoc", "IssuePointOrder", 3)
+        IssuePointOrderLocBJ = IssuePointOrderLoc
+        hook("IssuePointOrderByIdLoc", "IssuePointOrderById", 3)
+        hook("IsLocationVisibleToPlayer", "IsVisibleToPlayer", 1)
+        hook("IsLocationFoggedToPlayer", "IsFoggedToPlayer", 1)
+        hook("IsLocationMaskedToPlayer", "IsMaskedToPlayer", 1)
+        hook("CreateFogModifierRadiusLoc", "CreateFogModifierRadius", 3)
+        hook("AddSpecialEffectLoc", "AddSpecialEffect", 2)
+        hook("AddSpellEffectLoc", "AddSpellEffect", 3)
+        hook("AddSpellEffectByIdLoc", "AddSpellEffectById", 3)
+        hook("SetBlightLoc", "SetBlight", 2)
+        hook("DefineStartLocationLoc", "DefineStartLocation", 2)
+        hook("GroupEnumUnitsInRangeOfLoc", "GroupEnumUnitsInRange", 2)
+        hook("GroupEnumUnitsInRangeOfLocCounted", "GroupEnumUnitsInRangeCounted", 2)
+        hook("GroupPointOrderLoc", "GroupPointOrder", 3)
+        GroupPointOrderLocBJ = GroupPointOrderLoc
+        hook("GroupPointOrderByIdLoc", "GroupPointOrderById", 3)
+        hook("MoveRectToLoc", "MoveRectTo", 2)
+        hook("RegionAddCellAtLoc", "RegionAddCell", 2)
+        hook("RegionClearCellAtLoc", "RegionClearCell", 2)
+        hook("CreateUnitAtLoc", "CreateUnit", 3)
+        hook("CreateUnitAtLocByName", "CreateUnitByName", 3)
+        hook("SetUnitPositionLoc", "SetUnitPosition", 2)
+        hook("ReviveHeroLoc", "ReviveHero", 2)
+        hook("SetFogStateRadiusLoc", "SetFogStateRadius", 3)
+
+        ---@param min FakeLocation
+        ---@param max FakeLocation
+        ---@return rect newRect
+        function RectFromLoc(min, max)
+            assert(min ~= nil, 'min cannot be nil')
+            assert(max ~= nil, 'max cannot be nil')
+            return Rect(min[1], min[2], max[1], max[2])
+        end
+
+        ---@param whichRect rect
+        ---@param min FakeLocation
+        ---@param max FakeLocation
+        SetRectFromLoc = function(whichRect, min, max)
+            assert(min ~= nil, 'min cannot be nil')
+            assert(max ~= nil, 'max cannot be nil')
+            SetRect(whichRect, min[1], min[2], max[1], max[2])
         end
     end
-    function ForceRemovePlayer(force, player)
-        local pos = force and player and force.indexOf[player]
-        if pos then
-            force.indexOf[player]=nil
+    --[=============================[
+      • GROUPS (UNIT GROUPS IN GUI) •
+    --]=============================]
+    do
+        local mainGroup = bj_lastCreatedGroup
+        DestroyGroup(bj_suspendDecayFleshGroup --[[@as group]])
+        DestroyGroup(bj_suspendDecayBoneGroup --[[@as group]])
+        DestroyGroup = DoNothing
+
+        ---@class FakeGroup
+        ---@field [integer] unit
+        ---@field indexOf {[unit]: integer}
+
+        ---@return FakeGroup
+        function CreateGroup()
+            return { indexOf = {} }
+        end
+
+        bj_lastCreatedGroup = CreateGroup()
+        bj_suspendDecayFleshGroup = CreateGroup()
+        bj_suspendDecayBoneGroup = CreateGroup()
+
+        local groups ---@type table<unit, FakeGroup>
+        if _USE_UNIT_EVENT then
+            groups = {}
+
+            ---@param group FakeGroup
+            function GroupClear(group)
+                assert(group ~= nil, 'group cannot be nil')
+                local u
+                for i = 1, #group do
+                    u = group[i]
+                    groups[u] = nil
+                    group.indexOf[u] = nil
+                    group[i] = nil
+                end
+            end
+        else
+            ---@param group FakeGroup
+            function GroupClear(group)
+                assert(group ~= nil, 'group cannot be nil')
+                for i = 1, #group do
+                    group.indexOf[group[i]] = nil
+                    group[i] = nil
+                end
+            end
+        end
+
+        ---@param group FakeGroup
+        ---@param unit unit
+        function GroupAddUnit(group, unit)
+            assert(group ~= nil, 'group cannot be nil')
+            assert(unit ~= nil, 'unit cannot be nil')
+            if group.indexOf[unit] then return end
+
+            local pos = #group + 1
+            group.indexOf[unit] = pos
+            group[pos] = unit
+            if groups then
+                groups[unit] = groups[unit] or __jarray()
+                groups[unit][group] = true
+            end
+        end
+
+        ---@param group FakeGroup
+        ---@param unit unit
+        function GroupRemoveUnit(group, unit)
+            assert(group ~= nil, 'group cannot be nil')
+            assert(unit ~= nil, 'unit cannot be nil')
+            local indexOf = group.indexOf
+            if indexOf == nil then return end
+            local pos = indexOf[unit]
+            if pos == nil then return end
+
+            local size = #group
+            if pos ~= size then
+                indexOf[group[size]] = pos
+            end
+            group[size] = nil
+            indexOf[unit] = nil
+            if groups then
+                groups[unit][group] = nil
+            end
+        end
+
+        ---@param unit unit
+        ---@param group FakeGroup
+        ---@return boolean
+        function IsUnitInGroup(unit, group)
+            assert(unit ~= nil, 'unti cannot be nil')
+            assert(group ~= nil, 'group cannot be nil')
+            return group.indexOf[unit] and true or false
+        end
+
+        ---@param group FakeGroup
+        ---@return unit|nil
+        function FirstOfGroup(group)
+            assert(group ~= nil, 'group cannot be nil')
+            return group[1]
+        end
+
+        local enumUnit
+        ---@return unit enumUnit
+        function GetEnumUnit()
+            return enumUnit
+        end
+
+        ---@param group FakeGroup
+        ---@param code fun(u: unit)
+        function GUI.forGroup(group, code)
+            assert(group ~= nil, 'group cannot be nil')
+            assert(code ~= nil, 'code cannot be nil')
+            for i = 1, #group do
+                code(group[i])
+            end
+        end
+
+        ---@param group FakeGroup
+        ---@param code fun(u)
+        function ForGroup(group, code)
+            assert(group ~= nil, 'group cannot be nil')
+            assert(code ~= nil, 'code cannot be nil')
+            local old = enumUnit
+            GUI.forGroup(group, function(unit)
+                enumUnit = unit
+                code()
+            end)
+            enumUnit = old
+        end
+
+        do
+            local oldUnitAt = BlzGroupUnitAt
+
+            ---@param group FakeGroup
+            ---@param index integer
+            ---@return unit|nil
+            function BlzGroupUnitAt(group, index)
+                assert(group ~= nil, 'group cannot be nil')
+                assert(index ~= nil, 'index cannot be nil')
+                return group[index + 1]
+            end
+
+            local oldGetSize = BlzGroupGetSize
+
+            ---@param code fun(u: unit)
+            local function groupAction(code)
+                for i = 0, oldGetSize(mainGroup) - 1 do
+                    code(oldUnitAt(mainGroup, i) --[[@as unit should be fine]])
+                end
+            end
+            for _, name in ipairs({
+                "OfType",
+                "OfPlayer",
+                "OfTypeCounted",
+                "InRect",
+                "InRectCounted",
+                "InRange",
+                "InRangeOfLoc",
+                "InRangeCounted",
+                "InRangeOfLocCounted",
+                "Selected"
+            }) do
+                local varStr = "GroupEnumUnits" .. name
+                local old = _G[varStr]
+
+                ---@param group FakeGroup
+                ---@param ... unknown
+                _G[varStr] = function(group, ...)
+                    if group then
+                        old(mainGroup, ...)
+                        GroupClear(group)
+                        groupAction(function(unit)
+                            GroupAddUnit(group, unit)
+                        end)
+                    end
+                end
+                --Provide API for Lua users who just want to efficiently run code, without caring about the group itself.
+                ---@param code fun(group: FakeGroup, ...: unknown)
+                ---@param ... unknown
+                GUI["enumUnits" .. name] = function(code, ...)
+                    assert(code ~= nil, 'code cannot be nil')
+                    old(mainGroup, ...)
+                    groupAction(code)
+                end
+            end
+        end
+
+        for _, name in ipairs {
+            "ImmediateOrder",
+            "ImmediateOrderById",
+            "PointOrder",
+            "PointOrderById",
+            "TargetOrder",
+            "TargetOrderById"
+        } do
+            local new = _G["Issue" .. name]
+
+            ---@param group FakeGroup
+            ---@param ... unknown
+            _G["Group" .. name] = function(group, ...)
+                for i = 1, #group do
+                    new(group[i], ...)
+                end
+            end
+        end
+        GroupTrainOrderByIdBJ = GroupImmediateOrderById
+
+        ---@param group FakeGroup
+        ---@return integer
+        function BlzGroupGetSize(group)
+            assert(group ~= nil, 'group cannot be nil')
+            return #group
+        end
+
+        ---@param group FakeGroup
+        ---@param add FakeGroup
+        function GroupAddGroup(group, add)
+            assert(group ~= nil, 'group cannot be nil')
+            assert(add ~= nil, 'add cannot be nil')
+            GUI.forGroup(add, function(unit)
+                GroupAddUnit(group, unit)
+            end)
+        end
+
+        ---@param group FakeGroup
+        ---@param remove FakeGroup
+        function GroupRemoveGroup(group, remove)
+            assert(group ~= nil, 'group cannot be nil')
+            assert(remove ~= nil, 'remove cannot be nil')
+            GUI.forGroup(remove, function(unit)
+                GroupRemoveUnit(group, unit)
+            end)
+        end
+
+        ---@param group FakeGroup
+        ---@return unit|nil
+        function GroupPickRandomUnit(group)
+            assert(group ~= nil, 'group cannot be nil')
+            return group[1] and group[GetRandomInt(1, #group)]
+        end
+
+        ---@param group FakeGroup
+        ---@return boolean
+        IsUnitGroupEmptyBJ = function(group)
+            assert(group ~= nil, 'group cannot be nil')
+            return not group[1]
+        end
+
+        ForGroupBJ = ForGroup
+        CountUnitsInGroup = BlzGroupGetSize
+        BlzGroupAddGroupFast = GroupAddGroup
+        BlzGroupRemoveGroupFast = GroupRemoveGroup
+        GroupPickRandomUnitEnum = nil
+        CountUnitsInGroupEnum = nil
+        GroupAddGroupEnum = nil
+        GroupRemoveGroupEnum = nil
+
+        if groups then
+            OnInit(function(import)
+                import "UnitEvent"
+                ---@param data {unit: unit}
+                UnitEvent.onRemoval(function(data)
+                    local u = data.unit
+                    local g = groups[u]
+                    if g then
+                        for _, group in pairs(g) do
+                            GroupRemoveUnit(group, u)
+                        end
+                    end
+                end)
+            end)
+        end
+    end
+    --[========================[
+      • RECTS (REGIONS IN GUI) •
+    --]========================]
+    do
+        ---@alias FakeRect {[1]: number, [2]: number, [3]: number, [4]: number}
+
+        local oldRect, rect = Rect, nil
+        ---@param minX number
+        ---@param minY number
+        ---@param maxX number
+        ---@param maxY number
+        ---@return FakeRect
+        function Rect(minX, minY, maxX, maxY)
+            assert(minX ~= nil, 'minX cannot be nil')
+            assert(minY ~= nil, 'minY cannot be nil')
+            assert(maxX ~= nil, 'maxX cannot be nil')
+            assert(maxY ~= nil, 'maxY cannot be nil')
+            return { minX, minY, maxX, maxY }
+        end
+
+        local oldSetRect = SetRect
+        ---@param rect FakeRect
+        ---@param minX number
+        ---@param minY number
+        ---@param maxX number
+        ---@param maxY number
+        function SetRect(rect, minX, minY, maxX, maxY)
+            assert(rect ~= nil, 'rect cannot be nil')
+            assert(minX ~= nil, 'minX cannot be nil')
+            assert(minY ~= nil, 'minY cannot be nil')
+            assert(maxX ~= nil, 'maxX cannot be nil')
+            assert(maxY ~= nil, 'maxY cannot be nil')
+            rect[1] = minX
+            rect[2] = minY
+            rect[3] = maxX
+            rect[4] = maxY
+        end
+
+        do
+            local oldWorld = GetWorldBounds
+            local getMinX = GetRectMinX
+            local getMinY = GetRectMinY
+            local getMaxX = GetRectMaxX
+            local getMaxY = GetRectMaxY
+            local remover = RemoveRect
+            RemoveRect = DoNothing
+            local newWorld
+
+            ---@return FakeRect
+            function GetWorldBounds()
+                if not newWorld then
+                    local w = oldWorld()
+                    newWorld = { getMinX(w), getMinY(w), getMaxX(w), getMaxY(w) }
+                    remover(w)
+                end
+                return { unpack(newWorld) }
+            end
+
+            GetEntireMapRect = GetWorldBounds
+        end
+
+        ---@param rect FakeRect
+        ---@return number
+        function GetRectMinX(rect)
+            assert(rect ~= nil, 'rect cannot be nil')
+            return rect[1]
+        end
+
+        ---@param rect FakeRect
+        ---@return number
+        function GetRectMinY(rect)
+            assert(rect ~= nil, 'rect cannot be nil')
+            return rect[2]
+        end
+
+        ---@param rect FakeRect
+        ---@return number
+        function GetRectMaxX(rect)
+            assert(rect ~= nil, 'rect cannot be nil')
+            return rect[3]
+        end
+
+        ---@param rect FakeRect
+        ---@return number
+        function GetRectMaxY(rect)
+            assert(rect ~= nil, 'rect cannot be nil')
+            return rect[4]
+        end
+
+        ---@param rect FakeRect
+        ---@return number
+        function GetRectCenterX(rect)
+            assert(rect ~= nil, 'rect cannot be nil')
+            return (rect[1] + rect[3]) / 2
+        end
+
+        ---@param rect FakeRect
+        ---@return number
+        function GetRectCenterY(rect)
+            assert(rect ~= nil, 'rect cannot be nil')
+            return (rect[2] + rect[4]) / 2
+        end
+
+        ---@param rect FakeRect
+        ---@param x number
+        ---@param y number
+        function MoveRectTo(rect, x, y)
+            assert(rect ~= nil, 'rect cannot be nil')
+            assert(x ~= nil, 'x cannot be nil')
+            assert(y ~= nil, 'y cannot be nil')
+            x = x - GetRectCenterX(rect)
+            y = y - GetRectCenterY(rect)
+            SetRect(rect, rect[1] + x, rect[2] + y, rect[3] + x, rect[4] + y)
+        end
+
+        ---@param varName string
+        ---@param index integer needed to determine which of the parameters calls for a rect.
+        local function hook(varName, index)
+            local old = _G[varName]
+            local func
+            if index == 1 then
+                func = function(rct, ...)
+                    oldSetRect(rect --[[@as rect]], unpack(rct))
+                    return old(rect, ...)
+                end
+            elseif index == 2 then
+                func = function(a, rct, ...)
+                    oldSetRect(rect --[[@as rect]], unpack(rct))
+                    return old(a, rect, ...)
+                end
+            else --index==3
+                func = function(a, b, rct, ...)
+                    oldSetRect(rect --[[@as rect]], unpack(rct))
+                    return old(a, b, rect, ...)
+                end
+            end
+
+            ---@param ... unknown
+            _G[varName] = function(...)
+                if not rect then rect = oldRect(0, 0, 32, 32) end
+                _G[varName] = func
+                return func(...)
+            end
+        end
+        hook("EnumDestructablesInRect", 1)
+        hook("EnumItemsInRect", 1)
+        hook("AddWeatherEffect", 1)
+        hook("SetDoodadAnimationRect", 1)
+        hook("GroupEnumUnitsInRect", 2)
+        hook("GroupEnumUnitsInRectCounted", 2)
+        hook("RegionAddRect", 2)
+        hook("RegionClearRect", 2)
+        hook("SetBlightRect", 2)
+        hook("SetFogStateRect", 3)
+        hook("CreateFogModifierRect", 3)
+    end
+    --[===============================[
+      • FORCES (PLAYER GROUPS IN GUI) •
+    --]===============================]
+    do
+        ---@class FakeForce
+        ---@field [integer] player
+        ---@field indexOf {[player]: integer}
+
+        local oldForce, mainForce = CreateForce, nil
+        local function initForce()
+            initForce = DoNothing
+            mainForce = oldForce()
+        end
+
+        ---@return FakeForce
+        function CreateForce()
+            return { indexOf = {} }
+        end
+
+        DestroyForce = DoNothing ---@type fun(force: FakeForce)
+        local oldClear = ForceClear
+
+        ---@param force FakeForce
+        function ForceClear(force)
+            assert(force ~= nil, 'force cannot be nil')
+            for i, val in ipairs(force) do
+                force.indexOf[val] = nil
+                force[i] = nil
+            end
+        end
+
+        do
+            local oldCripple = CripplePlayer
+            local oldAdd = ForceAddPlayer
+
+            ---@param player player
+            ---@param force FakeForce
+            ---@param flag boolean
+            function CripplePlayer(player, force, flag)
+                initForce()
+
+                ---@param player player
+                ---@param force FakeForce
+                ---@param flag boolean
+                function CripplePlayer(player, force, flag)
+                    assert(player ~= nil, 'player cannot be nil')
+                    assert(force ~= nil, 'force cannot be nil')
+                    for _, val in ipairs(force) do
+                        oldAdd(mainForce --[[@ as force]], val)
+                    end
+                    oldCripple(player, mainForce --[[@ as force]], flag)
+                    oldClear(mainForce --[[@ as force]])
+                end
+
+                CripplePlayer(player, force, flag)
+            end
+        end
+
+        ---@param force FakeForce
+        ---@param player player
+        function ForceAddPlayer(force, player)
+            assert(force ~= nil, 'force cannot be nil')
+            assert(player ~= nil, 'player cannot be nil')
+            if force.indexOf[player] then return end
+
+            local pos = #force + 1
+            force.indexOf[player] = pos
+            force[pos] = player
+        end
+
+        ---@param force FakeForce
+        ---@param player player
+        function ForceRemovePlayer(force, player)
+            assert(force ~= nil, 'force cannot be nil')
+            assert(player ~= nil, 'player cannot be nil')
+            local pos = force.indexOf[player]
+            if pos == nil then return end
+
+            force.indexOf[player] = nil
             local top = #force
             if pos ~= top then
                 force[pos] = force[top]
@@ -618,312 +957,382 @@ do
             end
             force[top] = nil
         end
-    end
-    function BlzForceHasPlayer(force, player)
-        return force and player and force.indexOf[player]
-    end
-    function IsPlayerInForce(player, force)
-        return player and force and force.indexOf[player]
-    end
-    function IsUnitInForce(unit, force)
-        return unit and force and force.indexOf[GetOwningPlayer(unit)]
-    end
 
-    local enumPlayer
-    local oldForForce = ForForce
-    local oldEnumPlayer = GetEnumPlayer
-    GetEnumPlayer=function() return enumPlayer end
-
-    ForForce = function(force, code)
-        local old = enumPlayer
-        for _,player in ipairs(force) do
-            enumPlayer=player
-            code()
+        ---@param force FakeForce
+        ---@param player player
+        ---@return boolean
+        function BlzForceHasPlayer(force, player)
+            assert(force ~= nil, 'force cannot be nil')
+            assert(player ~= nil, 'player cannot be nil')
+            return force.indexOf[player] and true or false
         end
-        enumPlayer=old
-    end
 
-    local function funnelEnum(force)
-        ForceClear(force)
-        initForce()
-        oldForForce(mainForce, function()
-            ForceAddPlayer(force, oldEnumPlayer())
-        end)
-        oldClear(mainForce)
-    end
-    local function hookEnum(varStr)
-        local old=_G[varStr]
-        _G[varStr]=function(force, ...)
+        ---@param player player
+        ---@param force FakeForce
+        ---@return boolean
+        function IsPlayerInForce(player, force)
+            assert(player ~= nil, 'player cannot be nil')
+            assert(force ~= nil, 'force cannot be nil')
+            return force.indexOf[player] and true or false
+        end
+
+        ---@param unit unit
+        ---@param force FakeForce
+        ---@return boolean
+        function IsUnitInForce(unit, force)
+            assert(unit ~= nil, 'unit cannot be nil')
+            assert(force ~= nil, 'force cannot be nil')
+            return force.indexOf[GetOwningPlayer(unit)] and true or false
+        end
+
+        local enumPlayer
+        local oldForForce = ForForce
+        local oldEnumPlayer = GetEnumPlayer
+
+        ---@return player
+        function GetEnumPlayer()
+            return enumPlayer
+        end
+
+        ---@param force FakeForce
+        ---@param code function
+        function ForForce(force, code)
+            assert(force ~= nil, 'force cannot be nil')
+            assert(code ~= nil, 'code cannot be nil')
+            local old = enumPlayer
+            for _, player in ipairs(force) do
+                enumPlayer = player
+                code()
+            end
+            enumPlayer = old
+        end
+
+        ---@param force FakeForce
+        local function funnelEnum(force)
+            assert(force ~= nil, 'force cannot be nil')
+            ForceClear(force)
             initForce()
-            old(mainForce, ...)
-            funnelEnum(force)
+            oldForForce(mainForce, function()
+                ForceAddPlayer(force, oldEnumPlayer())
+            end)
+            oldClear(mainForce --[[@as force]])
+        end
+        ---@param varStr string
+        local function hookEnum(varStr)
+            local old = _G[varStr]
+            _G[varStr] = function(force, ...)
+                assert(force ~= nil, 'force cannot be nil')
+                initForce()
+                old(mainForce, ...)
+                funnelEnum(force)
+            end
+        end
+        hookEnum("ForceEnumPlayers")
+        hookEnum("ForceEnumPlayersCounted")
+        hookEnum("ForceEnumAllies")
+        hookEnum("ForceEnumEnemies")
+        ---@param force FakeForce
+        ---@return integer
+        function CountPlayersInForceBJ(force)
+            assert(force ~= nil, 'force cannot be nil')
+            return #force
+        end
+
+        CountPlayersInForceEnum = nil
+
+        ---@param player player
+        ---@return FakeForce
+        function GetForceOfPlayer(player)
+            assert(player ~= nil, 'player cannot be nil')
+            --No longer leaks. There was no reason to dynamically create forces to begin with.
+            return bj_FORCE_PLAYER[GetPlayerId(player)]
         end
     end
-    hookEnum("ForceEnumPlayers")
-    hookEnum("ForceEnumPlayersCounted")
-    hookEnum("ForceEnumAllies")
-    hookEnum("ForceEnumEnemies")
-    CountPlayersInForceBJ=function(force) return #force end
-    CountPlayersInForceEnum=nil
-    
-    GetForceOfPlayer=function(player)
-        --No longer leaks. There was no reason to dynamically create forces to begin with.
-        return bj_FORCE_PLAYER[GetPlayerId(player)]
-    end
-end
 
---Blizzard forgot to add this, but still enabled it for GUI. Therefore, I've extracted and simplified the code from DebugIdInteger2IdString
-function BlzFourCC2S(value)
-    local result = ""
-    for _=1,4 do
-        result = string.char(value % 256) .. result
-        value = value // 256
-    end
-    return result
-end
-
-function TriggerRegisterDestDeathInRegionEvent(trig, r)
-    --Removes the limit on the number of destructables that can be registered.
-    EnumDestructablesInRect(r, nil, function() TriggerRegisterDeathEvent(trig, GetEnumDestructable()) end)
-end
-IsUnitAliveBJ=UnitAlive --use the reliable native instead of the life checks
-function IsUnitDeadBJ(u) return not UnitAlive(u) end
-
-function SetUnitPropWindowBJ(whichUnit, propWindow)
-    --Allows the Prop Window to be set to zero to allow unit movement to be suspended.
-    SetUnitPropWindow(whichUnit, math.rad(propWindow))
-end
-
-if _USE_GLOBAL_REMAP then
-    OnInit(function(import)
-        import "GlobalRemap"
-        GlobalRemap("udg_INFINITE_LOOP", function() return -1 end) --a readonly variable for infinite looping in GUI.
-    end)
-end
-
-do
-    local cache=__jarray()
-    function GUI.wrapTrigger(whichTrig)
-        local func=cache[whichTrig]
-        if not func then
-            func=function()if IsTriggerEnabled(whichTrig)and TriggerEvaluate(whichTrig)then TriggerExecute(whichTrig)end end
-            cache[whichTrig]=func
+    --Blizzard forgot to add this, but still enabled it for GUI. Therefore, I've extracted and simplified the code from DebugIdInteger2IdString
+    ---@param value integer
+    ---@return string
+    function BlzFourCC2S(value)
+        if value == nil then return "" end
+        local result = ""
+        for _ = 1, 4 do
+            result = string.char(value % 256) .. result
+            value = value // 256
         end
-        return func
+        return result
     end
-end
-do
---[[---------------------------------------------------------------------------------------------
-    RegisterAnyPlayerUnitEvent by Bribe
-    
-    RegisterAnyPlayerUnitEvent cuts down on handle count for alread-registered events, plus has
-    the benefit for Lua users to just use function calls.
-    
-    Adds a third parameter to the RegisterAnyPlayerUnitEvent function: "skip". If true, disables
-    the specified event, while allowing a single function to run discretely. It also allows (if
-    Global Variable Remapper is included) GUI to un-register a playerunitevent by setting
-    udg_RemoveAnyUnitEvent to the trigger they wish to remove.
 
-    The "return" value of RegisterAnyPlayerUnitEvent calls the "remove" method. The API, therefore,
-    has been reduced to just this one function (in addition to the bj override).
------------------------------------------------------------------------------------------------]]
-    local fStack,tStack,oldBJ = {},{},TriggerRegisterAnyUnitEventBJ
-    
-    function RegisterAnyPlayerUnitEvent(event, userFunc, skip)
-        if skip then
-            local t = tStack[event]
-            if t and IsTriggerEnabled(t) then
-                DisableTrigger(t)
-                userFunc()
-                EnableTrigger(t)
-            else
-                userFunc()
+    ---@param trig trigger
+    ---@param r FakeRect
+    function TriggerRegisterDestDeathInRegionEvent(trig, r)
+        assert(trig ~= nil, 'trigger cannot be nil')
+        assert(r ~= nil, 'rect cannot be nil')
+        --Removes the limit on the number of destructables that can be registered.
+        EnumDestructablesInRect(r, nil, function() TriggerRegisterDeathEvent(trig, GetEnumDestructable()) end)
+    end
+
+    IsUnitAliveBJ = UnitAlive --use the reliable native instead of the life checks
+
+    ---@param u unit
+    ---@return boolean
+    function IsUnitDeadBJ(u)
+        return not UnitAlive(u)
+    end
+
+    ---@param whichUnit unit
+    ---@param propWindow number
+    function SetUnitPropWindowBJ(whichUnit, propWindow)
+        --Allows the Prop Window to be set to zero to allow unit movement to be suspended.
+        SetUnitPropWindow(whichUnit, math.rad(propWindow))
+    end
+
+    if _USE_GLOBAL_REMAP then
+        OnInit(function(import)
+            import "GlobalRemap"
+            GlobalRemap("udg_INFINITE_LOOP", function() return -1 end) --a readonly variable for infinite looping in GUI.
+        end)
+    end
+
+    do
+        local cache = __jarray()
+
+        ---@param whichTrig trigger
+        function GUI.wrapTrigger(whichTrig)
+            assert(whichTrig ~= nil, 'whichTrig cannot be nil')
+            local func = cache[whichTrig]
+            if not func then
+                func = function() if IsTriggerEnabled(whichTrig) and TriggerEvaluate(whichTrig) then TriggerExecute(whichTrig) end end
+                cache[whichTrig] = func
             end
-        else
-            local funcs,insertAt=fStack[event],1
-            if funcs then
-                insertAt=#funcs+1
-                if insertAt==1 then EnableTrigger(tStack[event]) end
+            return func
+        end
+    end
+    do
+        --[[---------------------------------------------------------------------------------------------
+            RegisterAnyPlayerUnitEvent by Bribe
+
+            RegisterAnyPlayerUnitEvent cuts down on handle count for alread-registered events, plus has
+            the benefit for Lua users to just use function calls.
+
+            Adds a third parameter to the RegisterAnyPlayerUnitEvent function: "skip". If true, disables
+            the specified event, while allowing a single function to run discretely. It also allows (if
+            Global Variable Remapper is included) GUI to un-register a playerunitevent by setting
+            udg_RemoveAnyUnitEvent to the trigger they wish to remove.
+
+            The "return" value of RegisterAnyPlayerUnitEvent calls the "remove" method. The API, therefore,
+            has been reduced to just this one function (in addition to the bj override).
+        -----------------------------------------------------------------------------------------------]]
+        local fStack, tStack, oldBJ = {}, {}, TriggerRegisterAnyUnitEventBJ ---@type {[eventid]: function[]}, {[eventid]: trigger[]}
+
+        ---@param event eventid
+        ---@param userFunc function
+        ---@param skip boolean?
+        function RegisterAnyPlayerUnitEvent(event, userFunc, skip)
+            assert(event ~= nil, 'event cannot be nil')
+            assert(userFunc ~= nil, 'userFunc cannot be nil')
+            if skip then
+                local t = tStack[event]
+                if t and IsTriggerEnabled(t) then
+                    DisableTrigger(t)
+                    userFunc()
+                    EnableTrigger(t)
+                else
+                    userFunc()
+                end
             else
-                local t=CreateTrigger()
-                oldBJ(t, event)
-                tStack[event],funcs = t,{}
-                fStack[event]=funcs
-                TriggerAddCondition(t, Filter(function()
-                    for _,func in ipairs(funcs)do func()end
-                end))
-            end
-            funcs[insertAt]=userFunc
-            return function()
-                local total=#funcs
-                for i=1,total do
-                    if funcs[i]==userFunc then
-                        if     total==1 then DisableTrigger(tStack[event]) --no more events are registered, disable the event (for now).
-                        elseif total> i then funcs[i]=funcs[total] end     --pop just the top index down to this vacant slot so we don't have to down-shift the entire stack.
-                        funcs[total]=nil --remove the top entry.
-                        return true
+                local funcs, insertAt = fStack[event], 1
+                if funcs then
+                    insertAt = #funcs + 1
+                    if insertAt == 1 then EnableTrigger(tStack[event]) end
+                else
+                    local t = CreateTrigger()
+                    oldBJ(t, event)
+                    tStack[event], funcs = t, {}
+                    fStack[event] = funcs
+                    TriggerAddCondition(t, Filter(function()
+                        for _, func in ipairs(funcs) do func() end
+                    end))
+                end
+                funcs[insertAt] = userFunc
+                return function()
+                    local total = #funcs
+                    for i = 1, total do
+                        if funcs[i] == userFunc then
+                            if total == 1 then
+                                DisableTrigger(tStack[event]) --no more events are registered, disable the event (for now).
+                            elseif total > i then
+                                funcs[i] = funcs[total]
+                            end                --pop just the top index down to this vacant slot so we don't have to down-shift the entire stack.
+                            funcs[total] = nil --remove the top entry.
+                            return true
+                        end
                     end
                 end
             end
         end
-    end
-    
-    local trigFuncs
-    function TriggerRegisterAnyUnitEventBJ(trig, event)
-        local removeFunc=RegisterAnyPlayerUnitEvent(event, GUI.wrapTrigger(trig))
-        if _USE_GLOBAL_REMAP then
-            if not trigFuncs then
-                trigFuncs=__jarray()
-                GlobalRemap("udg_RemoveAnyUnitEvent", nil, function(t)
-                    if  trigFuncs[t] then
-                        trigFuncs[t]()
-                        trigFuncs[t]=nil
-                    end
-                end)
+
+        local trigFuncs
+        ---@param trig trigger
+        ---@param event eventid
+        ---@return function|nil
+        function TriggerRegisterAnyUnitEventBJ(trig, event)
+            assert(trig ~= nil, 'trig cannot be nil')
+            assert(event ~= nil, 'event cannot be nil')
+            local removeFunc = RegisterAnyPlayerUnitEvent(event, GUI.wrapTrigger(trig))
+            if _USE_GLOBAL_REMAP then
+                if not trigFuncs then
+                    trigFuncs = __jarray()
+                    GlobalRemap("udg_RemoveAnyUnitEvent", nil, function(t)
+                        if trigFuncs[t] then
+                            trigFuncs[t]()
+                            trigFuncs[t] = nil
+                        end
+                    end)
+                end
+                trigFuncs[trig] = removeFunc
             end
-            trigFuncs[trig]=removeFunc
+            return removeFunc
         end
-        return removeFunc
     end
-end
 
----Modify to allow requests for negative hero stats, as per request from Tasyen.
----@param whichHero unit
----@param whichStat integer
----@param value integer
-function SetHeroStat(whichHero, whichStat, value)
-    (whichStat==bj_HEROSTAT_STR and SetHeroStr or whichStat==bj_HEROSTAT_AGI and SetHeroAgi or SetHeroInt)(whichHero, value, true)
-end
---The next part of the code is purely optional, as it is intended to optimize rather than add new functionality
-CommentString                           = nil
-RegisterDestDeathInRegionEnum           = nil
+    ---Modify to allow requests for negative hero stats, as per request from Tasyen.
+    ---@param whichHero unit
+    ---@param whichStat integer
+    ---@param value integer
+    function SetHeroStat(whichHero, whichStat, value)
+        assert(whichStat ~= nil, 'whichStat cannot be nil')
+        (whichStat == bj_HEROSTAT_STR and SetHeroStr or whichStat == bj_HEROSTAT_AGI and SetHeroAgi or SetHeroInt)(whichHero, value, true)
+    end
 
---This next list comes from HerlySQR, and its purpose is to eliminate useless wrapper functions (only where the parameters aligned):
-StringIdentity                          = GetLocalizedString
-TriggerRegisterTimerExpireEventBJ       = TriggerRegisterTimerExpireEvent
-TriggerRegisterDialogEventBJ            = TriggerRegisterDialogEvent
-TriggerRegisterUpgradeCommandEventBJ    = TriggerRegisterUpgradeCommandEvent
-RemoveWeatherEffectBJ                   = RemoveWeatherEffect
-DestroyLightningBJ                      = DestroyLightning
-GetLightningColorABJ                    = GetLightningColorA
-GetLightningColorRBJ                    = GetLightningColorR
-GetLightningColorGBJ                    = GetLightningColorG
-GetLightningColorBBJ                    = GetLightningColorB
-SetLightningColorBJ                     = SetLightningColor
-GetAbilityEffectBJ                      = GetAbilityEffectById
-GetAbilitySoundBJ                       = GetAbilitySoundById
-ResetTerrainFogBJ                       = ResetTerrainFog
-SetSoundDistanceCutoffBJ                = SetSoundDistanceCutoff
-SetSoundPitchBJ                         = SetSoundPitch
-AttachSoundToUnitBJ                     = AttachSoundToUnit
-KillSoundWhenDoneBJ                     = KillSoundWhenDone
-PlayThematicMusicBJ                     = PlayThematicMusic
-EndThematicMusicBJ                      = EndThematicMusic
-StopMusicBJ                             = StopMusic
-ResumeMusicBJ                           = ResumeMusic
-VolumeGroupResetImmediateBJ             = VolumeGroupReset
-WaitForSoundBJ                          = TriggerWaitForSound
-ClearMapMusicBJ                         = ClearMapMusic
-DestroyEffectBJ                         = DestroyEffect
-GetItemLifeBJ                           = GetWidgetLife -- This was just to type casting
-SetItemLifeBJ                           = SetWidgetLife -- This was just to type casting
-UnitRemoveBuffBJ                        = UnitRemoveAbility -- The buffs are abilities
-GetLearnedSkillBJ                       = GetLearnedSkill
-UnitDropItemPointBJ                     = UnitDropItemPoint
-UnitDropItemTargetBJ                    = UnitDropItemTarget
-UnitUseItemDestructable                 = UnitUseItemTarget -- This was just to type casting
-UnitInventorySizeBJ                     = UnitInventorySize
-SetItemInvulnerableBJ                   = SetItemInvulnerable
-SetItemDropOnDeathBJ                    = SetItemDropOnDeath
-SetItemDroppableBJ                      = SetItemDroppable
-SetItemPlayerBJ                         = SetItemPlayer
-ChooseRandomItemBJ                      = ChooseRandomItem
-ChooseRandomNPBuildingBJ                = ChooseRandomNPBuilding
-ChooseRandomCreepBJ                     = ChooseRandomCreep
-String2UnitIdBJ                         = UnitId -- I think they just wanted a better name
-GetIssuedOrderIdBJ                      = GetIssuedOrderId
-GetKillingUnitBJ                        = GetKillingUnit
-IsUnitHiddenBJ                          = IsUnitHidden
-IssueTrainOrderByIdBJ                   = IssueImmediateOrderById -- I think they just wanted a better name
-IssueUpgradeOrderByIdBJ                 = IssueImmediateOrderById -- I think they just wanted a better name
-GetAttackedUnitBJ                       = GetTriggerUnit -- I think they just wanted a better name
-SetUnitFlyHeightBJ                      = SetUnitFlyHeight
-SetUnitTurnSpeedBJ                      = SetUnitTurnSpeed
-GetUnitDefaultPropWindowBJ              = GetUnitDefaultPropWindow
-SetUnitBlendTimeBJ                      = SetUnitBlendTime
-SetUnitAcquireRangeBJ                   = SetUnitAcquireRange
-UnitSetCanSleepBJ                       = UnitAddSleep
-UnitCanSleepBJ                          = UnitCanSleep
-UnitWakeUpBJ                            = UnitWakeUp
-UnitIsSleepingBJ                        = UnitIsSleeping
-IsUnitPausedBJ                          = IsUnitPaused
-SetUnitExplodedBJ                       = SetUnitExploded
-GetTransportUnitBJ                      = GetTransportUnit
-GetLoadedUnitBJ                         = GetLoadedUnit
-IsUnitInTransportBJ                     = IsUnitInTransport
-IsUnitLoadedBJ                          = IsUnitLoaded
-IsUnitIllusionBJ                        = IsUnitIllusion
-SetDestructableInvulnerableBJ           = SetDestructableInvulnerable
-IsDestructableInvulnerableBJ            = IsDestructableInvulnerable
-SetDestructableMaxLifeBJ                = SetDestructableMaxLife
-WaygateIsActiveBJ                       = WaygateIsActive
-QueueUnitAnimationBJ                    = QueueUnitAnimation
-SetDestructableAnimationBJ              = SetDestructableAnimation
-QueueDestructableAnimationBJ            = QueueDestructableAnimation
-DialogSetMessageBJ                      = DialogSetMessage
-DialogClearBJ                           = DialogClear
-GetClickedButtonBJ                      = GetClickedButton
-GetClickedDialogBJ                      = GetClickedDialog
-DestroyQuestBJ                          = DestroyQuest
-QuestSetTitleBJ                         = QuestSetTitle
-QuestSetDescriptionBJ                   = QuestSetDescription
-QuestSetCompletedBJ                     = QuestSetCompleted
-QuestSetFailedBJ                        = QuestSetFailed
-QuestSetDiscoveredBJ                    = QuestSetDiscovered
-QuestItemSetDescriptionBJ               = QuestItemSetDescription
-QuestItemSetCompletedBJ                 = QuestItemSetCompleted
-DestroyDefeatConditionBJ                = DestroyDefeatCondition
-DefeatConditionSetDescriptionBJ         = DefeatConditionSetDescription
-FlashQuestDialogButtonBJ                = FlashQuestDialogButton
-DestroyTimerBJ                          = DestroyTimer
-DestroyTimerDialogBJ                    = DestroyTimerDialog
-TimerDialogSetTitleBJ                   = TimerDialogSetTitle
-TimerDialogSetSpeedBJ                   = TimerDialogSetSpeed
-TimerDialogDisplayBJ                    = TimerDialogDisplay
-LeaderboardSetStyleBJ                   = LeaderboardSetStyle
-LeaderboardGetItemCountBJ               = LeaderboardGetItemCount
-LeaderboardHasPlayerItemBJ              = LeaderboardHasPlayerItem
-DestroyLeaderboardBJ                    = DestroyLeaderboard
-LeaderboardDisplayBJ                    = LeaderboardDisplay
-LeaderboardSortItemsByPlayerBJ          = LeaderboardSortItemsByPlayer
-LeaderboardSortItemsByLabelBJ           = LeaderboardSortItemsByLabel
-PlayerGetLeaderboardBJ                  = PlayerGetLeaderboard
-DestroyMultiboardBJ                     = DestroyMultiboard
-SetTextTagPosUnitBJ                     = SetTextTagPosUnit
-SetTextTagSuspendedBJ                   = SetTextTagSuspended
-SetTextTagPermanentBJ                   = SetTextTagPermanent
-SetTextTagAgeBJ                         = SetTextTagAge
-SetTextTagLifespanBJ                    = SetTextTagLifespan
-SetTextTagFadepointBJ                   = SetTextTagFadepoint
-DestroyTextTagBJ                        = DestroyTextTag
-ForceCinematicSubtitlesBJ               = ForceCinematicSubtitles
-DisplayCineFilterBJ                     = DisplayCineFilter
-SaveGameCacheBJ                         = SaveGameCache
-FlushGameCacheBJ                        = FlushGameCache
-SaveGameCheckPointBJ                    = SaveGameCheckpoint
-LoadGameBJ                              = LoadGame
-RenameSaveDirectoryBJ                   = RenameSaveDirectory
-RemoveSaveDirectoryBJ                   = RemoveSaveDirectory
-CopySaveGameBJ                          = CopySaveGame
-IssueTargetOrderBJ                      = IssueTargetOrder
-IssueTargetDestructableOrder            = IssueTargetOrder -- This was just to type casting
-IssueTargetItemOrder                    = IssueTargetOrder -- This was just to type casting
-IssueImmediateOrderBJ                   = IssueImmediateOrder
-GroupTargetOrderBJ                      = GroupTargetOrder
-GroupImmediateOrderBJ                   = GroupImmediateOrder
-GroupTargetDestructableOrder            = GroupTargetOrder -- This was just to type casting
-GroupTargetItemOrder                    = GroupTargetOrder -- This was just to type casting
-GetDyingDestructable                    = GetTriggerDestructable -- I think they just wanted a better name
-GetAbilityName                          = GetObjectName -- I think they just wanted a better name
+    --The next part of the code is purely optional, as it is intended to optimize rather than add new functionality
+    CommentString                        = nil
+    RegisterDestDeathInRegionEnum        = nil
 
+    --This next list comes from HerlySQR, and its purpose is to eliminate useless wrapper functions (only where the parameters aligned):
+    StringIdentity                       = GetLocalizedString
+    TriggerRegisterTimerExpireEventBJ    = TriggerRegisterTimerExpireEvent
+    TriggerRegisterDialogEventBJ         = TriggerRegisterDialogEvent
+    TriggerRegisterUpgradeCommandEventBJ = TriggerRegisterUpgradeCommandEvent
+    RemoveWeatherEffectBJ                = RemoveWeatherEffect
+    DestroyLightningBJ                   = DestroyLightning
+    GetLightningColorABJ                 = GetLightningColorA
+    GetLightningColorRBJ                 = GetLightningColorR
+    GetLightningColorGBJ                 = GetLightningColorG
+    GetLightningColorBBJ                 = GetLightningColorB
+    SetLightningColorBJ                  = SetLightningColor
+    GetAbilityEffectBJ                   = GetAbilityEffectById
+    GetAbilitySoundBJ                    = GetAbilitySoundById
+    ResetTerrainFogBJ                    = ResetTerrainFog
+    SetSoundDistanceCutoffBJ             = SetSoundDistanceCutoff
+    SetSoundPitchBJ                      = SetSoundPitch
+    AttachSoundToUnitBJ                  = AttachSoundToUnit
+    KillSoundWhenDoneBJ                  = KillSoundWhenDone
+    PlayThematicMusicBJ                  = PlayThematicMusic
+    EndThematicMusicBJ                   = EndThematicMusic
+    StopMusicBJ                          = StopMusic
+    ResumeMusicBJ                        = ResumeMusic
+    VolumeGroupResetImmediateBJ          = VolumeGroupReset
+    WaitForSoundBJ                       = TriggerWaitForSound
+    ClearMapMusicBJ                      = ClearMapMusic
+    DestroyEffectBJ                      = DestroyEffect
+    GetItemLifeBJ                        = GetWidgetLife     -- This was just to type casting
+    SetItemLifeBJ                        = SetWidgetLife     -- This was just to type casting
+    UnitRemoveBuffBJ                     = UnitRemoveAbility -- The buffs are abilities
+    GetLearnedSkillBJ                    = GetLearnedSkill
+    UnitDropItemPointBJ                  = UnitDropItemPoint
+    UnitDropItemTargetBJ                 = UnitDropItemTarget
+    UnitUseItemDestructable              = UnitUseItemTarget -- This was just to type casting
+    UnitInventorySizeBJ                  = UnitInventorySize
+    SetItemInvulnerableBJ                = SetItemInvulnerable
+    SetItemDropOnDeathBJ                 = SetItemDropOnDeath
+    SetItemDroppableBJ                   = SetItemDroppable
+    SetItemPlayerBJ                      = SetItemPlayer
+    ChooseRandomItemBJ                   = ChooseRandomItem
+    ChooseRandomNPBuildingBJ             = ChooseRandomNPBuilding
+    ChooseRandomCreepBJ                  = ChooseRandomCreep
+    String2UnitIdBJ                      = UnitId -- I think they just wanted a better name
+    GetIssuedOrderIdBJ                   = GetIssuedOrderId
+    GetKillingUnitBJ                     = GetKillingUnit
+    IsUnitHiddenBJ                       = IsUnitHidden
+    IssueTrainOrderByIdBJ                = IssueImmediateOrderById -- I think they just wanted a better name
+    IssueUpgradeOrderByIdBJ              = IssueImmediateOrderById -- I think they just wanted a better name
+    GetAttackedUnitBJ                    = GetTriggerUnit          -- I think they just wanted a better name
+    SetUnitFlyHeightBJ                   = SetUnitFlyHeight
+    SetUnitTurnSpeedBJ                   = SetUnitTurnSpeed
+    GetUnitDefaultPropWindowBJ           = GetUnitDefaultPropWindow
+    SetUnitBlendTimeBJ                   = SetUnitBlendTime
+    SetUnitAcquireRangeBJ                = SetUnitAcquireRange
+    UnitSetCanSleepBJ                    = UnitAddSleep
+    UnitCanSleepBJ                       = UnitCanSleep
+    UnitWakeUpBJ                         = UnitWakeUp
+    UnitIsSleepingBJ                     = UnitIsSleeping
+    IsUnitPausedBJ                       = IsUnitPaused
+    SetUnitExplodedBJ                    = SetUnitExploded
+    GetTransportUnitBJ                   = GetTransportUnit
+    GetLoadedUnitBJ                      = GetLoadedUnit
+    IsUnitInTransportBJ                  = IsUnitInTransport
+    IsUnitLoadedBJ                       = IsUnitLoaded
+    IsUnitIllusionBJ                     = IsUnitIllusion
+    SetDestructableInvulnerableBJ        = SetDestructableInvulnerable
+    IsDestructableInvulnerableBJ         = IsDestructableInvulnerable
+    SetDestructableMaxLifeBJ             = SetDestructableMaxLife
+    WaygateIsActiveBJ                    = WaygateIsActive
+    QueueUnitAnimationBJ                 = QueueUnitAnimation
+    SetDestructableAnimationBJ           = SetDestructableAnimation
+    QueueDestructableAnimationBJ         = QueueDestructableAnimation
+    DialogSetMessageBJ                   = DialogSetMessage
+    DialogClearBJ                        = DialogClear
+    GetClickedButtonBJ                   = GetClickedButton
+    GetClickedDialogBJ                   = GetClickedDialog
+    DestroyQuestBJ                       = DestroyQuest
+    QuestSetTitleBJ                      = QuestSetTitle
+    QuestSetDescriptionBJ                = QuestSetDescription
+    QuestSetCompletedBJ                  = QuestSetCompleted
+    QuestSetFailedBJ                     = QuestSetFailed
+    QuestSetDiscoveredBJ                 = QuestSetDiscovered
+    QuestItemSetDescriptionBJ            = QuestItemSetDescription
+    QuestItemSetCompletedBJ              = QuestItemSetCompleted
+    DestroyDefeatConditionBJ             = DestroyDefeatCondition
+    DefeatConditionSetDescriptionBJ      = DefeatConditionSetDescription
+    FlashQuestDialogButtonBJ             = FlashQuestDialogButton
+    DestroyTimerBJ                       = DestroyTimer
+    DestroyTimerDialogBJ                 = DestroyTimerDialog
+    TimerDialogSetTitleBJ                = TimerDialogSetTitle
+    TimerDialogSetSpeedBJ                = TimerDialogSetSpeed
+    TimerDialogDisplayBJ                 = TimerDialogDisplay
+    LeaderboardSetStyleBJ                = LeaderboardSetStyle
+    LeaderboardGetItemCountBJ            = LeaderboardGetItemCount
+    LeaderboardHasPlayerItemBJ           = LeaderboardHasPlayerItem
+    DestroyLeaderboardBJ                 = DestroyLeaderboard
+    LeaderboardDisplayBJ                 = LeaderboardDisplay
+    LeaderboardSortItemsByPlayerBJ       = LeaderboardSortItemsByPlayer
+    LeaderboardSortItemsByLabelBJ        = LeaderboardSortItemsByLabel
+    PlayerGetLeaderboardBJ               = PlayerGetLeaderboard
+    DestroyMultiboardBJ                  = DestroyMultiboard
+    SetTextTagPosUnitBJ                  = SetTextTagPosUnit
+    SetTextTagSuspendedBJ                = SetTextTagSuspended
+    SetTextTagPermanentBJ                = SetTextTagPermanent
+    SetTextTagAgeBJ                      = SetTextTagAge
+    SetTextTagLifespanBJ                 = SetTextTagLifespan
+    SetTextTagFadepointBJ                = SetTextTagFadepoint
+    DestroyTextTagBJ                     = DestroyTextTag
+    ForceCinematicSubtitlesBJ            = ForceCinematicSubtitles
+    DisplayCineFilterBJ                  = DisplayCineFilter
+    SaveGameCacheBJ                      = SaveGameCache
+    FlushGameCacheBJ                     = FlushGameCache
+    SaveGameCheckPointBJ                 = SaveGameCheckpoint
+    LoadGameBJ                           = LoadGame
+    RenameSaveDirectoryBJ                = RenameSaveDirectory
+    RemoveSaveDirectoryBJ                = RemoveSaveDirectory
+    CopySaveGameBJ                       = CopySaveGame
+    IssueTargetOrderBJ                   = IssueTargetOrder
+    IssueTargetDestructableOrder         = IssueTargetOrder -- This was just to type casting
+    IssueTargetItemOrder                 = IssueTargetOrder -- This was just to type casting
+    IssueImmediateOrderBJ                = IssueImmediateOrder
+    GroupTargetOrderBJ                   = GroupTargetOrder
+    GroupImmediateOrderBJ                = GroupImmediateOrder
+    GroupTargetDestructableOrder         = GroupTargetOrder       -- This was just to type casting
+    GroupTargetItemOrder                 = GroupTargetOrder       -- This was just to type casting
+    GetDyingDestructable                 = GetTriggerDestructable -- I think they just wanted a better name
+    GetAbilityName                       = GetObjectName          -- I think they just wanted a better name
 end
