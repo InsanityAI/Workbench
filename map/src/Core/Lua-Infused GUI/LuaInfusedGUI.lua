@@ -1,3 +1,4 @@
+if Debug then Debug.beginFile "LuaInfusedGUI" end
 --[[
     Lua-Infused GUI with automatic memory leak resolution: Modernizing the experience for a better future for users of the Trigger Editor.
 
@@ -33,6 +34,9 @@ do
     local unpack            = table.unpack
     local assert            = assert
 
+    ---@class FakedType
+    ---@field __faketype {__name: string}
+
     local fakeTypes         = {
         FakeLocation  = { __name = 'userdata' },
         FakeHashtable = { __name = 'userdata' },
@@ -47,20 +51,20 @@ do
         ---@return string typeName
         function type(obj)
             local thisType = oldType(obj)
-            if thisType == 'table' and obj.__type then
-                return obj.__type.__name
+            if thisType == 'table' and obj.__faketype and oldType(obj.__faketype) == 'table' then
+                return obj --[[@as FakedType]].__faketype.__name
             end
             return thisType
         end
     end
 
-    do
-        --[[-----------------------------------------------------------------------------------------
-    __jarray expander by Bribe
+    --[[-----------------------------------------------------------------------------------------
+        __jarray expander by Bribe
 
-    This snippet will ensure that objects used as indices in udg_ arrays will be automatically
-    cleaned up when the garbage collector runs, and tries to re-use metatables whenever possible.
-    -------------------------------------------------------------------------------------------]]
+        This snippet will ensure that objects used as indices in udg_ arrays will be automatically
+        cleaned up when the garbage collector runs, and tries to re-use metatables whenever possible.
+        -------------------------------------------------------------------------------------------]]
+    do
         local mts = {}
         local weakKeys = { __mode = "k" } --ensures tables with non-nilled objects as keys will be garbage collected.
 
@@ -124,7 +128,7 @@ do
         end
 
         ---@alias FakeHashtableBucket<T> {[unknown]: {[unknown]: T}}
-        ---@class FakeHashtable
+        ---@class FakeHashtable: FakedType
         ---@field boolean FakeHashtableBucket<boolean>
         ---@field integer FakeHashtableBucket<integer>
         ---@field real FakeHashtableBucket<real>
@@ -167,7 +171,7 @@ do
         ---@return table
         function InitHashtableBJ()
             last = __jarray();
-            last.__type = fakeTypes.FakeHashtable
+            last.__faketype = fakeTypes.FakeHashtable
             return last
         end
 
@@ -294,7 +298,9 @@ do
       • LOCATIONS (POINTS IN GUI) •
     --]===========================]
     do
-        ---@alias FakeLocation {[1]: number, [2]: number}
+        ---@class FakeLocation: FakedType
+        ---@field [1] number x
+        ---@field [2] number y
 
         local oldLocation = Location
         local location
@@ -305,7 +311,7 @@ do
         function Location(x, y)
             assert(x ~= nil, 'x cannot be nil')
             assert(y ~= nil, 'y cannot be nil')
-            return { x, y, __type = fakeTypes.FakeLocation }
+            return { x, y, __faketype = fakeTypes.FakeLocation }
         end
 
         do
@@ -478,13 +484,13 @@ do
         DestroyGroup(bj_suspendDecayBoneGroup --[[@as group]])
         DestroyGroup = DoNothing
 
-        ---@class FakeGroup
+        ---@class FakeGroup: FakedType
         ---@field [integer] unit
         ---@field indexOf {[unit]: integer}
 
         ---@return FakeGroup
         function CreateGroup()
-            return { indexOf = {}, __type = fakeTypes.FakeGroup }
+            return { indexOf = {}, __faketype = fakeTypes.FakeGroup }
         end
 
         bj_lastCreatedGroup = CreateGroup()
@@ -746,7 +752,11 @@ do
       • RECTS (REGIONS IN GUI) •
     --]========================]
     do
-        ---@alias FakeRect {[1]: number, [2]: number, [3]: number, [4]: number}
+        ---@class FakeRect: FakedType
+        ---@field [1] number minX
+        ---@field [2] number minY
+        ---@field [3] number maxX
+        ---@field [4] number maxY
 
         local oldRect, rect = Rect, nil
         ---@param minX number
@@ -759,7 +769,7 @@ do
             assert(minY ~= nil, 'minY cannot be nil')
             assert(maxX ~= nil, 'maxX cannot be nil')
             assert(maxY ~= nil, 'maxY cannot be nil')
-            return { minX, minY, maxX, maxY, __type = fakeTypes.FakeRect }
+            return { minX, minY, maxX, maxY, __faketype = fakeTypes.FakeRect }
         end
 
         local oldSetRect = SetRect
@@ -902,7 +912,7 @@ do
       • FORCES (PLAYER GROUPS IN GUI) •
     --]===============================]
     do
-        ---@class FakeForce
+        ---@class FakeForce: FakedType
         ---@field [integer] player
         ---@field indexOf {[player]: integer}
 
@@ -914,7 +924,7 @@ do
 
         ---@return FakeForce
         function CreateForce()
-            return { indexOf = {}, __type = fakeTypes.FakeForce }
+            return { indexOf = {}, __faketype = fakeTypes.FakeForce }
         end
 
         DestroyForce = DoNothing ---@type fun(force: FakeForce)
@@ -1373,3 +1383,4 @@ do
     GetDyingDestructable                 = GetTriggerDestructable -- I think they just wanted a better name
     GetAbilityName                       = GetObjectName          -- I think they just wanted a better name
 end
+if Debug then Debug.endFile() end
