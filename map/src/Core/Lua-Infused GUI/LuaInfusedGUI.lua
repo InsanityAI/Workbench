@@ -142,7 +142,8 @@ do
         local function load(whichHashTable, type, parentKey)
             local typedTable = whichHashTable[type]
             if not typedTable then
-                whichHashTable[type] = {}
+                typedTable = {}
+                whichHashTable[type] = typedTable
             end
             local index = typedTable[parentKey]
             if not index then
@@ -163,12 +164,12 @@ do
 
         local last
 
-        ---@return table
+        ---@return FakeHashtable
         function GetLastCreatedHashtableBJ()
             return last
         end
 
-        ---@return table
+        ---@return FakeHashtable
         function InitHashtableBJ()
             last = __jarray();
             last.__faketype = fakeTypes.FakeHashtable
@@ -184,6 +185,7 @@ do
             assert(childKey ~= nil, 'childKey cannot be nil')
             assert(parentKey ~= nil, 'parentKey cannot be nil')
             assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
+            assert(type ~= nil, 'type cannot be nil')
             load(whichHashTable, type, parentKey)[childKey] = value
         end
 
@@ -200,10 +202,25 @@ do
             local val = load(whichHashTable, type or 'handle', parentKey)[childKey]
             return val ~= nil and val or default
         end
-        SaveIntegerBJ = saveInto ---@type fun(value: integer, childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable)
-        SaveRealBJ = saveInto ---@type fun(value: number, childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable)
-        SaveBooleanBJ = saveInto ---@type fun(value: boolean, childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable)
-        SaveStringBJ = saveInto ---@type fun(value: string, childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable)
+
+        ---@generic T
+        ---@param type string
+        ---@return fun(value: T, childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable)
+        local function createSaveIntoTyped(type)
+            ---@generic T
+            ---@param value T
+            ---@param childKey unknown
+            ---@param parentKey unknown
+            ---@param whichHashTable FakeHashtable
+            return function(value, childKey, parentKey, whichHashTable)
+                return saveInto(value, childKey, parentKey, whichHashTable, type)
+            end
+        end
+
+        SaveIntegerBJ = createSaveIntoTyped('integer')
+        SaveRealBJ = createSaveIntoTyped('real')
+        SaveBooleanBJ = createSaveIntoTyped('boolean')
+        SaveStringBJ = createSaveIntoTyped('string')
 
         ---@param value unknown|nil
         ---@param childKey unknown
@@ -459,14 +476,14 @@ do
 
         ---@param min FakeLocation
         ---@param max FakeLocation
-        ---@return rect newRect
+        ---@return FakeRect newRect
         function RectFromLoc(min, max)
             assert(min ~= nil, 'min cannot be nil')
             assert(max ~= nil, 'max cannot be nil')
-            return Rect(min[1], min[2], max[1], max[2])
+            return Rect(min[1], min[2], max[1], max[2]) --[[@as FakeRect]]
         end
 
-        ---@param whichRect rect
+        ---@param whichRect FakeRect
         ---@param min FakeLocation
         ---@param max FakeLocation
         function SetRectFromLoc(whichRect, min, max)
@@ -803,7 +820,7 @@ do
             ---@return FakeRect
             function GetWorldBounds()
                 if not newWorld then
-                    local w = oldWorld()
+                    local w = oldWorld() --[[@as rect]]
                     newWorld = Rect(getMinX(w), getMinY(w), getMaxX(w), getMaxY(w))
                     remover(w)
                 end
@@ -1065,6 +1082,7 @@ do
                     old(mainForce, ...)
                     funnelEnum(force)
                 end
+
                 initForce()
                 _G[varStr](force, ...)
             end
@@ -1093,6 +1111,21 @@ do
             assert(player ~= nil, 'player cannot be nil')
             --No longer leaks. There was no reason to dynamically create forces to begin with.
             return bj_FORCE_PLAYER[GetPlayerId(player)]
+        end
+    end
+
+    -- section on Blizzard.j desyncable objects
+    do
+        local desyncCausingTimer1 = bj_queuedExecTimeoutTimer
+        local desyncCausingTimer2 = bj_delayedSuspendDecayTimer
+        local desyncCausingTimer3 = bj_volumeGroupsTimer
+        local desyncCausingTimer4 = bj_lastStartedTimer
+        function GUI.__constantly_loaded()
+            -- some nonsense lines to make sure this function "always" needs the relevant upvalues
+            if desyncCausingTimer1 then return true end
+            if desyncCausingTimer2 then return true end
+            if desyncCausingTimer3 then return true end
+            if desyncCausingTimer4 then return true end
         end
     end
 
@@ -1148,7 +1181,11 @@ do
             assert(whichTrig ~= nil, 'whichTrig cannot be nil')
             local func = cache[whichTrig]
             if not func then
-                func = function() if IsTriggerEnabled(whichTrig) and TriggerEvaluate(whichTrig) then TriggerExecute(whichTrig) end end
+                func = function()
+                    if IsTriggerEnabled(whichTrig) and TriggerEvaluate(whichTrig) then
+                        TriggerExecute(whichTrig)
+                    end
+                end
                 cache[whichTrig] = func
             end
             return func
@@ -1169,7 +1206,8 @@ do
             The "return" value of RegisterAnyPlayerUnitEvent calls the "remove" method. The API, therefore,
             has been reduced to just this one function (in addition to the bj override).
         -----------------------------------------------------------------------------------------------]]
-        local fStack, tStack, oldBJ = {}, {}, TriggerRegisterAnyUnitEventBJ ---@type {[eventid]: function[]}, {[eventid]: trigger[]}
+        local fStack, tStack, oldBJ = {}, {},
+            TriggerRegisterAnyUnitEventBJ ---@type {[eventid]: function[]}, {[eventid]: trigger[]}
 
         ---@param event eventid
         ---@param userFunc function
@@ -1248,7 +1286,8 @@ do
     ---@param value integer
     function SetHeroStat(whichHero, whichStat, value)
         assert(whichStat ~= nil, 'whichStat cannot be nil')
-        (whichStat == bj_HEROSTAT_STR and SetHeroStr or whichStat == bj_HEROSTAT_AGI and SetHeroAgi or SetHeroInt)(whichHero, value, true)
+        (whichStat == bj_HEROSTAT_STR and SetHeroStr or whichStat == bj_HEROSTAT_AGI and SetHeroAgi or SetHeroInt)(
+                whichHero, value, true)
     end
 
     --The next part of the code is purely optional, as it is intended to optimize rather than add new functionality
