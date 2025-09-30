@@ -299,9 +299,9 @@ do
             whichHashTable.handle = nil
         end
 
-        ---@param whichHashTable FakeHashtable
         ---@param parentKey unknown
-        function FlushChildHashtableBJ(whichHashTable, parentKey)
+        ---@param whichHashTable FakeHashtable
+        function FlushChildHashtableBJ(parentKey, whichHashTable)
             assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
             assert(parentKey ~= nil, 'parentKey cannot be nil')
             whichHashTable.boolean[parentKey] = nil
