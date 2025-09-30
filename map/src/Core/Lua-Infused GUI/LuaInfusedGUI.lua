@@ -3,7 +3,7 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
     Lua-Infused GUI with automatic memory leak resolution: Modernizing the experience for a better future for users of the Trigger Editor.
 
     Credits:
-        Bribe, Tasyen, Dr Super Good, HerlySQR
+        Bribe, Tasyen, Dr Super Good, HerlySQR, Antares
 
     Transforming rects, locations, groups, forces and BJ hashtable wrappers into Lua tables, which are automatically garbage collected.
 
@@ -13,9 +13,20 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
 
     Provides GUI.loopArray for safe iteration over a __jarray
 
-    Updated: 28 Sep 2025 by Insanity_AI
-
-    Changes: Added asserts everywhere, EmmyLua annotations and fixed some overrides to actually return booleans and Hashtable to behave like a normal hashtable with primitive types
+    Updated: 30 Sep 2025 by Insanity_AI
+    Changes:
+        - asserts on arguments so DebugUtils can more effectively tell you what's wrong
+        - StringHashBJ and GetHandleIdBJ returns 0 if the argument is falsy, otherwise returns the argument itself
+        - fixed Hashtable API overrides to support niche Hashtable mechanic of being able to store integer, real, string, boolean and a handle simultaneously on same key pair
+        - explicit boolean return for following natives: IsUnitInGroup, IsUnitGroupEmptyBJ, BlzForceHasPlayer, IsPlayerInForce, IsUnitInForce
+        - GroupPickRandomUnit will no longer return 0 if group is empty
+        - swapped FlushChildHashtableBJ arguments to match the Blizzard.j signature
+        - type override to return 'userdata' for FakeLocation, FakeRect, FakeGroup, FakeForce and FakeHashtable
+        - added Debug.beginFile/endFile
+        - added EmmyLua annotations
+        - stored the 4 timers defined in Lua root by Blizzard.j so that their references never get lost and the objects never get collected by GC which ultimately causes desyncs
+        - WC3 Native Math API replaced with Lua's math API
+        - SubStringBJ replaced with string.sub
 
     Uses optionally:
         https://github.com/BribeFromTheHive/Lua-Core/blob/main/Total_Initialization.lua
@@ -1432,6 +1443,6 @@ do
     Atan2BJ                              = function(y, x) return math.atan(y, x) * bj_RADTODEG end ---@type fun(x: number, y: number): number
     Pow                                  = function(base, exponent) return base ^ exponent end ---@type fun(base: number, exponent: number): number
 
-    SubStringBJ = string.sub
+    SubStringBJ                          = string.sub
 end
 if Debug then Debug.endFile() end
