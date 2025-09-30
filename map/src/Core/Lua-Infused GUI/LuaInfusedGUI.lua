@@ -1421,5 +1421,17 @@ do
     GroupTargetItemOrder                 = GroupTargetOrder       -- This was just to type casting
     GetDyingDestructable                 = GetTriggerDestructable -- I think they just wanted a better name
     GetAbilityName                       = GetObjectName          -- I think they just wanted a better name
+
+    -- List of math overrides, provided by Antares
+    CosBJ                                = function(degrees) return math.cos(degrees * bj_DEGTORAD) end ---@type fun(degrees: number): number
+    SinBJ                                = function(degrees) return math.sin(degrees * bj_DEGTORAD) end ---@type fun(degrees: number): number
+    TanBJ                                = function(degrees) return math.tan(degrees * bj_DEGTORAD) end ---@type fun(degrees: number): number
+    AsinBJ                               = function(ratio) return math.asin(ratio) * bj_RADTODEG end ---@type fun(ratio: number): number
+    AcosBJ                               = function(ratio) return math.acos(ratio) * bj_RADTODEG end ---@type fun(ratio: number): number
+    AtanBJ                               = function(ratio) return math.atan(ratio) * bj_RADTODEG end ---@type fun(ratio: number): number
+    Atan2BJ                              = function(y, x) return math.atan(y, x) * bj_RADTODEG end ---@type fun(x: number, y: number): number
+    Pow                                  = function(base, exponent) return base ^ exponent end ---@type fun(base: number, exponent: number): number
+
+    SubStringBJ = string.sub
 end
 if Debug then Debug.endFile() end
