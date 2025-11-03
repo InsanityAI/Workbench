@@ -1,40 +1,51 @@
 if Debug then Debug.beginFile "Railgun" end
---==================================================================================================
------------------------------------Railgun-----by-Insanity_AI---------------------------------------
---==================================================================================================
---  Setup:  Create a Railgun ability and modify trigger spell condition.
---          Create a dummy unit for trajectory visualizaton.
---          Make sure to match those objectIDs with configuration settings in here:
---          Primarily in SpellCondition() and in the Visuals category; VISUALIZATION_ID
---  A bit of configuration info:
---          You can edit in the Configuration Section just down below.
---          Each configurable function or variable has a little comment describing what it does.
---          There are also functions that are responsible for damaging units, killing destructables,
---          And blacklisting them, those are all at your disposal.
---          I added a lot of visual configuration, I'm pretty sure you can use things like GetTriggerUnit()
---          in there, so I'm pretty sure that alone opens a lot of doors and posibilities.
---
---  About the damage:
---          At the moment it deals percentage of target's max health.
---          The damage is stacked on the target depending on how close they're to the beam,
---          which is determined by the RADIUS.
---          It goes up from 0% to 90%(in configuration) depending on how close the target is
---          to the beam.
---
---  Limitation:
---          It will shoot through terrain hills, so I'd suggest using some sort of pathingblockers
---          ... that is, unless you don't want this intended interaction (or lack of.)
---
---  Modifications:
---          Cast time, cooldown and mana cost is edited in the object editor,
---          as for the other things, they're editable right here.
---
---==================================================================================================
 OnInit.module("Railgun", function(require)
-    require "SetUtils"
-    require "TimerQueue"
-    require "ApplyOverTime"
-    require "typeof"
+    --==================================================================================================
+    -----------------------------------Railgun-----by-Insanity_AI---------------------------------------
+    --==================================================================================================
+    -- Requirements:
+    -- Total_Initialization -- https://www.hiveworkshop.com/threads/total-initialization.317099/post-3641920
+    require "SetUtils"      -- https://www.hiveworkshop.com/threads/setutils.353716
+    require "TimerQueue"    -- https://www.hiveworkshop.com/threads/timerqueue-stopwatch.353718
+    require "ApplyOverTime" -- found in Dependencies
+    require "HandleType"    -- https://www.hiveworkshop.com/threads/get-handle-type.354436
+    --  since Railgun is defined as a module, you must place `require "Railgun"` somewhere
+    --
+    --  About the damage:
+    --          At the moment it deals percentage of target's max health.
+    --          The damage is stacked on the target depending on how close they're to the beam,
+    --          which is determined by the RADIUS.
+    --          It goes up from 0% to 90%(in configuration) depending on how close the target is
+    --          to the beam.
+    --
+    --  Limitation:
+    --          It will shoot through terrain hills, so I'd suggest using some sort of pathingblockers
+    --          ... that is, unless you don't want this intended interaction (or lack of.)
+    --
+    --  API:
+    --   Note: arguments denoted with '?' are optional; can be nilled
+    --
+    --   Railgun.create(range, aimVisualRadius, aimVisualStepDelta, beamStepDelta, beamWidth, unitFilter?, destructableFilter?,
+    --          beamConstructor?, beamDestructor?, targetHandler?, aimVisualConstructor?, aimVisualDestructor?) -> Railgun instance
+    --    - range: number - distance the beam travels
+    --    - aimVisualRadius: number - radius the aiming visualizer uses with destructableFilter to check for when to stop
+    --    - aimVisualStepDelta: number - distance between visualizers
+    --    - beamStepDelta: number - distance between points for when beam fires and checks for obstacles
+    --    - beamWidth: number - width of the beam used for obstacle check and target damage
+    --    - unitFilter?: filterfunc - filter function that checks for eligible unit targets (no filter = any unit)
+    --    - destructableFilter?: fitlerfunc - filter function that checks for eligible destructable targets/obstacles (no filter = alive destructables and not pathing blockers)
+    --    - beamConstructor?: fun(startX: number, startY: number, startZ: number, endX: number, endY: number, endZ: number) -> unknown
+    --         -- expected function that returns something resembling a beam, can be effect or something else entirely, as long as you implement:
+    --    - beamDestructor?: fun(beam: unknown) - used to destroy the custom beam
+    --    - targetHandler?: fun(caster: unit, target: widget, squaredDistance: number, beamWidthSquared: number) - function that deals damage or whatever effect the user wants
+    --    - aimVisualConstructor?: fun(x: number, y: number, z: number) -> unknown - similar with beam, except this is for creating visualizers that appear while aiming/casting
+    --    - aimVisualDestructor?: fun(aimVisual: unknown) - similar with beam, except this is for removing visualizers that appear while aiming/casting
+    --    -> returns a Railgun instance for your convenience.
+    --
+    --  Railgun:removeAimVisuals() - removes all aim visuals
+    --  Railgun:aim(casterX, casterY, casterZ, targetX, targetY, targetZ) -- creates aim visuals from caster to target positions, checking with destructableFilter for obstacles
+    --  Railgun:fire(caster: unit, startX, startY, startZ, targetX, targetY, targetZ) -- spawns the beam, checking for units and destructables and dealing effects if any on its path
+    --==================================================================================================
 
     local aot = ApplyOverTime.create(TimerQueue)
     local rect = Rect(0, 0, 0, 0)
@@ -50,6 +61,10 @@ OnInit.module("Railgun", function(require)
         return not ((destructType == 'YTlb') or (destructType == 'YTab') or (destructType == 'YTpb') or (destructType == 'YTfb'))
     end)
 
+    local function hitMarker(x, y)
+        DestroyEffect(AddSpecialEffect("Objects\\Spawnmodels\\NightElf\\NECancelDeath\\NECancelDeath.mdl", x, y))
+    end
+
     ---@param caster unit
     ---@param widget widget
     ---@param squaredDistance number
@@ -58,20 +73,25 @@ OnInit.module("Railgun", function(require)
         --Function responsible for damaging units, you can edit this however you'd like.
         --squaredDistance is the distance of the unit from the beam... squared.
         if (widget ~= caster) then
-            local widgetType = typeof(widget)
+            local widgetType = HandleType[widget]
             if widgetType == 'unit' then
-                local damage = (beamWidthSquared - squaredDistance) / beamWidthSquared
-                if damage > 0.90 then
-                    damage = 0.90
+                if UnitAlive(widget --[[@as unit]]) then
+                    local damage = (beamWidthSquared - squaredDistance) / beamWidthSquared
+                    if damage > 0.90 then
+                        damage = 0.90
+                    end
+                    damage = damage * GetUnitState(widget --[[@as unit]], UNIT_STATE_MAX_LIFE)
+                    UnitDamageTarget(caster, widget, damage, true, false, ATTACK_TYPE_CHAOS, DAMAGE_TYPE_UNKNOWN, WEAPON_TYPE_WHOKNOWS)
+                    hitMarker(GetUnitX(widget --[[@as unit]]), GetUnitY(widget --[[@as unit]]))
                 end
-                damage = damage * GetUnitState(widget --[[@as unit]], UNIT_STATE_MAX_LIFE)
-                UnitDamageTarget(caster, widget, damage, true, false, ATTACK_TYPE_CHAOS, DAMAGE_TYPE_UNKNOWN, WEAPON_TYPE_WHOKNOWS)
             elseif widgetType == 'destructable' then
-                SetDestructableLife(widget --[[@as destructable]], 0)
+                if GetDestructableLife(widget --[[@as destructable]]) > 0 then
+                    SetDestructableLife(widget --[[@as destructable]], 0)
+                    hitMarker(GetDestructableX(widget --[[@as destructable]]), GetDestructableY(widget --[[@as destructable]]))
+                end
             else
                 return -- ignore items
             end
-            DestroyEffect(AddSpecialEffectTarget("Objects\\Spawnmodels\\NightElf\\NECancelDeath\\NECancelDeath.mdl", widget, "chest"))
         end
     end
 
@@ -114,7 +134,7 @@ OnInit.module("Railgun", function(require)
 
     ---@type AimVisualConstructor
     local function defaultVisualConstructor(x, y, z)
-        local visualizer = AddSpecialEffect("Objects\\Spawnmodels\\NightElf\\NECancelDeath\\NECancelDeath.mdl", x, y)
+        local visualizer = AddSpecialEffect("Abilities\\Weapons\\SpiritOfVengeanceMissile\\SpiritOfVengeanceMissile.mdl", x, y)
         BlzSetSpecialEffectZ(visualizer, z)
         return visualizer
     end
@@ -167,7 +187,7 @@ OnInit.module("Railgun", function(require)
         }, Railgun)
     end
 
-    function Railgun:RemoveAimVisuals()
+    function Railgun:removeAimVisuals()
         for index, aimVisual in ipairs(self.aimVisuals) do
             self.aimVisualDestructor(aimVisual)
             self.aimVisuals[index] = nil
@@ -180,7 +200,7 @@ OnInit.module("Railgun", function(require)
     ---@param targetX number
     ---@param targetY number
     ---@param targetZ number
-    function Railgun:Aim(casterX, casterY, casterZ, targetX, targetY, targetZ)
+    function Railgun:aim(casterX, casterY, casterZ, targetX, targetY, targetZ)
         local angle = math.atan(targetY - casterY, targetX - casterX)
         local offsetX = self.aimVisualStepDelta * math.cos(angle)
         local offsetY = self.aimVisualStepDelta * math.sin(angle)
@@ -226,11 +246,11 @@ OnInit.module("Railgun", function(require)
     ---@param targetX number
     ---@param targetY number
     ---@param targetZ number
-    function Railgun:Fire(caster, startX, startY, startZ, targetX, targetY, targetZ)
+    function Railgun:fire(caster, startX, startY, startZ, targetX, targetY, targetZ)
         local angle = math.atan(targetY - startY, targetX - startX)
         local offsetX, offsetY = self.beamStepDelta * math.cos(angle), self.beamStepDelta * math.sin(angle)
         local steps = math.modf(self.range / self.beamStepDelta)
-        local offsetZ = (targetZ - startZ) / steps
+        local offsetZ = 0 --(targetZ - startZ) / steps
         local maxRangeSquared = self.beamWidth ^ 2
 
         local i = 1
@@ -257,7 +277,7 @@ OnInit.module("Railgun", function(require)
 
             i = i + 1
         end
-        targetZ = startZ + offsetZ * i * self.beamStepDelta
+        targetZ = startZ + offsetZ * i
 
         SetRect(rect,
             math.min(startX, targetX) - self.beamWidth,
