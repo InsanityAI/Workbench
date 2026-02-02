@@ -23,6 +23,7 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
         - fixed SetHeroStat
         - added some String & Math API overrides (check the bottom of the script for the list)
         - modified GroupXOrder overrides to use group natives in order to retain speed and formation of units when ordered as a group (thanks Macielos)
+        - swapped order of overrides: group <-> location, so that group overrides happen first
 
     Updated: 30 Sep 2025 by Insanity_AI
     Changes:
@@ -328,190 +329,6 @@ do
             if whichHashTable.handle then whichHashTable.handle[parentKey] = nil end
         end
     end
-    --[===========================[
-      • LOCATIONS (POINTS IN GUI) •
-    --]===========================]
-    do
-        ---@class FakeLocation: FakedType
-        ---@field [1] number x
-        ---@field [2] number y
-
-        local oldLocation = Location
-        local location
-
-        ---@param x number
-        ---@param y number
-        ---@return FakeLocation
-        function Location(x, y)
-            assert(x ~= nil, 'x cannot be nil')
-            assert(y ~= nil, 'y cannot be nil')
-            return { x, y, __faketype = "userdata" }
-        end
-
-        do
-            local oldRemove = RemoveLocation
-            local oldGetX   = GetLocationX
-            local oldGetY   = GetLocationY
-            local oldRally  = GetUnitRallyPoint
-
-            ---@param unit unit
-            ---@return FakeLocation
-            function GetUnitRallyPoint(unit)
-                assert(unit ~= nil, 'unit cannot be nil')
-                local removeThis = oldRally(unit) --Actually needs to create a location for a brief moment, as there is no GetUnitRallyX/Y
-                local loc = Location(oldGetX(removeThis), oldGetY(removeThis))
-                oldRemove(removeThis)
-                return loc
-            end
-        end
-
-        RemoveLocation = DoNothing ---@type fun(location: FakeLocation)
-
-        do
-            local oldMoveLoc = MoveLocation
-            local oldGetZ = GetLocationZ
-
-            ---@param x number
-            ---@param y number
-            ---@return number z
-            function GUI.getCoordZ(x, y)
-                function GUI.getCoordZ(x, y)
-                    assert(x ~= nil, 'x cannot be nil')
-                    assert(y ~= nil, 'y cannot be nil')
-                    oldMoveLoc(location, x, y)
-                    return oldGetZ(location)
-                end
-
-                location = oldLocation(x, y)
-                return GUI.getCoordZ(x, y)
-            end
-        end
-
-        ---@param loc FakeLocation
-        ---@return number x
-        function GetLocationX(loc)
-            assert(loc ~= nil, 'loc cannot be nil')
-            return loc[1]
-        end
-
-        ---@param loc FakeLocation
-        ---@return number y
-        function GetLocationY(loc)
-            assert(loc ~= nil, 'loc cannot be nil')
-            return loc[2]
-        end
-
-        ---@param loc FakeLocation
-        ---@return number z
-        function GetLocationZ(loc)
-            assert(loc ~= nil, 'loc cannot be nil')
-            return GUI.getCoordZ(loc[1], loc[2])
-        end
-
-        ---@param loc FakeLocation
-        ---@param x number
-        ---@param y number
-        function MoveLocation(loc, x, y)
-            assert(loc ~= nil, 'loc cannot be nil')
-            loc[1] = x
-            loc[2] = y
-        end
-
-        ---@param varName string
-        ---@param suffix string|nil
-        local function fakeCreate(varName, suffix)
-            local getX = _ENV[varName .. "X"]
-            local getY = _ENV[varName .. "Y"]
-            _ENV[varName .. (suffix or "Loc")] = function(obj) return Location(getX(obj), getY(obj)) end
-        end
-        fakeCreate("GetUnit")
-        fakeCreate("GetOrderPoint")
-        fakeCreate("GetSpellTarget")
-        fakeCreate("CameraSetupGetDestPosition")
-        fakeCreate("GetCameraTargetPosition")
-        fakeCreate("GetCameraEyePosition")
-        fakeCreate("BlzGetTriggerPlayerMouse", "Position")
-        fakeCreate("GetStartLocation")
-
-        ---@param effect effect
-        ---@param loc FakeLocation
-        function BlzSetSpecialEffectPositionLoc(effect, loc)
-            assert(effect ~= nil, 'effect cannot be nil')
-            assert(loc ~= nil, 'loc cannot be nil')
-            local x, y = loc[1], loc[2]
-            BlzSetSpecialEffectPosition(effect, x, y, GUI.getCoordZ(x, y))
-        end
-
-        ---@param oldVarName string
-        ---@param newVarName string
-        ---@param index integer needed to determine which of the parameters calls for a location.
-        local function hook(oldVarName, newVarName, index)
-            local new = _ENV[newVarName]
-            local func
-            if index == 1 then
-                func = function(loc, ...)
-                    assert(loc ~= nil, 'Function ' .. oldVarName .. '\'s argument #1 - location cannot be nil!')
-                    return new(loc[1], loc[2], ...)
-                end
-            elseif index == 2 then
-                func = function(a, loc, ...)
-                    assert(loc ~= nil, 'Function ' .. oldVarName .. '\'s argument #2 - location cannot be nil!')
-                    return new(a, loc[1], loc[2], ...)
-                end
-            else --index==3
-                func = function(a, b, loc, ...)
-                    assert(loc ~= nil, 'Function ' .. oldVarName .. '\'s argument #3 - location cannot be nil!')
-                    return new(a, b, loc[1], loc[2], ...)
-                end
-            end
-            _ENV[oldVarName] = func
-        end
-        hook("IsLocationInRegion", "IsPointInRegion", 2)
-        hook("IsUnitInRangeLoc", "IsUnitInRangeXY", 2)
-        hook("IssuePointOrderLoc", "IssuePointOrder", 3)
-        IssuePointOrderLocBJ = IssuePointOrderLoc
-        hook("IssuePointOrderByIdLoc", "IssuePointOrderById", 3)
-        hook("IsLocationVisibleToPlayer", "IsVisibleToPlayer", 1)
-        hook("IsLocationFoggedToPlayer", "IsFoggedToPlayer", 1)
-        hook("IsLocationMaskedToPlayer", "IsMaskedToPlayer", 1)
-        hook("CreateFogModifierRadiusLoc", "CreateFogModifierRadius", 3)
-        hook("AddSpecialEffectLoc", "AddSpecialEffect", 2)
-        hook("AddSpellEffectLoc", "AddSpellEffect", 3)
-        hook("AddSpellEffectByIdLoc", "AddSpellEffectById", 3)
-        hook("SetBlightLoc", "SetBlight", 2)
-        hook("DefineStartLocationLoc", "DefineStartLocation", 2)
-        hook("GroupEnumUnitsInRangeOfLoc", "GroupEnumUnitsInRange", 2)
-        hook("GroupEnumUnitsInRangeOfLocCounted", "GroupEnumUnitsInRangeCounted", 2)
-        hook("GroupPointOrderLoc", "GroupPointOrder", 3)
-        GroupPointOrderLocBJ = GroupPointOrderLoc
-        hook("GroupPointOrderByIdLoc", "GroupPointOrderById", 3)
-        hook("MoveRectToLoc", "MoveRectTo", 2)
-        hook("RegionAddCellAtLoc", "RegionAddCell", 2)
-        hook("RegionClearCellAtLoc", "RegionClearCell", 2)
-        hook("CreateUnitAtLoc", "CreateUnit", 3)
-        hook("CreateUnitAtLocByName", "CreateUnitByName", 3)
-        hook("SetUnitPositionLoc", "SetUnitPosition", 2)
-        hook("ReviveHeroLoc", "ReviveHero", 2)
-        hook("SetFogStateRadiusLoc", "SetFogStateRadius", 3)
-
-        ---@param min FakeLocation
-        ---@param max FakeLocation
-        ---@return FakeRect newRect
-        function RectFromLoc(min, max)
-            assert(min ~= nil, 'min cannot be nil')
-            assert(max ~= nil, 'max cannot be nil')
-            return Rect(min[1], min[2], max[1], max[2]) --[[@as FakeRect]]
-        end
-
-        ---@param whichRect FakeRect
-        ---@param min FakeLocation
-        ---@param max FakeLocation
-        function SetRectFromLoc(whichRect, min, max)
-            assert(min ~= nil, 'min cannot be nil')
-            assert(max ~= nil, 'max cannot be nil')
-            SetRect(whichRect, min[1], min[2], max[1], max[2])
-        end
-    end
     --[=============================[
       • GROUPS (UNIT GROUPS IN GUI) •
     --]=============================]
@@ -793,6 +610,192 @@ do
             end)
         end
     end
+
+    --[===========================[
+      • LOCATIONS (POINTS IN GUI) •
+    --]===========================]
+    do
+        ---@class FakeLocation: FakedType
+        ---@field [1] number x
+        ---@field [2] number y
+
+        local oldLocation = Location
+        local location
+
+        ---@param x number
+        ---@param y number
+        ---@return FakeLocation
+        function Location(x, y)
+            assert(x ~= nil, 'x cannot be nil')
+            assert(y ~= nil, 'y cannot be nil')
+            return { x, y, __faketype = "userdata" }
+        end
+
+        do
+            local oldRemove = RemoveLocation
+            local oldGetX   = GetLocationX
+            local oldGetY   = GetLocationY
+            local oldRally  = GetUnitRallyPoint
+
+            ---@param unit unit
+            ---@return FakeLocation
+            function GetUnitRallyPoint(unit)
+                assert(unit ~= nil, 'unit cannot be nil')
+                local removeThis = oldRally(unit) --Actually needs to create a location for a brief moment, as there is no GetUnitRallyX/Y
+                local loc = Location(oldGetX(removeThis), oldGetY(removeThis))
+                oldRemove(removeThis)
+                return loc
+            end
+        end
+
+        RemoveLocation = DoNothing ---@type fun(location: FakeLocation)
+
+        do
+            local oldMoveLoc = MoveLocation
+            local oldGetZ = GetLocationZ
+
+            ---@param x number
+            ---@param y number
+            ---@return number z
+            function GUI.getCoordZ(x, y)
+                function GUI.getCoordZ(x, y)
+                    assert(x ~= nil, 'x cannot be nil')
+                    assert(y ~= nil, 'y cannot be nil')
+                    oldMoveLoc(location, x, y)
+                    return oldGetZ(location)
+                end
+
+                location = oldLocation(x, y)
+                return GUI.getCoordZ(x, y)
+            end
+        end
+
+        ---@param loc FakeLocation
+        ---@return number x
+        function GetLocationX(loc)
+            assert(loc ~= nil, 'loc cannot be nil')
+            return loc[1]
+        end
+
+        ---@param loc FakeLocation
+        ---@return number y
+        function GetLocationY(loc)
+            assert(loc ~= nil, 'loc cannot be nil')
+            return loc[2]
+        end
+
+        ---@param loc FakeLocation
+        ---@return number z
+        function GetLocationZ(loc)
+            assert(loc ~= nil, 'loc cannot be nil')
+            return GUI.getCoordZ(loc[1], loc[2])
+        end
+
+        ---@param loc FakeLocation
+        ---@param x number
+        ---@param y number
+        function MoveLocation(loc, x, y)
+            assert(loc ~= nil, 'loc cannot be nil')
+            loc[1] = x
+            loc[2] = y
+        end
+
+        ---@param varName string
+        ---@param suffix string|nil
+        local function fakeCreate(varName, suffix)
+            local getX = _ENV[varName .. "X"]
+            local getY = _ENV[varName .. "Y"]
+            _ENV[varName .. (suffix or "Loc")] = function(obj) return Location(getX(obj), getY(obj)) end
+        end
+        fakeCreate("GetUnit")
+        fakeCreate("GetOrderPoint")
+        fakeCreate("GetSpellTarget")
+        fakeCreate("CameraSetupGetDestPosition")
+        fakeCreate("GetCameraTargetPosition")
+        fakeCreate("GetCameraEyePosition")
+        fakeCreate("BlzGetTriggerPlayerMouse", "Position")
+        fakeCreate("GetStartLocation")
+
+        ---@param effect effect
+        ---@param loc FakeLocation
+        function BlzSetSpecialEffectPositionLoc(effect, loc)
+            assert(effect ~= nil, 'effect cannot be nil')
+            assert(loc ~= nil, 'loc cannot be nil')
+            local x, y = loc[1], loc[2]
+            BlzSetSpecialEffectPosition(effect, x, y, GUI.getCoordZ(x, y))
+        end
+
+        ---@param oldVarName string
+        ---@param newVarName string
+        ---@param index integer needed to determine which of the parameters calls for a location.
+        local function hook(oldVarName, newVarName, index)
+            local new = _ENV[newVarName]
+            local func
+            if index == 1 then
+                func = function(loc, ...)
+                    assert(loc ~= nil, 'Function ' .. oldVarName .. '\'s argument #1 - location cannot be nil!')
+                    return new(loc[1], loc[2], ...)
+                end
+            elseif index == 2 then
+                func = function(a, loc, ...)
+                    assert(loc ~= nil, 'Function ' .. oldVarName .. '\'s argument #2 - location cannot be nil!')
+                    return new(a, loc[1], loc[2], ...)
+                end
+            else --index==3
+                func = function(a, b, loc, ...)
+                    assert(loc ~= nil, 'Function ' .. oldVarName .. '\'s argument #3 - location cannot be nil!')
+                    return new(a, b, loc[1], loc[2], ...)
+                end
+            end
+            _ENV[oldVarName] = func
+        end
+        hook("IsLocationInRegion", "IsPointInRegion", 2)
+        hook("IsUnitInRangeLoc", "IsUnitInRangeXY", 2)
+        hook("IssuePointOrderLoc", "IssuePointOrder", 3)
+        IssuePointOrderLocBJ = IssuePointOrderLoc
+        hook("IssuePointOrderByIdLoc", "IssuePointOrderById", 3)
+        hook("IsLocationVisibleToPlayer", "IsVisibleToPlayer", 1)
+        hook("IsLocationFoggedToPlayer", "IsFoggedToPlayer", 1)
+        hook("IsLocationMaskedToPlayer", "IsMaskedToPlayer", 1)
+        hook("CreateFogModifierRadiusLoc", "CreateFogModifierRadius", 3)
+        hook("AddSpecialEffectLoc", "AddSpecialEffect", 2)
+        hook("AddSpellEffectLoc", "AddSpellEffect", 3)
+        hook("AddSpellEffectByIdLoc", "AddSpellEffectById", 3)
+        hook("SetBlightLoc", "SetBlight", 2)
+        hook("DefineStartLocationLoc", "DefineStartLocation", 2)
+        hook("GroupEnumUnitsInRangeOfLoc", "GroupEnumUnitsInRange", 2)
+        hook("GroupEnumUnitsInRangeOfLocCounted", "GroupEnumUnitsInRangeCounted", 2)
+        hook("GroupPointOrderLoc", "GroupPointOrder", 3)
+        GroupPointOrderLocBJ = GroupPointOrderLoc
+        hook("GroupPointOrderByIdLoc", "GroupPointOrderById", 3)
+        hook("MoveRectToLoc", "MoveRectTo", 2)
+        hook("RegionAddCellAtLoc", "RegionAddCell", 2)
+        hook("RegionClearCellAtLoc", "RegionClearCell", 2)
+        hook("CreateUnitAtLoc", "CreateUnit", 3)
+        hook("CreateUnitAtLocByName", "CreateUnitByName", 3)
+        hook("SetUnitPositionLoc", "SetUnitPosition", 2)
+        hook("ReviveHeroLoc", "ReviveHero", 2)
+        hook("SetFogStateRadiusLoc", "SetFogStateRadius", 3)
+
+        ---@param min FakeLocation
+        ---@param max FakeLocation
+        ---@return FakeRect newRect
+        function RectFromLoc(min, max)
+            assert(min ~= nil, 'min cannot be nil')
+            assert(max ~= nil, 'max cannot be nil')
+            return Rect(min[1], min[2], max[1], max[2]) --[[@as FakeRect]]
+        end
+
+        ---@param whichRect FakeRect
+        ---@param min FakeLocation
+        ---@param max FakeLocation
+        function SetRectFromLoc(whichRect, min, max)
+            assert(min ~= nil, 'min cannot be nil')
+            assert(max ~= nil, 'max cannot be nil')
+            SetRect(whichRect, min[1], min[2], max[1], max[2])
+        end
+    end
+
     --[========================[
       • RECTS (REGIONS IN GUI) •
     --]========================]
