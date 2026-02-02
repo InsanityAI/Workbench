@@ -733,17 +733,17 @@ do
             local func
             if index == 1 then
                 func = function(loc, ...)
-                    assert(loc ~= nil, 'Function ' .. oldVarName .. '\'s argument #1 - location cannot be nil!')
+                    if loc == nil then error('Function ' .. oldVarName .. '\'s argument #1 - location cannot be nil!') end
                     return new(loc[1], loc[2], ...)
                 end
             elseif index == 2 then
                 func = function(a, loc, ...)
-                    assert(loc ~= nil, 'Function ' .. oldVarName .. '\'s argument #2 - location cannot be nil!')
+                    if loc == nil then error('Function ' .. oldVarName .. '\'s argument #2 - location cannot be nil!') end
                     return new(a, loc[1], loc[2], ...)
                 end
             else --index==3
                 func = function(a, b, loc, ...)
-                    assert(loc ~= nil, 'Function ' .. oldVarName .. '\'s argument #3 - location cannot be nil!')
+                    if loc == nil then error('Function ' .. oldVarName .. '\'s argument #3 - location cannot be nil!') end
                     return new(a, b, loc[1], loc[2], ...)
                 end
             end
@@ -922,19 +922,19 @@ do
             local func
             if index == 1 then
                 func = function(rct, ...)
-                    assert(rct ~= nil, 'Function ' .. varName .. '\'s argument #1 - rect cannot be nil!')
+                    if rct == nil then error('Function ' .. varName .. '\'s argument #1 - rect cannot be nil!') end
                     oldSetRect(rect --[[@as rect]], unpack(rct))
                     return old(rect, ...)
                 end
             elseif index == 2 then
                 func = function(a, rct, ...)
-                    assert(rct ~= nil, 'Function ' .. varName .. '\'s argument #2 - rect cannot be nil!')
+                    if rct == nil then error('Function ' .. varName .. '\'s argument #2 - rect cannot be nil!') end
                     oldSetRect(rect --[[@as rect]], unpack(rct))
                     return old(a, rect, ...)
                 end
             else --index==3
                 func = function(a, b, rct, ...)
-                    assert(rct ~= nil, 'Function ' .. varName .. '\'s argument #3 - rect cannot be nil!')
+                    if rct == nil then error('Function ' .. varName .. '\'s argument #3 - rect cannot be nil!') end
                     oldSetRect(rect --[[@as rect]], unpack(rct))
                     return old(a, b, rect, ...)
                 end
