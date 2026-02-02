@@ -13,6 +13,17 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
 
     Provides GUI.loopArray for safe iteration over a __jarray
 
+    Updates: 02 Feb 2026 by Insanity_AI
+    Changes:
+        - FakedType property is now a string
+        - replaced _G with _ENV for a (negligible) speed boost
+        - additional asserts for hashtable API
+        - Hashtable API now replaces the natives instead of BJs
+        - GroupRemoveUnit now no longer breaks the FakeGroup (thanks Antares & Macielos)
+        - fixed SetHeroStat
+        - added some String & Math API overrides (check the bottom of the script for the list)
+        - modified GroupXOrder overrides to use group natives in order to retain speed and formation of units when ordered as a group (thanks Macielos)
+
     Updated: 30 Sep 2025 by Insanity_AI
     Changes:
         - asserts on arguments so DebugUtils can more effectively tell you what's wrong
@@ -41,20 +52,12 @@ do
     local _USE_UNIT_EVENT   = false --set to true if you have UnitEvent in your map and want to automatically remove units from their unit groups if they are removed from the game.
 
     --Define common variables to be utilized throughout the script.
-    local _G                = _G
     local unpack            = table.unpack
     local assert            = assert
 
     ---@class FakedType
-    ---@field __faketype {__name: string}
+    ---@field __faketype string
 
-    local fakeTypes         = {
-        FakeLocation  = { __name = 'userdata' },
-        FakeHashtable = { __name = 'userdata' },
-        FakeGroup     = { __name = 'userdata' },
-        FakeForce     = { __name = 'userdata' },
-        FakeRect      = { __name = 'userdata' }
-    }
     do
         local oldType = type
         --[[ Type extender - if object being checked is a table, check if it's one of the replacements for userdata --]]
@@ -62,8 +65,8 @@ do
         ---@return string typeName
         function type(obj)
             local thisType = oldType(obj)
-            if thisType == 'table' and obj.__faketype and oldType(obj.__faketype) == 'table' then
-                return obj --[[@as FakedType]].__faketype.__name
+            if thisType == 'table' and obj.__faketype and oldType(obj.__faketype) == 'string' then
+                return obj --[[@as FakedType]].__faketype
             end
             return thisType
         end
@@ -99,9 +102,9 @@ do
             return setmetatable(tab or {}, mt)
         end
 
-        --have to do a wide search for all arrays in the variable editor. The WarCraft 3 _G table is HUGE,
+        --have to do a wide search for all arrays in the variable editor. The WarCraft 3 _ENV table is HUGE,
         --and without editing the war3map.lua file manually, it is not possible to rewrite it in advance.
-        for k, v in pairs(_G) do
+        for k, v in pairs(_ENV) do
             if type(v) == "table" and string.sub(k, 1, 4) == "udg_" then
                 __jarray(v[0], v)
             end
@@ -118,13 +121,13 @@ do
     --[=============[
       • HASHTABLES •
     --]=============]
-    do
-        --[[ GUI hashtable converter by Tasyen and Bribe
+    --[[ GUI hashtable converter by Tasyen and Bribe
 
         Converts GUI hashtables API into Lua Tables, overwrites StringHashBJ and GetHandleIdBJ to permit
         typecasting, bypasses the 256 hashtable limit by avoiding hashtables, provides the variable
         "HashTableArray", which automatically creates hashtables for you as needed (so you don't have to
         initialize them each time). ]]
+    do
         ---@param s string
         ---@return string s
         function StringHashBJ(s)
@@ -173,135 +176,138 @@ do
             end)
         end
 
-        local last
-
-        ---@return FakeHashtable
-        function GetLastCreatedHashtableBJ()
-            return last
+        ---@param whichHashTable FakeHashtable
+        ---@param parentKey unknown
+        ---@param childKey unknown
+        local function checkHashtableArgs(whichHashTable, parentKey, childKey)
+            assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
+            assert(parentKey ~= nil, 'parentKey cannot be nil')
+            assert(childKey ~= nil, 'childKey cannot be nil')
         end
 
         ---@return FakeHashtable
-        function InitHashtableBJ()
-            last = __jarray();
-            last.__faketype = fakeTypes.FakeHashtable
-            return last
+        function InitHashtable()
+            return { __faketype = "userdata" }
         end
 
         ---@param value unknown?
         ---@param childKey unknown
         ---@param parentKey unknown
         ---@param whichHashTable FakeHashtable
-        ---@param type string
-        local function saveInto(value, childKey, parentKey, whichHashTable, type)
-            assert(childKey ~= nil, 'childKey cannot be nil')
-            assert(parentKey ~= nil, 'parentKey cannot be nil')
-            assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
-            assert(type ~= nil, 'type cannot be nil')
-            load(whichHashTable, type, parentKey)[childKey] = value
-        end
-
-        ---@param childKey unknown
-        ---@param parentKey unknown
-        ---@param whichHashTable FakeHashtable
-        ---@param type string|nil
-        ---@param default unknown|nil
-        ---@return unknown|nil
-        local function loadFrom(childKey, parentKey, whichHashTable, type, default)
-            assert(childKey ~= nil, 'childKey cannot be nil')
-            assert(parentKey ~= nil, 'parentKey cannot be nil')
-            assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
-            local val = load(whichHashTable, type or 'handle', parentKey)[childKey]
-            return val ~= nil and val or default
+        ---@param type 'boolean'|'integer'|'real'|'string'|'handle'
+        local function saveInto(whichHashTable, type, parentKey, childKey, value)
+            checkHashtableArgs(whichHashTable, parentKey, childKey)
+            load(whichHashTable, parentKey, type)[childKey] = value
         end
 
         ---@generic T
-        ---@param type string
-        ---@return fun(value: T, childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable)
+        ---@param type 'boolean'|'integer'|'real'|'string'|'handle'
+        ---@return fun(whichHashTable: FakeHashtable, parentKey: unknown, childKey: unknown, value: T)
         local function createSaveIntoTyped(type)
+            assert(type ~= nil, 'type cannot be nil')
             ---@generic T
-            ---@param value T
-            ---@param childKey unknown
-            ---@param parentKey unknown
             ---@param whichHashTable FakeHashtable
-            return function(value, childKey, parentKey, whichHashTable)
-                return saveInto(value, childKey, parentKey, whichHashTable, type)
+            ---@param parentKey unknown
+            ---@param childKey unknown
+            ---@param value T
+            return function(whichHashTable, parentKey, childKey, value)
+                return saveInto(whichHashTable, type, parentKey, childKey, value)
             end
         end
 
-        SaveIntegerBJ = createSaveIntoTyped('integer')
-        SaveRealBJ = createSaveIntoTyped('real')
-        SaveBooleanBJ = createSaveIntoTyped('boolean')
-        SaveStringBJ = createSaveIntoTyped('string')
+        SaveInteger = createSaveIntoTyped('integer') ---@type fun(whichHashtable: FakeHashtable, parentKey: unknown, childKey: unknown, value: integer)
+        SaveReal = createSaveIntoTyped('real') ---@type fun(whichHashtable: FakeHashtable, parentKey: unknown, childKey: unknown, value: number)
+        SaveBoolean = createSaveIntoTyped('boolean') ---@type fun(whichHashtable: FakeHashtable, parentKey: unknown, childKey: unknown, value: boolean)
+        SaveStr = createSaveIntoTyped('string') ---@type fun(whichHashtable: FakeHashtable, parentKey: unknown, childKey: unknown, value: string)
+        local saveHandle = createSaveIntoTyped('handle')
 
-        ---@param value unknown|nil
-        ---@param childKey unknown
-        ---@param parentKey unknown
         ---@param whichHashTable FakeHashtable
-        local function saveHandle(value, childKey, parentKey, whichHashTable)
-            saveInto(value, childKey, parentKey, whichHashTable, 'handle')
+        ---@param type 'boolean'|'integer'|'real'|'string'|'handle'
+        ---@param parentKey unknown
+        ---@param childKey unknown
+        ---@param default unknown|nil
+        ---@return unknown|nil
+        local function loadFrom(whichHashTable, type, parentKey, childKey, default)
+            checkHashtableArgs(whichHashTable, parentKey, childKey)
+            local val = load(whichHashTable, parentKey, type)[childKey]
+            return val ~= nil and val or default
         end
 
-        ---@param type string
+        ---@param type 'boolean'|'integer'|'real'|'string'|'handle'|nil
         ---@param default unknown
-        ---@return fun(childKey: unknown, parentKey: unknown, whichHashTable: table): unknown|nil
+        ---@return fun(whichHashTable: FakeHashtable, parentKey: unknown, childKey: unknown): unknown|nil
         local function createDefault(type, default)
-            return function(childKey, parentKey, whichHashTable)
-                return loadFrom(childKey, parentKey, whichHashTable, type, default)
+            return function(whichHashTable, parentKey, childKey)
+                return loadFrom(whichHashTable, parentKey, childKey, type or 'handle', default)
             end
         end
-        LoadIntegerBJ = createDefault('integer', 0) ---@type fun(childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable): integer
-        LoadRealBJ = createDefault('real', 0) ---@type fun(childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable): number
-        LoadBooleanBJ = createDefault('boolean', false) ---@type fun(childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable): boolean
-        LoadStringBJ = createDefault('string', '') ---@type fun(childKey: unknown, parentKey: unknown, whichHashTable: FakeHashtable): string
-
-        ---@param childKey unknown
-        ---@param parentKey unknown
-        ---@param whichHashTable FakeHashtable
-        local function loadHandle(childKey, parentKey, whichHashTable)
-            return loadFrom(childKey, parentKey, whichHashTable, 'handle')
-        end
+        LoadInteger = createDefault('integer', 0) ---@type fun(whichHashTable: FakeHashtable, parentKey: unknown, childKey: unknown): integer
+        LoadReal = createDefault('real', 0) ---@type fun(whichHashTable: FakeHashtable, parentKey: unknown, childKey: unknown): number
+        LoadBoolean = createDefault('boolean', false) ---@type fun(whichHashTable: FakeHashtable, parentKey: unknown, childKey: unknown): boolean
+        LoadStr = createDefault('string', '') ---@type fun(whichHashTable: FakeHashtable, parentKey: unknown, childKey: unknown): string
+        local loadHandle = createDefault('handle', nil)
 
         do
             local sub = string.sub
-            for key in pairs(_G) do
-                if sub(key, -8) == "HandleBJ" then
+            for key in pairs(_ENV) do
+                if sub(key, -6) == "Handle" then
                     local str = sub(key, 1, 4)
                     if str == "Save" then
-                        _G[key] = saveHandle
+                        _ENV[key] = saveHandle
                     elseif str == "Load" then
-                        _G[key] = loadHandle
+                        _ENV[key] = loadHandle
                     end
                 end
             end
         end
 
-        ---@param childKey unknown
-        ---@param valueType integer
-        ---@param parentKey unknown
         ---@param whichHashTable FakeHashtable
+        ---@param parentKey unknown
+        ---@param childKey unknown
         ---@return boolean
-        function HaveSavedValue(childKey, valueType, parentKey, whichHashTable)
-            assert(childKey ~= nil, 'childKey cannot be nil')
-            assert(parentKey ~= nil, 'parentKey cannot be nil')
-            assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
-            if (valueType == bj_HASHTABLE_BOOLEAN) then
-                return load(whichHashTable, 'boolean', parentKey)[childKey] ~= nil
-            elseif (valueType == bj_HASHTABLE_INTEGER) then
-                return load(whichHashTable, 'integer', parentKey)[childKey] ~= nil
-            elseif (valueType == bj_HASHTABLE_REAL) then
-                return load(whichHashTable, 'real', parentKey)[childKey] ~= nil
-            elseif (valueType == bj_HASHTABLE_STRING) then
-                return load(whichHashTable, 'string', parentKey)[childKey] ~= nil
-            elseif (valueType == bj_HASHTABLE_HANDLE) then
-                return load(whichHashTable, 'handle', parentKey)[childKey] ~= nil
-            else
-                --  Unrecognized value type - ignore the request.
-                return false
-            end
+        function HaveSavedBoolean(whichHashTable, parentKey, childKey)
+            checkHashtableArgs(whichHashTable, parentKey, childKey)
+            return load(whichHashTable, parentKey, 'boolean')[childKey] ~= nil
         end
 
         ---@param whichHashTable FakeHashtable
-        function FlushParentHashtableBJ(whichHashTable)
+        ---@param parentKey unknown
+        ---@param childKey unknown
+        ---@return boolean
+        function HaveSavedInteger(whichHashTable, parentKey, childKey)
+            checkHashtableArgs(whichHashTable, parentKey, childKey)
+            return load(whichHashTable, parentKey, 'integer')[childKey] ~= nil
+        end
+
+        ---@param whichHashTable FakeHashtable
+        ---@param parentKey unknown
+        ---@param childKey unknown
+        ---@return boolean
+        function HaveSavedReal(whichHashTable, parentKey, childKey)
+            checkHashtableArgs(whichHashTable, parentKey, childKey)
+            return load(whichHashTable, parentKey, 'real')[childKey] ~= nil
+        end
+
+        ---@param whichHashTable FakeHashtable
+        ---@param parentKey unknown
+        ---@param childKey unknown
+        ---@return boolean
+        function HaveSavedString(whichHashTable, parentKey, childKey)
+            checkHashtableArgs(whichHashTable, parentKey, childKey)
+            return load(whichHashTable, parentKey, 'string')[childKey] ~= nil
+        end
+
+        ---@param whichHashTable FakeHashtable
+        ---@param parentKey unknown
+        ---@param childKey unknown
+        ---@return boolean
+        function HaveSavedHandle(whichHashTable, parentKey, childKey)
+            checkHashtableArgs(whichHashTable, parentKey, childKey)
+            return load(whichHashTable, parentKey, 'handle')[childKey] ~= nil
+        end
+
+        ---@param whichHashTable FakeHashtable
+        function FlushParentHashtable(whichHashTable)
             assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
             whichHashTable.boolean = nil
             whichHashTable.integer = nil
@@ -310,16 +316,16 @@ do
             whichHashTable.handle = nil
         end
 
-        ---@param parentKey unknown
         ---@param whichHashTable FakeHashtable
-        function FlushChildHashtableBJ(parentKey, whichHashTable)
+        ---@param parentKey unknown
+        function FlushChildHashtable(whichHashTable, parentKey)
             assert(whichHashTable ~= nil, 'whichHashTable cannot be nil')
             assert(parentKey ~= nil, 'parentKey cannot be nil')
-            whichHashTable.boolean[parentKey] = nil
-            whichHashTable.integer[parentKey] = nil
-            whichHashTable.real[parentKey] = nil
-            whichHashTable.string[parentKey] = nil
-            whichHashTable.handle[parentKey] = nil
+            if whichHashTable.boolean then whichHashTable.boolean[parentKey] = nil end
+            if whichHashTable.integer then whichHashTable.integer[parentKey] = nil end
+            if whichHashTable.real then whichHashTable.real[parentKey] = nil end
+            if whichHashTable.string then whichHashTable.string[parentKey] = nil end
+            if whichHashTable.handle then whichHashTable.handle[parentKey] = nil end
         end
     end
     --[===========================[
@@ -339,7 +345,7 @@ do
         function Location(x, y)
             assert(x ~= nil, 'x cannot be nil')
             assert(y ~= nil, 'y cannot be nil')
-            return { x, y, __faketype = fakeTypes.FakeLocation }
+            return { x, y, __faketype = "userdata" }
         end
 
         do
@@ -414,9 +420,9 @@ do
         ---@param varName string
         ---@param suffix string|nil
         local function fakeCreate(varName, suffix)
-            local getX = _G[varName .. "X"]
-            local getY = _G[varName .. "Y"]
-            _G[varName .. (suffix or "Loc")] = function(obj) return Location(getX(obj), getY(obj)) end
+            local getX = _ENV[varName .. "X"]
+            local getY = _ENV[varName .. "Y"]
+            _ENV[varName .. (suffix or "Loc")] = function(obj) return Location(getX(obj), getY(obj)) end
         end
         fakeCreate("GetUnit")
         fakeCreate("GetOrderPoint")
@@ -440,22 +446,25 @@ do
         ---@param newVarName string
         ---@param index integer needed to determine which of the parameters calls for a location.
         local function hook(oldVarName, newVarName, index)
-            local new = _G[newVarName]
+            local new = _ENV[newVarName]
             local func
             if index == 1 then
                 func = function(loc, ...)
+                    assert(loc ~= nil, 'Function ' .. oldVarName .. '\'s argument #1 - location cannot be nil!')
                     return new(loc[1], loc[2], ...)
                 end
             elseif index == 2 then
                 func = function(a, loc, ...)
+                    assert(loc ~= nil, 'Function ' .. oldVarName .. '\'s argument #2 - location cannot be nil!')
                     return new(a, loc[1], loc[2], ...)
                 end
             else --index==3
                 func = function(a, b, loc, ...)
+                    assert(loc ~= nil, 'Function ' .. oldVarName .. '\'s argument #3 - location cannot be nil!')
                     return new(a, b, loc[1], loc[2], ...)
                 end
             end
-            _G[oldVarName] = func
+            _ENV[oldVarName] = func
         end
         hook("IsLocationInRegion", "IsPointInRegion", 2)
         hook("IsUnitInRangeLoc", "IsUnitInRangeXY", 2)
@@ -508,6 +517,7 @@ do
     --]=============================]
     do
         local mainGroup = bj_lastCreatedGroup
+        local issueGroup = CreateGroup() --[[@as group]]
         DestroyGroup(bj_suspendDecayFleshGroup --[[@as group]])
         DestroyGroup(bj_suspendDecayBoneGroup --[[@as group]])
         DestroyGroup = DoNothing
@@ -518,14 +528,14 @@ do
 
         ---@return FakeGroup
         function CreateGroup()
-            return { indexOf = {}, __faketype = fakeTypes.FakeGroup }
+            return { indexOf = {}, __faketype = "userdata" }
         end
 
         bj_lastCreatedGroup = CreateGroup()
         bj_suspendDecayFleshGroup = CreateGroup()
         bj_suspendDecayBoneGroup = CreateGroup()
 
-        local groups ---@type table<unit, FakeGroup>
+        local groups ---@type table<unit, table<FakeGroup, boolean>>
         if _USE_UNIT_EVENT then
             groups = {}
 
@@ -550,6 +560,9 @@ do
                 end
             end
         end
+
+        local oldGroupClear = GroupClear --[[@as fun(group: group)]]
+        local oldGroupAddUnit = GroupAddUnit --[[@as fun(group: group, unit: unit)]]
 
         ---@param group FakeGroup
         ---@param unit unit
@@ -579,7 +592,9 @@ do
 
             local size = #group
             if pos ~= size then
-                indexOf[group[size]] = pos
+                local replUnit = group[size]
+                group[pos] = replUnit
+                indexOf[replUnit] = pos
             end
             group[size] = nil
             indexOf[unit] = nil
@@ -666,11 +681,11 @@ do
                 "Selected"
             }) do
                 local varStr = "GroupEnumUnits" .. name
-                local old = _G[varStr]
+                local old = _ENV[varStr]
 
                 ---@param group FakeGroup
                 ---@param ... unknown
-                _G[varStr] = function(group, ...)
+                _ENV[varStr] = function(group, ...)
                     if group then
                         old(mainGroup, ...)
                         GroupClear(group)
@@ -691,24 +706,26 @@ do
         end
 
         for _, name in ipairs {
-            "ImmediateOrder",
-            "ImmediateOrderById",
-            "PointOrder",
-            "PointOrderById",
-            "TargetOrder",
-            "TargetOrderById"
+            "GroupImmediateOrder",
+            "GroupImmediateOrderById",
+            "GroupPointOrder",
+            "GroupPointOrderById",
+            "GroupTargetOrder",
+            "GroupTargetOrderById"
         } do
-            local new = _G["Issue" .. name]
-
+            local old = _ENV[name]
             ---@param group FakeGroup
             ---@param ... unknown
-            _G["Group" .. name] = function(group, ...)
-                for i = 1, #group do
-                    new(group[i], ...)
+            ---@return boolean
+            _ENV[name] = function(group, ...)
+                assert(group ~= nil, ' group cannot be nil')
+                oldGroupClear(issueGroup)
+                for _, unit in ipairs(group) do
+                    oldGroupAddUnit(issueGroup, unit)
                 end
+                return old(issueGroup, ...)
             end
         end
-        GroupTrainOrderByIdBJ = GroupImmediateOrderById
 
         ---@param group FakeGroup
         ---@return integer
@@ -797,7 +814,7 @@ do
             assert(minY ~= nil, 'minY cannot be nil')
             assert(maxX ~= nil, 'maxX cannot be nil')
             assert(maxY ~= nil, 'maxY cannot be nil')
-            return { minX, minY, maxX, maxY, __faketype = fakeTypes.FakeRect }
+            return { minX, minY, maxX, maxY, __faketype = "userdata" }
         end
 
         local oldSetRect = SetRect
@@ -898,29 +915,32 @@ do
         ---@param varName string
         ---@param index integer needed to determine which of the parameters calls for a rect.
         local function hook(varName, index)
-            local old = _G[varName]
+            local old = _ENV[varName]
             local func
             if index == 1 then
                 func = function(rct, ...)
+                    assert(rct ~= nil, 'Function ' .. varName .. '\'s argument #1 - rect cannot be nil!')
                     oldSetRect(rect --[[@as rect]], unpack(rct))
                     return old(rect, ...)
                 end
             elseif index == 2 then
                 func = function(a, rct, ...)
+                    assert(rct ~= nil, 'Function ' .. varName .. '\'s argument #2 - rect cannot be nil!')
                     oldSetRect(rect --[[@as rect]], unpack(rct))
                     return old(a, rect, ...)
                 end
             else --index==3
                 func = function(a, b, rct, ...)
+                    assert(rct ~= nil, 'Function ' .. varName .. '\'s argument #3 - rect cannot be nil!')
                     oldSetRect(rect --[[@as rect]], unpack(rct))
                     return old(a, b, rect, ...)
                 end
             end
 
             ---@param ... unknown
-            _G[varName] = function(...)
+            _ENV[varName] = function(...)
                 if not rect then rect = oldRect(0, 0, 32, 32) end
-                _G[varName] = func
+                _ENV[varName] = func
                 return func(...)
             end
         end
@@ -952,7 +972,7 @@ do
 
         ---@return FakeForce
         function CreateForce()
-            return { indexOf = {}, __faketype = fakeTypes.FakeForce }
+            return { indexOf = {}, __faketype = "userdata" }
         end
 
         DestroyForce = DoNothing ---@type fun(force: FakeForce)
@@ -1086,7 +1106,7 @@ do
         end
         ---@param varStr string
         local function hookEnum(varStr)
-            local old = _G[varStr]
+            local old = _ENV[varStr]
             local deferred
             function deferred(force, ...)
                 function deferred(force, ...)
@@ -1095,10 +1115,10 @@ do
                 end
 
                 initForce()
-                _G[varStr](force, ...)
+                _ENV[varStr](force, ...)
             end
 
-            _G[varStr] = function(force, ...)
+            _ENV[varStr] = function(force, ...)
                 assert(force ~= nil, 'force cannot be nil')
                 deferred(force, ...)
             end
@@ -1297,8 +1317,13 @@ do
     ---@param value integer
     function SetHeroStat(whichHero, whichStat, value)
         assert(whichStat ~= nil, 'whichStat cannot be nil')
-        (whichStat == bj_HEROSTAT_STR and SetHeroStr or whichStat == bj_HEROSTAT_AGI and SetHeroAgi or SetHeroInt)(
-                whichHero, value, true)
+        if (whichStat == bj_HEROSTAT_STR) then
+            SetHeroStr(whichHero, value, true)
+        elseif (whichStat == bj_HEROSTAT_AGI) then
+            SetHeroAgi(whichHero, value, true)
+        elseif (whichStat == bj_HEROSTAT_INT) then
+            SetHeroInt(whichHero, value, true)
+        end
     end
 
     --The next part of the code is purely optional, as it is intended to optimize rather than add new functionality
@@ -1428,21 +1453,36 @@ do
     IssueImmediateOrderBJ                = IssueImmediateOrder
     GroupTargetOrderBJ                   = GroupTargetOrder
     GroupImmediateOrderBJ                = GroupImmediateOrder
+    GroupTrainOrderByIdBJ                = GroupImmediateOrderById
     GroupTargetDestructableOrder         = GroupTargetOrder       -- This was just to type casting
     GroupTargetItemOrder                 = GroupTargetOrder       -- This was just to type casting
     GetDyingDestructable                 = GetTriggerDestructable -- I think they just wanted a better name
     GetAbilityName                       = GetObjectName          -- I think they just wanted a better name
 
-    -- List of math overrides, provided by Antares
+    -- List of math overrides, provided by Antares & Insanity_AI
     CosBJ                                = function(degrees) return math.cos(degrees * bj_DEGTORAD) end ---@type fun(degrees: number): number
     SinBJ                                = function(degrees) return math.sin(degrees * bj_DEGTORAD) end ---@type fun(degrees: number): number
     TanBJ                                = function(degrees) return math.tan(degrees * bj_DEGTORAD) end ---@type fun(degrees: number): number
     AsinBJ                               = function(ratio) return math.asin(ratio) * bj_RADTODEG end ---@type fun(ratio: number): number
     AcosBJ                               = function(ratio) return math.acos(ratio) * bj_RADTODEG end ---@type fun(ratio: number): number
-    AtanBJ                               = function(ratio) return math.atan(ratio) * bj_RADTODEG end ---@type fun(ratio: number): number
-    Atan2BJ                              = function(y, x) return math.atan(y, x) * bj_RADTODEG end ---@type fun(x: number, y: number): number
+
+    -- Native Atans are faster than math.atan, surprisingly
+    -- AtanBJ                               = function(ratio) return math.atan(ratio) * bj_RADTODEG end ---@type fun(ratio: number): number
+    -- Atan2BJ                              = function(y, x) return math.atan(y, x) * bj_RADTODEG end ---@type fun(x: number, y: number): number
+
+    Cos                                  = math.cos
+    Sin                                  = math.sin
+    Tan                                  = math.tan
+    Acos                                 = math.acos
+    Asin                                 = math.asin
     Pow                                  = function(base, exponent) return base ^ exponent end ---@type fun(base: number, exponent: number): number
+    SquareRoot                           = math.sqrt
+    Deg2Rad                              = function(degrees) return degrees * bj_DEGTORAD end ---@type fun(degrees: number): number
+    Rad2Deg                              = function(radians) return radians * bj_RADTODEG end ---@type fun(radians: number): number
 
     SubStringBJ                          = string.sub
+    SubString                            = function(source, start, _end) return string.sub(source, start + 1, _end) end ---@type fun(source: string, start: integer, _end: integer): string
+    StringLength                         = string.len
+    StringCase                           = function(source, upper) if upper then return string.upper(source) else return string.lower(source) end end ---@type fun(source: string, upper: boolean): string
 end
 if Debug then Debug.endFile() end
