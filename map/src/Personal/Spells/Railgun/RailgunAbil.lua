@@ -5,18 +5,21 @@ OnInit.trig(function(require)
     --==================================================================================================
     require "Railgun"
     require "GetPointZ" -- found in Dependencies
+    require "SoundLib"
 
     --[[
         This is an example trigger for how you can setup Railgun ability, you can either use this or
         write your own logic that does not rely on unit abilities, if you so choose.
     ]]
 
-    local ABILITY_ID = FourCC('A000')          -- Railgun ability code
-    local RAILGUN_RANGE = 4000.00              -- Railgun maximum range
-    local AIM_VISUAL_RADIUS = 100.00           -- Aim visualizers' obstacle checker radius
-    local AIM_VISUAL_STEP_DELTA = 266.66       -- Distance between 2 aim visualizers
-    local BEAM_STEP_DELTA = 40.00              -- Distance between points in the beam for obstacle checking
-    local BEAM_WIDTH = 100.00                  -- Width of the beam for damaging targets and obstacle checking
+    local ABILITY_ID = FourCC('A000')    -- Railgun ability code
+    local RAILGUN_RANGE = 4000.00        -- Railgun maximum range
+    local AIM_VISUAL_RADIUS = 100.00     -- Aim visualizers' obstacle checker radius
+    local AIM_VISUAL_STEP_DELTA = 266.66 -- Distance between 2 aim visualizers
+    local BEAM_STEP_DELTA = 40.00        -- Distance between points in the beam for obstacle checking
+    local BEAM_WIDTH = 100.00            -- Width of the beam for damaging targets and obstacle checking
+    local aimSound = Sound:new({ path = "war3mapImported\\Railgun-charge.wav", is3D = true })
+    local fireSound = Sound:new({ path = "war3mapImported\\Railgun-fire.wav", is3D = true })
 
     local CASTER_ANIMATION_AIM = "stand ready" -- casting spell animation
     local CASTER_ANIMATION_FIRE = "spell"      -- starts effect of spell animation
@@ -67,15 +70,14 @@ OnInit.trig(function(require)
 
         local caster = GetTriggerUnit()
 
+        local casterX, casterY, casterZ = GetUnitX(caster), GetUnitY(caster), BlzGetUnitZ(caster)
         local targetX, targetY = GetSpellTargetX(), GetSpellTargetY()
         local targetZ = GetPointZ(targetX, targetY)
 
-        getSpellInstance(caster, targetX, targetY, targetZ):aim(
-            GetUnitX(caster), GetUnitY(caster), BlzGetUnitZ(caster),
-            targetX, targetY, targetZ
-        )
-
+        getSpellInstance(caster, targetX, targetY, targetZ):aim(casterX, casterY, casterZ, targetX, targetY, targetZ)
         SetUnitAnimation(caster, CASTER_ANIMATION_AIM)
+        aimSound(1, false, nil, nil, caster)
+        -- PlaySoundOnUnitBJ(gg_snd_Railgun_charge, 100, caster)
     end)
 
     local stopTrigger = CreateTrigger()
@@ -93,10 +95,13 @@ OnInit.trig(function(require)
     TriggerAddAction(fireTrigger, function()
         if GetSpellAbilityId() ~= ABILITY_ID then return end
         local caster = GetTriggerUnit()
+        local casterX, casterY, casterZ = GetUnitX(caster), GetUnitY(caster), BlzGetUnitZ(caster)
         local spell = spellInstances[caster]
-        spell:fire(caster, GetUnitX(caster), GetUnitY(caster), BlzGetUnitZ(caster), spell.targetX, spell.targetY, spell.targetZ)
+        spell:fire(caster, casterX, casterY, casterZ, spell.targetX, spell.targetY, spell.targetZ)
         SetUnitAnimation(caster, CASTER_ANIMATION_FIRE)
         QueueUnitAnimation(caster, CASTER_ANIMATION_STAND)
+        -- PlaySoundOnUnitBJ(gg_snd_Railgun_fire, 100, caster)
+        fireSound(1, false, nil, nil, caster)
     end)
 end)
 if Debug then Debug.endFile() end

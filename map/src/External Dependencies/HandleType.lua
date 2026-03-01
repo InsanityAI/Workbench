@@ -18,11 +18,7 @@ do
     ===============================================================================================================================================================
     ]]
 
-    local widgetTypes = {
-        unit = true,
-        destructable = true,
-        item = true
-    }
+    ---@alias TypeCheck<T> (fun(obj: unknown): T)|{[unknown]: T}
 
     HandleType = setmetatable({}, {
         __mode = "k",
@@ -43,51 +39,42 @@ do
                 return ""
             end
         end
-    })
+    }) --[[@as TypeCheck<string>]]
 
-    IsHandle = setmetatable({}, {
-        __mode = "k",
-        __index = function(self, key)
-            self[key] = HandleType[key] ~= ""
-            return self[key]
-        end,
-        __call = function(self, key)
-            if key then
+    ---@generic T
+    ---@param condition fun(key: string): T
+    ---@param defaultReturnValue T
+    ---@return TypeCheck<T>
+    local function createTypeCheck(condition, defaultReturnValue)
+        return setmetatable({}, {
+            __mode = "k",
+            __index = function(self, key)
+                self[key] = condition(key)
                 return self[key]
-            else
-                return false
+            end,
+            __call = function(self, key)
+                if key then
+                    return self[key]
+                else
+                    return defaultReturnValue
+                end
             end
-        end
-    })
+        })
+    end
 
-    IsWidget = setmetatable({}, {
-        __mode = "k",
-        __index = function(self, key)
-            self[key] = widgetTypes[HandleType[key]] == true
-            return self[key]
-        end,
-        __call = function(self, key)
-            if key then
-                return self[key]
-            else
-                return false
-            end
-        end
-    })
+    IsHandle = createTypeCheck(function(key) return HandleType[key] ~= "" end, false)
 
-    IsUnit = setmetatable({}, {
-        __mode = "k",
-        __index = function(self, key)
-            self[key] = HandleType[key] == "unit"
-            return self[key]
-        end,
-        __call = function(self, key)
-            if key then
-                return self[key]
-            else
-                return false
-            end
-        end
-    })
+    local widgetTypes = {
+        unit = true,
+        destructable = true,
+        item = true
+    }
+
+    IsWidget = createTypeCheck(function(key) return widgetTypes[HandleType[key]] == true end, false)
+    IsUnit = createTypeCheck(function(key) return HandleType[key] == "unit" end, false)
+    IsDestructable = createTypeCheck(function(key) return HandleType[key] == "destructable" end, false)
+    IsItem = createTypeCheck(function(key) return HandleType[key] == "item" end, false)
+
+    local a = IsItem[{}]
 end
 if Debug then Debug.endFile() end

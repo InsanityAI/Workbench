@@ -9,10 +9,20 @@ OnInit.module("TableRecycler", function()
     ---Retrieves one from it otherwise.
     ---@return table
     function TableRecycler.create()
-        local tbl = freeTable[#freeTable + 1] or {}
+        local tbl = table.remove(freeTable, nil) or {}
         tblTracker[tbl] = nil
-        freeTable[#freeTable + 1] = nil
         return tbl
+    end
+
+    function table.removeobject(tbl, object)
+        for i = 1, math.huge do
+            local val = tbl[i]
+            if val == nil then break end
+            if val == object then
+                table.remove(tbl, i)
+                break
+            end
+        end
     end
 
     ---Clears data from the table and adds it to the recycled table list.
@@ -20,55 +30,51 @@ OnInit.module("TableRecycler", function()
     function TableRecycler.release(tbl)
         if not tbl or tblTracker[tbl] then return end
         tblTracker[tbl] = true
-        for k in pairs(tbl) do
-            rawset(tbl, k, nil)
+        for i = 1, math.huge, 1 do
+            if tbl[i] == nil then break end
+            tbl[i] = nil
         end
-        freeTable[#freeTable + 1] = tbl
-    end
-
-    ---Clears data from the table but doesn't add it to the recycled table list.
-    ---@param tbl table
-    function TableRecycler.clear(tbl)
-        if not tbl then return end
         for k in pairs(tbl) do
             print("Error: bad table release", k)
+            Debug.throwError()
             rawset(tbl, k, nil)
         end
+        table.insert(freeTable, tbl)
     end
 
-    ---Alternative way to add table to the recycled table list.
-    ---@param tbl table
-    function TableRecycler.releaseFast(tbl)
-        freeTable[#freeTable + 1] = tbl
-    end
-
-    ---comment
     ---@param tbl table
     function TableRecycler.releaseKey(tbl)
         if not tbl then return end
         local list = tbl._list
         setmetatable(tbl, nil)
-        for i = 1, #list, 1 do
+        for i = 1, math.huge, 1 do
             local key = list[i]
+            if key == nil then break end
             tbl[key] = nil
             list[i] = nil
         end
         tbl._list = nil
         TableRecycler.release(list)
-        --freeTable[#freeTable+1] = list
         TableRecycler.release(tbl)
-        --freeTable[#freeTable+1] = tbl
     end
 
-    ---pretty sure we dont' need this
+    function ClearKeyTable(tbl)
+        local list = tbl._list
+        for i = 1, math.huge, 1 do
+            local key = list[i]
+            if key == nil then break end
+            tbl[key] = nil
+            list[i] = nil
+        end
+    end
+
     local metaKeyTable = {
         __newindex = function(t, k, v)
             rawset(t, k, v)
-            t._list[#t._list + 1] = k
+            table.insert(t._list, k)
         end
     }
 
-    ---pretty sure we dont' need this
     ---@param o table
     ---@return table
     function TableRecycler.newKey(o)
@@ -77,7 +83,6 @@ OnInit.module("TableRecycler", function()
         return setmetatable(o, metaKeyTable)
     end
 
-    ---pretty sure we dont' need this
     ---@param base table
     function TableRecycler.copyKey(base)
         local new = TableRecycler.create()
