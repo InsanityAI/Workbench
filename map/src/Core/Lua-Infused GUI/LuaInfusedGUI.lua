@@ -3,7 +3,7 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
     Lua-Infused GUI with automatic memory leak resolution: Modernizing the experience for a better future for users of the Trigger Editor.
 
     Credits:
-        Bribe, Tasyen, Dr Super Good, HerlySQR, Antares
+        Bribe, Tasyen, Dr Super Good, HerlySQR, Antares, Marcielos
 
     Transforming rects, locations, groups, forces and BJ hashtable wrappers into Lua tables, which are automatically garbage collected.
 
@@ -13,7 +13,13 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
 
     Provides GUI.loopArray for safe iteration over a __jarray
 
-    Updates: 02 Feb 2026 by Insanity_AI
+    Update: 01 Mar 2026 by Marcielos & InsanityAI
+    Changes: 
+        - Fixed GroupClear, GroupAddUnit, GroupAddGroup and GroupRemoveGroup overrides
+        - Fixed Hashtable API where argument order was wrong
+        - Overridden CreateMinimapIconAtLoc and ExecuteFunc
+
+    Update: 02 Feb 2026 by Insanity_AI
     Changes:
         - FakedType property is now a string
         - replaced _G with _ENV for a (negligible) speed boost
@@ -25,7 +31,7 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
         - modified GroupXOrder overrides to use group natives in order to retain speed and formation of units when ordered as a group (thanks Macielos)
         - swapped order of overrides: group <-> location, so that group overrides happen first
 
-    Updated: 30 Sep 2025 by Insanity_AI
+    Update: 30 Sep 2025 by Insanity_AI
     Changes:
         - asserts on arguments so DebugUtils can more effectively tell you what's wrong
         - StringHashBJ and GetHandleIdBJ returns 0 if the argument is falsy, otherwise returns the argument itself
@@ -198,7 +204,7 @@ do
         ---@param type 'boolean'|'integer'|'real'|'string'|'handle'
         local function saveInto(whichHashTable, type, parentKey, childKey, value)
             checkHashtableArgs(whichHashTable, parentKey, childKey)
-            load(whichHashTable, parentKey, type)[childKey] = value
+            load(whichHashTable, type, parentKey)[childKey] = value
         end
 
         ---@generic T
@@ -230,7 +236,7 @@ do
         ---@return unknown|nil
         local function loadFrom(whichHashTable, type, parentKey, childKey, default)
             checkHashtableArgs(whichHashTable, parentKey, childKey)
-            local val = load(whichHashTable, parentKey, type)[childKey]
+            local val = load(whichHashTable, type, parentKey)[childKey]
             return val ~= nil and val or default
         end
 
@@ -239,7 +245,7 @@ do
         ---@return fun(whichHashTable: FakeHashtable, parentKey: unknown, childKey: unknown): unknown|nil
         local function createDefault(type, default)
             return function(whichHashTable, parentKey, childKey)
-                return loadFrom(whichHashTable, parentKey, childKey, type or 'handle', default)
+                return loadFrom(whichHashTable, type or 'handle', parentKey, childKey, default)
             end
         end
         LoadInteger = createDefault('integer', 0) ---@type fun(whichHashTable: FakeHashtable, parentKey: unknown, childKey: unknown): integer
@@ -352,6 +358,9 @@ do
         bj_suspendDecayFleshGroup = CreateGroup()
         bj_suspendDecayBoneGroup = CreateGroup()
 
+        local oldGroupClear = GroupClear --[[@as fun(group: group)]]
+        local oldGroupAddUnit = GroupAddUnit --[[@as fun(group: group, unit: unit)]]
+
         local groups ---@type table<unit, table<FakeGroup, boolean>>
         if _USE_UNIT_EVENT then
             groups = {}
@@ -377,9 +386,6 @@ do
                 end
             end
         end
-
-        local oldGroupClear = GroupClear --[[@as fun(group: group)]]
-        local oldGroupAddUnit = GroupAddUnit --[[@as fun(group: group, unit: unit)]]
 
         ---@param group FakeGroup
         ---@param unit unit
@@ -424,7 +430,7 @@ do
         ---@param group FakeGroup
         ---@return boolean
         function IsUnitInGroup(unit, group)
-            assert(unit ~= nil, 'unti cannot be nil')
+            assert(unit ~= nil, 'unit cannot be nil')
             assert(group ~= nil, 'group cannot be nil')
             return group.indexOf[unit] and true or false
         end
@@ -553,7 +559,7 @@ do
 
         ---@param group FakeGroup
         ---@param add FakeGroup
-        function GroupAddGroup(group, add)
+        function GroupAddGroup(add, group)
             assert(group ~= nil, 'group cannot be nil')
             assert(add ~= nil, 'add cannot be nil')
             GUI.forGroup(add, function(unit)
@@ -563,7 +569,7 @@ do
 
         ---@param group FakeGroup
         ---@param remove FakeGroup
-        function GroupRemoveGroup(group, remove)
+        function GroupRemoveGroup(remove, group)
             assert(group ~= nil, 'group cannot be nil')
             assert(remove ~= nil, 'remove cannot be nil')
             GUI.forGroup(remove, function(unit)
@@ -602,7 +608,7 @@ do
                     local u = data.unit
                     local g = groups[u]
                     if g then
-                        for _, group in pairs(g) do
+                        for group, _ in pairs(g) do
                             GroupRemoveUnit(group, u)
                         end
                     end
@@ -776,6 +782,7 @@ do
         hook("SetUnitPositionLoc", "SetUnitPosition", 2)
         hook("ReviveHeroLoc", "ReviveHero", 2)
         hook("SetFogStateRadiusLoc", "SetFogStateRadius", 3)
+        hook('CreateMinimapIconAtLoc', 'CreateMinimapIcon', 1)
 
         ---@param min FakeLocation
         ---@param max FakeLocation
@@ -1240,10 +1247,9 @@ do
             The "return" value of RegisterAnyPlayerUnitEvent calls the "remove" method. The API, therefore,
             has been reduced to just this one function (in addition to the bj override).
         -----------------------------------------------------------------------------------------------]]
-        local fStack, tStack, oldBJ = {}, {},
-            TriggerRegisterAnyUnitEventBJ ---@type {[eventid]: function[]}, {[eventid]: trigger[]}
+        local fStack, tStack, oldBJ = {}, {}, TriggerRegisterAnyUnitEventBJ ---@type {[eventid]: function[]}, {[eventid]: trigger[]}
 
-        ---@param event eventid
+        ---@param event playerunitevent
         ---@param userFunc function
         ---@param skip boolean?
         function RegisterAnyPlayerUnitEvent(event, userFunc, skip)
@@ -1292,7 +1298,7 @@ do
 
         local trigFuncs
         ---@param trig trigger
-        ---@param event eventid
+        ---@param event playerunitevent
         ---@return function|nil
         function TriggerRegisterAnyUnitEventBJ(trig, event)
             assert(trig ~= nil, 'trig cannot be nil')
@@ -1314,7 +1320,7 @@ do
         end
     end
 
-    ---Modify to allow requests for negative hero stats, as per request from Tasyen.
+    -- Modify to allow requests for negative hero stats, as per request from Tasyen.
     ---@param whichHero unit
     ---@param whichStat integer
     ---@param value integer
@@ -1327,6 +1333,14 @@ do
         elseif (whichStat == bj_HEROSTAT_INT) then
             SetHeroInt(whichHero, value, true)
         end
+    end
+
+    -- ExecuteFunc native is useless in Lua, so let's replace it:
+    ---@param funcName string
+    function ExecuteFunc(funcName)
+        local func = _ENV[funcName]
+        if func == nil then error('Function by the name ' .. funcName .. ' is not found!') end
+        func()
     end
 
     --The next part of the code is purely optional, as it is intended to optimize rather than add new functionality
