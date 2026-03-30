@@ -13,6 +13,10 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
 
     Provides GUI.loopArray for safe iteration over a __jarray
 
+    Update: 30 Mar 2026 by Macielos
+    Changes: 
+        - Removed overrides for UnitRemoveBuffBJ, TimerDialogDisplayBJ, LeaderboardDisplayBJ as they do have identical argument order with their corresponding native
+
     Update: 16 Mar 2026 by InsanityAI
     Changes:
         - Fixed asserts early exiting functions in case _THROW_ERROR_ON_INVALID_ARG is set to true and the arg condition is valid
@@ -1435,7 +1439,6 @@ do
     DestroyEffectBJ                      = DestroyEffect
     GetItemLifeBJ                        = GetWidgetLife     -- This was just to type casting
     SetItemLifeBJ                        = SetWidgetLife     -- This was just to type casting
-    UnitRemoveBuffBJ                     = UnitRemoveAbility -- The buffs are abilities
     GetLearnedSkillBJ                    = GetLearnedSkill
     UnitDropItemPointBJ                  = UnitDropItemPoint
     UnitDropItemTargetBJ                 = UnitDropItemTarget
@@ -1497,12 +1500,10 @@ do
     DestroyTimerDialogBJ                 = DestroyTimerDialog
     TimerDialogSetTitleBJ                = TimerDialogSetTitle
     TimerDialogSetSpeedBJ                = TimerDialogSetSpeed
-    TimerDialogDisplayBJ                 = TimerDialogDisplay
     LeaderboardSetStyleBJ                = LeaderboardSetStyle
     LeaderboardGetItemCountBJ            = LeaderboardGetItemCount
     LeaderboardHasPlayerItemBJ           = LeaderboardHasPlayerItem
     DestroyLeaderboardBJ                 = DestroyLeaderboard
-    LeaderboardDisplayBJ                 = LeaderboardDisplay
     LeaderboardSortItemsByPlayerBJ       = LeaderboardSortItemsByPlayer
     LeaderboardSortItemsByLabelBJ        = LeaderboardSortItemsByLabel
     PlayerGetLeaderboardBJ               = PlayerGetLeaderboard
