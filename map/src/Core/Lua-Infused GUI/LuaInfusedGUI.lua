@@ -15,7 +15,7 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
 
     Update: 30 Mar 2026 by Macielos
     Changes: 
-        - Removed overrides for UnitRemoveBuffBJ, TimerDialogDisplayBJ, LeaderboardDisplayBJ as they do have identical argument order with their corresponding native
+        - Removed overrides for UnitRemoveBuffBJ, TimerDialogDisplayBJ, LeaderboardDisplayBJ as they do not have identical argument order with their corresponding native
 
     Update: 16 Mar 2026 by InsanityAI
     Changes:
