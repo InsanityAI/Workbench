@@ -67,7 +67,6 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
         https://github.com/BribeFromTheHive/Lua-Core/blob/main/Total_Initialization.lua
         https://github.com/BribeFromTheHive/Lua-Core/blob/main/Hook.lua
         https://github.com/BribeFromTheHive/Lua-Core/blob/main/Global_Variable_Remapper.lua
-        https://github.com/BribeFromTheHive/Lua-Core/blob/main/UnitEvent.lua
 --]]
 GUI = {}
 do
@@ -396,113 +395,118 @@ do
         local oldGroupClear = GroupClear --[[@as fun(group: group)]]
         local oldGroupAddUnit = GroupAddUnit --[[@as fun(group: group, unit: unit)]]
 
-        ---@class GroupDatabase
-        ---@field groups FakeGroup[]
-        ---@field groupIndices table<FakeGroup, integer>
-        ---@field n integer
+        local groupDBRegisterUnitInGroup, groupDBDeregisterUnitFromGroup, groupDBDeregisterGroup, groupDBDeregisterUnit
+        do
+            ---@class GroupDatabase
+            ---@field groups FakeGroup[]
+            ---@field groupIndices table<FakeGroup, integer>
+            ---@field n integer
 
-        local weakValueMt = { __mode = 'v' }
-        local weakKeyMt = { __mode = 'k' }
+            local weakValueMt = { __mode = 'v' }
+            local weakKeyMt = { __mode = 'k' }
 
-        local groupDB = {
-            unitsInGroups = {} --[[@as table<unit, GroupDatabase>]],
-            groups = setmetatable({}, weakValueMt) --[[@as FakeGroup[] ]],
-            groupIndices = setmetatable({}, weakKeyMt) --[[@as table<FakeGroup, integer>]],
-            n = 0 -- total groups
-        }
+            local groupDB = {
+                unitsInGroups = {} --[[@as table<unit, GroupDatabase>]],
+                groups = setmetatable({}, weakValueMt) --[[@as FakeGroup[] ]],
+                groupIndices = setmetatable({}, weakKeyMt) --[[@as table<FakeGroup, integer>]],
+                n = 0 -- total groups
+            }
 
-        ---@param group FakeGroup
-        ---@param unit unit
-        function groupDB.RegisterUnitInGroup(group, unit)
-            local relevantGroupDB = groupDB.unitsInGroups[unit]
-            if not relevantGroupDB then
-                relevantGroupDB = {
-                    groups = setmetatable({}, weakValueMt) --[[@as FakeGroup[] ]],
-                    groupIndices = setmetatable({}, weakKeyMt) --[[@as table<FakeGroup, integer>]],
-                    n = 0 -- amount of groups the unit is in
-                }
-                groupDB.unitsInGroups[unit] = relevantGroupDB
-            end
-
-            if not relevantGroupDB.groupIndices[group] then
-                relevantGroupDB.n = relevantGroupDB.n + 1
-                relevantGroupDB.groupIndices[group] = relevantGroupDB.n
-                relevantGroupDB.groups[relevantGroupDB.n] = group
-            end
-
-            if not groupDB.groupIndices[group] then
-                groupDB.n = groupDB.n + 1
-                groupDB.groups[groupDB.n] = group
-                groupDB.groupIndices[group] = groupDB.n
-            end
-        end
-
-        ---@param group FakeGroup
-        ---@param unit unit
-        function groupDB.DeregisterUnitFromGroup(group, unit)
-            local pos = group.indexOf[unit]
-            if pos == nil then return end
-
-            local relevantGroupDB = groupDB.unitsInGroups[unit]
-            if relevantGroupDB.n == 1 then
-                groupDB.unitsInGroups[unit] = nil
-            else
-                relevantGroupDB.groups[relevantGroupDB.groupIndices[group]] = relevantGroupDB.groups[relevantGroupDB.n]
-                relevantGroupDB.groups[relevantGroupDB.n] = nil
-                relevantGroupDB.n = relevantGroupDB.n - 1
-            end
-
-            -- remove unit from group
-            local size = #group
-            if pos ~= size then
-                local replUnit = group[size]
-                group[pos] = replUnit
-                group.indexOf[replUnit] = pos
-            end
-            group[size] = nil
-            group.indexOf[unit] = nil
-        end
-
-        ---@param unit unit
-        function groupDB.DeregisterUnit(unit)
-            local relevantGroupDB = groupDB.unitsInGroups[unit]
-            if not relevantGroupDB then return end
-            for _, group in ipairs(relevantGroupDB.groups) do
-                groupDB.DeregisterUnitFromGroup(group, unit)
-                if #group == 0 then
-                    groupDB.groups[groupDB.groupIndices[group]] = groupDB.groups[groupDB.n]
-                    groupDB.groups[groupDB.n] = nil
-                    groupDB.n = groupDB.n - 1
+            ---@param group FakeGroup
+            ---@param unit unit
+            groupDBRegisterUnitInGroup = function(group, unit)
+                local relevantGroupDB = groupDB.unitsInGroups[unit]
+                if not relevantGroupDB then
+                    relevantGroupDB = {
+                        groups = setmetatable({}, weakValueMt) --[[@as FakeGroup[] ]],
+                        groupIndices = setmetatable({}, weakKeyMt) --[[@as table<FakeGroup, integer>]],
+                        n = 0 -- amount of groups the unit is in
+                    }
+                    groupDB.unitsInGroups[unit] = relevantGroupDB
                 end
+
+                if not relevantGroupDB.groupIndices[group] then
+                    relevantGroupDB.n = relevantGroupDB.n + 1
+                    relevantGroupDB.groupIndices[group] = relevantGroupDB.n
+                    relevantGroupDB.groups[relevantGroupDB.n] = group
+                end
+
+                if not groupDB.groupIndices[group] then
+                    groupDB.n = groupDB.n + 1
+                    groupDB.groups[groupDB.n] = group
+                    groupDB.groupIndices[group] = groupDB.n
+                end
+
+                local pos = #group + 1
+                group.indexOf[unit] = pos
+                group[pos] = unit
             end
-            groupDB.unitsInGroups[unit] = nil
-        end
 
-        unitRemovedEvent = groupDB.DeregisterUnit
+            ---@param group FakeGroup
+            ---@param unit unit
+            groupDBDeregisterUnitFromGroup = function(group, unit)
+                local pos = group.indexOf[unit]
+                if pos == nil then return end
 
-        ---@param group FakeGroup
-        function groupDB.DeregisterGroup(group)
-            if not groupDB.groupIndices[group] then return end
-            for i = #group, 1, -1 do
-                groupDB.DeregisterUnitFromGroup(group, group[i])
+                local relevantGroupDB = groupDB.unitsInGroups[unit]
+                if relevantGroupDB.n == 1 then
+                    groupDB.unitsInGroups[unit] = nil
+                else
+                    relevantGroupDB.groups[relevantGroupDB.groupIndices[group]] = relevantGroupDB.groups
+                    [relevantGroupDB.n]
+                    relevantGroupDB.groups[relevantGroupDB.n] = nil
+                    relevantGroupDB.n = relevantGroupDB.n - 1
+                end
+
+                -- remove unit from group
+                local size = #group
+                if pos ~= size then
+                    local replUnit = group[size]
+                    group[pos] = replUnit
+                    group.indexOf[replUnit] = pos
+                end
+                group[size] = nil
+                group.indexOf[unit] = nil
             end
 
-            groupDB.groups[groupDB.groupIndices[group]] = groupDB.groups[groupDB.n]
-            groupDB.groups[groupDB.n] = nil
-            groupDB.n = groupDB.n - 1
-        end
-
-        local groupMt = {
-            __gc = function(group)
-                print("Yo, GC actually did something, success!")
-                groupDB.DeregisterGroup(group)
+            ---@param unit unit
+            groupDBDeregisterUnit = function(unit)
+                local relevantGroupDB = groupDB.unitsInGroups[unit]
+                if not relevantGroupDB then return end
+                for _, group in ipairs(relevantGroupDB.groups) do
+                    groupDBDeregisterUnitFromGroup(group, unit)
+                    if #group == 0 then
+                        groupDB.groups[groupDB.groupIndices[group]] = groupDB.groups[groupDB.n]
+                        groupDB.groups[groupDB.n] = nil
+                        groupDB.n = groupDB.n - 1
+                    end
+                end
+                groupDB.unitsInGroups[unit] = nil
             end
-        }
-        ---@return FakeGroup
-        function CreateGroup()
-            return setmetatable({ indexOf = {}, __faketype = "userdata" }, groupMt)
-        end
 
+            ---@param group FakeGroup
+            groupDBDeregisterGroup = function(group)
+                if not groupDB.groupIndices[group] then return end
+                for i = #group, 1, -1 do
+                    groupDBDeregisterUnitFromGroup(group, group[i])
+                end
+
+                groupDB.groups[groupDB.groupIndices[group]] = groupDB.groups[groupDB.n]
+                groupDB.groups[groupDB.n] = nil
+                groupDB.n = groupDB.n - 1
+            end
+
+            local groupMt = {
+                __gc = function(group)
+                    print("Yo, GC actually did something, success!")
+                    groupDB.DeregisterGroup(group)
+                end
+            }
+            ---@return FakeGroup
+            function CreateGroup()
+                return setmetatable({ indexOf = {}, __faketype = "userdata" }, groupMt)
+            end
+        end
         bj_lastCreatedGroup = CreateGroup()
         bj_suspendDecayFleshGroup = CreateGroup()
         bj_suspendDecayBoneGroup = CreateGroup()
@@ -513,11 +517,7 @@ do
             if check(group ~= nil, 'group cannot be nil') then return end
             if check(unit ~= nil, 'unit cannot be nil') then return end
             if group.indexOf[unit] then return end
-
-            local pos = #group + 1
-            group.indexOf[unit] = pos
-            group[pos] = unit
-            groupDB.RegisterUnitInGroup(group, unit)
+            groupDBRegisterUnitInGroup(group, unit)
         end
 
         ---@param group FakeGroup
@@ -525,14 +525,16 @@ do
         function GroupRemoveUnit(group, unit)
             if check(group ~= nil, 'group cannot be nil') then return end
             if check(unit ~= nil, 'unit cannot be nil') then return end
-            groupDB.DeregisterUnitFromGroup(group, unit)
+            groupDBDeregisterUnitFromGroup(group, unit)
         end
 
         ---@param group FakeGroup
         function GroupClear(group)
             if check(group ~= nil, 'group cannot be nil') then return end
-            groupDB.DeregisterGroup(group)
+            groupDBDeregisterGroup(group)
         end
+
+        unitRemovedEvent = groupDBDeregisterUnit
 
         ---@param unit unit
         ---@param group FakeGroup
@@ -707,22 +709,6 @@ do
         CountUnitsInGroupEnum = nil
         GroupAddGroupEnum = nil
         GroupRemoveGroupEnum = nil
-
-        if groupDB then
-            OnInit(function(import)
-                import "UnitEvent"
-                ---@param data {unit: unit}
-                UnitEvent.onRemoval(function(data)
-                    local u = data.unit
-                    local g = groupDB[u]
-                    if g then
-                        for group, _ in pairs(g) do
-                            GroupRemoveUnit(group, u)
-                        end
-                    end
-                end)
-            end)
-        end
     end
 
     --[===========================[
@@ -1629,14 +1615,28 @@ do
     SubStringBJ                          = string.sub
     SubString                            = function(source, start, _end) return string.sub(source, start + 1, _end) end ---@type fun(source: string, start: integer, _end: integer): string
     StringLength                         = string.len
-    StringCase                           = function(source, upper) if upper then return string.upper(source) else return
-    string.lower(source) end end ---@type fun(source: string, upper: boolean): string
+    StringCase                           = function(source, upper)
+        if upper then
+            return string.upper(source)
+        else
+            return
+                string.lower(source)
+        end
+    end ---@type fun(source: string, upper: boolean): string
 
     --[=======================[
       • UNIT REMOVAL DETECTOR •
     --]=======================]
     do
         local allUnits = {} ---@type table<unit, boolean>
+
+        ---@alias UnitRemovalEventListener fun(removedUnit: unit)
+
+        ---@class EventListenerMap
+        ---@field [integer] UnitRemovalEventListener
+        ---@field [UnitRemovalEventListener] integer
+        ---@field n integer
+        local eventListeners = { n = 0 }
 
         local enterTrigger = CreateTrigger()
         TriggerRegisterEnterRectSimple(enterTrigger, GetWorldBounds() --[[@as rect]]) -- returns FakeRect but due to all overrides, the BJ will be able to process it
@@ -1657,12 +1657,36 @@ do
             if GetIssuedOrderId() == 852056 and (not UnitAlive(unit)) and allUnits[unit] and GetUnitAbilityLevel(unit, _REMOVE_ABIL) == 0 then
                 allUnits[unit] = nil
                 unitRemovedEvent(unit)
+                for _, listener in ipairs(eventListeners) do
+                    listener(unit)
+                end
             end
         end)
 
         local playerCountMax = GetBJMaxPlayerSlots() - 1 -- 24 + 4 neutrals
         for j = 0, playerCountMax do
             SetPlayerAbilityAvailable(Player(j), _REMOVE_ABIL, false)
+        end
+
+        ---@param listener fun(removedUnit: unit)
+        function GUI.RegisterUnitRemovedEventListener(listener)
+            if check(listener ~= nil, 'listener cannot be nil') then return end
+            if eventListeners[listener] then return end
+
+            eventListeners.n = eventListeners.n + 1
+            eventListeners[listener] = eventListeners.n
+            eventListeners[eventListeners.n] = listener
+        end
+
+        ---@param listener fun(removedUnit: unit)
+        function GUI.DeregisterUnitRemovedEventListener(listener)
+            if check(listener ~= nil, 'listener cannot be nil') then return end
+            if eventListeners[listener] then return end
+
+            eventListeners[eventListeners[listener]] = eventListeners[eventListeners.n]
+            eventListeners[eventListeners.n] = nil
+            eventListeners.n = eventListeners.n - 1
+            eventListeners[listener] = nil
         end
     end
 end
