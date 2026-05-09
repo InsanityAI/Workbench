@@ -466,21 +466,15 @@ do
             groupDBDeregisterGroupSimple = function(group)
                 groupDB.groups[group] = nil
             end
-
-            local groupMt = {
-                __gc = function(group)
-                    print("Yo, GC actually did something, success!")
-                    groupDB.DeregisterGroup(group)
-                end
-            }
-            ---@return FakeGroup
-            function CreateGroup()
-                return setmetatable({ indexOf = {}, __faketype = "userdata" }, groupMt)
-            end
         end
         bj_lastCreatedGroup = CreateGroup()
         bj_suspendDecayFleshGroup = CreateGroup()
         bj_suspendDecayBoneGroup = CreateGroup()
+
+        ---@return FakeGroup
+        function CreateGroup()
+            return { indexOf = {}, __faketype = "userdata" }
+        end
 
         ---@param group FakeGroup
         ---@param unit unit
@@ -1628,7 +1622,7 @@ do
             if GetIssuedOrderId() == DEFEND_ORDER_ID and (not UnitAlive(unit)) and allUnits[unit] then
                 allUnits[unit] = nil
                 for _, listener in ipairs(eventListeners) do
-                    -- todo: wrap it in a coroutine so that TSA/yields don't pause this entire thing
+                    -- todo: wrap it in a coroutine so that TSA/yields don't pause this entire thing (after coroutine recycler is added)
                     pcall(listener --[[@as UnitRemovalEventListener]], unit)
                 end
                 unitRemovedEvent(unit)
