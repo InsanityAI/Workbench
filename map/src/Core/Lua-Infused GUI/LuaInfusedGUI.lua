@@ -13,8 +13,12 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
 
     Provides GUI.loopArray for safe iteration over a __jarray
 
+    Update: XX May 2026 by InsanityAI & Marcielos
+    Changes:
+        - Groups now auto-remove units that were removed from the game
+
     Update: 30 Mar 2026 by Macielos
-    Changes: 
+    Changes:
         - Removed overrides for UnitRemoveBuffBJ, TimerDialogDisplayBJ, LeaderboardDisplayBJ as they do not have identical argument order with their corresponding native
 
     Update: 16 Mar 2026 by InsanityAI
@@ -68,16 +72,16 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
 GUI = {}
 do
     --Configurables
-    local _THROW_ERROR_ON_INVALID_ARG   = false -- set to true if you want LIGUI to throw errors when incorrect arguments are sent to overriden functions
-    local _PRINT_WARNING_ON_INVALID_ARG = true  -- set to true if you want warnings by LIGUI when incorrect arguments are sent to overriden functions
-    local _USE_GLOBAL_REMAP             = false -- set to true if you want GUI to have extended functionality such as "udg_HashTableArray" (which gives GUI an infinite supply of shared hashtables)
-    local _USE_UNIT_EVENT               = false -- set to true if you have UnitEvent in your map and want to automatically remove units from their unit groups if they are removed from the game.
+    local _THROW_ERROR_ON_INVALID_ARG   = false          -- set to true if you want LIGUI to throw errors when incorrect arguments are sent to overriden functions
+    local _PRINT_WARNING_ON_INVALID_ARG = true           -- set to true if you want warnings by LIGUI when incorrect arguments are sent to overriden functions
+    local _USE_GLOBAL_REMAP             = false          -- set to true if you want GUI to have extended functionality such as "udg_HashTableArray" (which gives GUI an infinite supply of shared hashtables)
+    local _REMOVE_ABIL                  = FourCC('A000') -- a copy of Defend ability that is used to detect when exactly does a unit get removed.
 
     --Define common variables to be utilized throughout the script.
     local unpack                        = table.unpack
     local assert                        = assert
     -- Used to check if function should exit early due to invalid arguments, instead of executing its internal logic
-    local check                         = (function() ---@type fun(condition:boolean, msg: string): shouldEarlyExit: boolean 
+    local check                         = (function() ---@type fun(condition:boolean, msg: string): shouldEarlyExit: boolean
         if _THROW_ERROR_ON_INVALID_ARG then
             return function(condition, msg)
                 return not assert(condition, msg)
@@ -377,6 +381,7 @@ do
     --[=============================[
       • GROUPS (UNIT GROUPS IN GUI) •
     --]=============================]
+    local unitRemovedEvent ---@type fun(unit: unit)
     do
         local mainGroup = bj_lastCreatedGroup
         local issueGroup = CreateGroup() --[[@as group]]
@@ -388,43 +393,119 @@ do
         ---@field [integer] unit
         ---@field indexOf {[unit]: integer}
 
+        local oldGroupClear = GroupClear --[[@as fun(group: group)]]
+        local oldGroupAddUnit = GroupAddUnit --[[@as fun(group: group, unit: unit)]]
+
+        ---@class GroupDatabase
+        ---@field groups FakeGroup[]
+        ---@field groupIndices table<FakeGroup, integer>
+        ---@field n integer
+
+        local weakValueMt = { __mode = 'v' }
+        local weakKeyMt = { __mode = 'k' }
+
+        local groupDB = {
+            unitsInGroups = {} --[[@as table<unit, GroupDatabase>]],
+            groups = setmetatable({}, weakValueMt) --[[@as FakeGroup[] ]],
+            groupIndices = setmetatable({}, weakKeyMt) --[[@as table<FakeGroup, integer>]],
+            n = 0 -- total groups
+        }
+
+        ---@param group FakeGroup
+        ---@param unit unit
+        function groupDB.RegisterUnitInGroup(group, unit)
+            local relevantGroupDB = groupDB.unitsInGroups[unit]
+            if not relevantGroupDB then
+                relevantGroupDB = {
+                    groups = setmetatable({}, weakValueMt) --[[@as FakeGroup[] ]],
+                    groupIndices = setmetatable({}, weakKeyMt) --[[@as table<FakeGroup, integer>]],
+                    n = 0 -- amount of groups the unit is in
+                }
+                groupDB.unitsInGroups[unit] = relevantGroupDB
+            end
+
+            if not relevantGroupDB.groupIndices[group] then
+                relevantGroupDB.n = relevantGroupDB.n + 1
+                relevantGroupDB.groupIndices[group] = relevantGroupDB.n
+                relevantGroupDB.groups[relevantGroupDB.n] = group
+            end
+
+            if not groupDB.groupIndices[group] then
+                groupDB.n = groupDB.n + 1
+                groupDB.groups[groupDB.n] = group
+                groupDB.groupIndices[group] = groupDB.n
+            end
+        end
+
+        ---@param group FakeGroup
+        ---@param unit unit
+        function groupDB.DeregisterUnitFromGroup(group, unit)
+            local pos = group.indexOf[unit]
+            if pos == nil then return end
+
+            local relevantGroupDB = groupDB.unitsInGroups[unit]
+            if relevantGroupDB.n == 1 then
+                groupDB.unitsInGroups[unit] = nil
+            else
+                relevantGroupDB.groups[relevantGroupDB.groupIndices[group]] = relevantGroupDB.groups[relevantGroupDB.n]
+                relevantGroupDB.groups[relevantGroupDB.n] = nil
+                relevantGroupDB.n = relevantGroupDB.n - 1
+            end
+
+            -- remove unit from group
+            local size = #group
+            if pos ~= size then
+                local replUnit = group[size]
+                group[pos] = replUnit
+                group.indexOf[replUnit] = pos
+            end
+            group[size] = nil
+            group.indexOf[unit] = nil
+        end
+
+        ---@param unit unit
+        function groupDB.DeregisterUnit(unit)
+            local relevantGroupDB = groupDB.unitsInGroups[unit]
+            if not relevantGroupDB then return end
+            for _, group in ipairs(relevantGroupDB.groups) do
+                groupDB.DeregisterUnitFromGroup(group, unit)
+                if #group == 0 then
+                    groupDB.groups[groupDB.groupIndices[group]] = groupDB.groups[groupDB.n]
+                    groupDB.groups[groupDB.n] = nil
+                    groupDB.n = groupDB.n - 1
+                end
+            end
+            groupDB.unitsInGroups[unit] = nil
+        end
+
+        unitRemovedEvent = groupDB.DeregisterUnit
+
+        ---@param group FakeGroup
+        function groupDB.DeregisterGroup(group)
+            if not groupDB.groupIndices[group] then return end
+            for i = #group, 1, -1 do
+                groupDB.DeregisterUnitFromGroup(group, group[i])
+            end
+
+            groupDB.groups[groupDB.groupIndices[group]] = groupDB.groups[groupDB.n]
+            groupDB.groups[groupDB.n] = nil
+            groupDB.n = groupDB.n - 1
+        end
+
+        local groupMt = {
+            __gc = function(group)
+                print("Yo, GC actually did something, success!")
+                groupDB.DeregisterGroup(group)
+            end
+        }
         ---@return FakeGroup
         function CreateGroup()
-            return { indexOf = {}, __faketype = "userdata" }
+            return setmetatable({ indexOf = {}, __faketype = "userdata" }, groupMt)
         end
 
         bj_lastCreatedGroup = CreateGroup()
         bj_suspendDecayFleshGroup = CreateGroup()
         bj_suspendDecayBoneGroup = CreateGroup()
-
-        local oldGroupClear = GroupClear --[[@as fun(group: group)]]
-        local oldGroupAddUnit = GroupAddUnit --[[@as fun(group: group, unit: unit)]]
-
-        local groups ---@type table<unit, table<FakeGroup, boolean>>
-        if _USE_UNIT_EVENT then
-            groups = {}
-
-            ---@param group FakeGroup
-            function GroupClear(group)
-                if check(group ~= nil, 'group cannot be nil') then return end
-                local u
-                for i = 1, #group do
-                    u = group[i]
-                    groups[u] = nil
-                    group.indexOf[u] = nil
-                    group[i] = nil
-                end
-            end
-        else
-            ---@param group FakeGroup
-            function GroupClear(group)
-                if check(group ~= nil, 'group cannot be nil') then return end
-                for i = 1, #group do
-                    group.indexOf[group[i]] = nil
-                    group[i] = nil
-                end
-            end
-        end
 
         ---@param group FakeGroup
         ---@param unit unit
@@ -436,10 +517,7 @@ do
             local pos = #group + 1
             group.indexOf[unit] = pos
             group[pos] = unit
-            if groups then
-                groups[unit] = groups[unit] or __jarray()
-                groups[unit][group] = true
-            end
+            groupDB.RegisterUnitInGroup(group, unit)
         end
 
         ---@param group FakeGroup
@@ -447,22 +525,13 @@ do
         function GroupRemoveUnit(group, unit)
             if check(group ~= nil, 'group cannot be nil') then return end
             if check(unit ~= nil, 'unit cannot be nil') then return end
-            local indexOf = group.indexOf
-            if indexOf == nil then return end
-            local pos = indexOf[unit]
-            if pos == nil then return end
+            groupDB.DeregisterUnitFromGroup(group, unit)
+        end
 
-            local size = #group
-            if pos ~= size then
-                local replUnit = group[size]
-                group[pos] = replUnit
-                indexOf[replUnit] = pos
-            end
-            group[size] = nil
-            indexOf[unit] = nil
-            if groups then
-                groups[unit][group] = nil
-            end
+        ---@param group FakeGroup
+        function GroupClear(group)
+            if check(group ~= nil, 'group cannot be nil') then return end
+            groupDB.DeregisterGroup(group)
         end
 
         ---@param unit unit
@@ -639,13 +708,13 @@ do
         GroupAddGroupEnum = nil
         GroupRemoveGroupEnum = nil
 
-        if groups then
+        if groupDB then
             OnInit(function(import)
                 import "UnitEvent"
                 ---@param data {unit: unit}
                 UnitEvent.onRemoval(function(data)
                     local u = data.unit
-                    local g = groups[u]
+                    local g = groupDB[u]
                     if g then
                         for group, _ in pairs(g) do
                             GroupRemoveUnit(group, u)
@@ -686,8 +755,8 @@ do
             ---@return FakeLocation?
             function GetUnitRallyPoint(unit)
                 if check(unit ~= nil, 'unit cannot be nil') then return nil end -- no unit, no rally
-                local removeThis = oldRally(unit)                                    --Actually needs to create a location for a brief moment, as there is no GetUnitRallyX/Y
-                if removeThis == nil then return nil end                             -- in case there's no rally
+                local removeThis = oldRally(unit)                               --Actually needs to create a location for a brief moment, as there is no GetUnitRallyX/Y
+                if removeThis == nil then return nil end                        -- in case there's no rally
                 local loc = Location(oldGetX(removeThis), oldGetY(removeThis))
                 oldRemove(removeThis)
                 return loc
@@ -1437,8 +1506,8 @@ do
     WaitForSoundBJ                       = TriggerWaitForSound
     ClearMapMusicBJ                      = ClearMapMusic
     DestroyEffectBJ                      = DestroyEffect
-    GetItemLifeBJ                        = GetWidgetLife     -- This was just to type casting
-    SetItemLifeBJ                        = SetWidgetLife     -- This was just to type casting
+    GetItemLifeBJ                        = GetWidgetLife -- This was just to type casting
+    SetItemLifeBJ                        = SetWidgetLife -- This was just to type casting
     GetLearnedSkillBJ                    = GetLearnedSkill
     UnitDropItemPointBJ                  = UnitDropItemPoint
     UnitDropItemTargetBJ                 = UnitDropItemTarget
@@ -1560,6 +1629,41 @@ do
     SubStringBJ                          = string.sub
     SubString                            = function(source, start, _end) return string.sub(source, start + 1, _end) end ---@type fun(source: string, start: integer, _end: integer): string
     StringLength                         = string.len
-    StringCase                           = function(source, upper) if upper then return string.upper(source) else return string.lower(source) end end ---@type fun(source: string, upper: boolean): string
+    StringCase                           = function(source, upper) if upper then return string.upper(source) else return
+    string.lower(source) end end ---@type fun(source: string, upper: boolean): string
+
+    --[=======================[
+      • UNIT REMOVAL DETECTOR •
+    --]=======================]
+    do
+        local allUnits = {} ---@type table<unit, boolean>
+
+        local enterTrigger = CreateTrigger()
+        TriggerRegisterEnterRectSimple(enterTrigger, GetWorldBounds() --[[@as rect]]) -- returns FakeRect but due to all overrides, the BJ will be able to process it
+        TriggerAddAction(enterTrigger, function()
+            local unit = GetTriggerUnit()
+            if not allUnits[unit] then
+                allUnits[unit] = true
+                UnitAddAbility(unit, _REMOVE_ABIL)
+                UnitMakeAbilityPermanent(unit, true, _REMOVE_ABIL)
+                -- else - the unit was dead, but has re-entered the map (e.g. unloaded from meat wagon)
+            end
+        end)
+
+        local deindexTrigger = CreateTrigger()
+        TriggerRegisterAnyUnitEventBJ(deindexTrigger, EVENT_PLAYER_UNIT_ISSUED_ORDER)
+        TriggerAddAction(deindexTrigger, function()
+            local unit = GetTriggerUnit()
+            if GetIssuedOrderId() == 852056 and (not UnitAlive(unit)) and allUnits[unit] and GetUnitAbilityLevel(unit, _REMOVE_ABIL) == 0 then
+                allUnits[unit] = nil
+                unitRemovedEvent(unit)
+            end
+        end)
+
+        local playerCountMax = GetBJMaxPlayerSlots() - 1 -- 24 + 4 neutrals
+        for j = 0, playerCountMax do
+            SetPlayerAbilityAvailable(Player(j), _REMOVE_ABIL, false)
+        end
+    end
 end
 if Debug then Debug.endFile() end
