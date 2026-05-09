@@ -16,6 +16,7 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
     Update: XX May 2026 by InsanityAI & Marcielos
     Changes:
         - Groups now auto-remove units that were removed from the game
+        - Added GUI.RegisterUnitRemovedEventListener and GUI.DeregisterUnitRemovedEventListener
 
     Update: 30 Mar 2026 by Macielos
     Changes:
@@ -450,6 +451,7 @@ do
                 end
                 groupDB.unitsInGroups[unit] = nil
             end
+            unitRemovedEvent = groupDBDeregisterUnit
 
             ---@param group FakeGroup
             groupDBDeregisterGroup = function(group)
@@ -503,8 +505,6 @@ do
             if check(group ~= nil, 'group cannot be nil') then return end
             groupDBDeregisterGroup(group)
         end
-
-        unitRemovedEvent = groupDBDeregisterUnit
 
         ---@param unit unit
         ---@param group FakeGroup
@@ -1598,6 +1598,7 @@ do
       • UNIT REMOVAL DETECTOR •
     --]=======================]
     do
+        local DEFEND_ORDER_ID = 852056
         local allUnits = {} ---@type table<unit, boolean>
 
         ---@alias UnitRemovalEventListener fun(removedUnit: unit)
@@ -1624,12 +1625,13 @@ do
         TriggerRegisterAnyUnitEventBJ(deindexTrigger, EVENT_PLAYER_UNIT_ISSUED_ORDER)
         TriggerAddAction(deindexTrigger, function()
             local unit = GetTriggerUnit()
-            if GetIssuedOrderId() == 852056 and (not UnitAlive(unit)) and allUnits[unit] and GetUnitAbilityLevel(unit, _REMOVE_ABIL) == 0 then
+            if GetIssuedOrderId() == DEFEND_ORDER_ID and (not UnitAlive(unit)) and allUnits[unit] then
                 allUnits[unit] = nil
-                unitRemovedEvent(unit)
                 for _, listener in ipairs(eventListeners) do
-                    listener(unit)
+                    -- todo: wrap it in a coroutine so that TSA/yields don't pause this entire thing
+                    pcall(listener --[[@as UnitRemovalEventListener]], unit)
                 end
+                unitRemovedEvent(unit)
             end
         end)
 
