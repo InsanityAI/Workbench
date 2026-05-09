@@ -388,54 +388,32 @@ do
         DestroyGroup(bj_suspendDecayBoneGroup --[[@as group]])
         DestroyGroup = DoNothing
 
-        ---@class FakeGroup: FakedType
+        ---@class FakeGroup: FakedType, group
         ---@field [integer] unit
         ---@field indexOf {[unit]: integer}
 
         local oldGroupClear = GroupClear --[[@as fun(group: group)]]
         local oldGroupAddUnit = GroupAddUnit --[[@as fun(group: group, unit: unit)]]
 
-        local groupDBRegisterUnitInGroup, groupDBDeregisterUnitFromGroup, groupDBDeregisterGroup, groupDBDeregisterUnit
+        local groupDBRegisterUnitInGroup, groupDBDeregisterUnitFromGroup, groupDBDeregisterGroup, groupDBDeregisterUnit, groupDBDeregisterGroupSimple
         do
-            ---@class GroupDatabase
-            ---@field groups FakeGroup[]
-            ---@field groupIndices table<FakeGroup, integer>
-            ---@field n integer
-
-            local weakValueMt = { __mode = 'v' }
             local weakKeyMt = { __mode = 'k' }
 
             local groupDB = {
-                unitsInGroups = {} --[[@as table<unit, GroupDatabase>]],
-                groups = setmetatable({}, weakValueMt) --[[@as FakeGroup[] ]],
-                groupIndices = setmetatable({}, weakKeyMt) --[[@as table<FakeGroup, integer>]],
-                n = 0 -- total groups
+                unitsInGroups = {} --[[@as table<unit, table<FakeGroup, true>>]],
+                groups = setmetatable({}, weakKeyMt) --[[@as table<FakeGroup, true> ]],
             }
 
             ---@param group FakeGroup
             ---@param unit unit
             groupDBRegisterUnitInGroup = function(group, unit)
-                local relevantGroupDB = groupDB.unitsInGroups[unit]
-                if not relevantGroupDB then
-                    relevantGroupDB = {
-                        groups = setmetatable({}, weakValueMt) --[[@as FakeGroup[] ]],
-                        groupIndices = setmetatable({}, weakKeyMt) --[[@as table<FakeGroup, integer>]],
-                        n = 0 -- amount of groups the unit is in
-                    }
-                    groupDB.unitsInGroups[unit] = relevantGroupDB
+                local relevantGroups = groupDB.unitsInGroups[unit]
+                if not relevantGroups then
+                    relevantGroups = setmetatable({}, weakKeyMt) --[[@as table<FakeGroup, true>]]
+                    groupDB.unitsInGroups[unit] = relevantGroups
                 end
-
-                if not relevantGroupDB.groupIndices[group] then
-                    relevantGroupDB.n = relevantGroupDB.n + 1
-                    relevantGroupDB.groupIndices[group] = relevantGroupDB.n
-                    relevantGroupDB.groups[relevantGroupDB.n] = group
-                end
-
-                if not groupDB.groupIndices[group] then
-                    groupDB.n = groupDB.n + 1
-                    groupDB.groups[groupDB.n] = group
-                    groupDB.groupIndices[group] = groupDB.n
-                end
+                relevantGroups[group] = true
+                groupDB.groups[group] = true
 
                 local pos = #group + 1
                 group.indexOf[unit] = pos
@@ -447,16 +425,7 @@ do
             groupDBDeregisterUnitFromGroup = function(group, unit)
                 local pos = group.indexOf[unit]
                 if pos == nil then return end
-
-                local relevantGroupDB = groupDB.unitsInGroups[unit]
-                if relevantGroupDB.n == 1 then
-                    groupDB.unitsInGroups[unit] = nil
-                else
-                    relevantGroupDB.groups[relevantGroupDB.groupIndices[group]] = relevantGroupDB.groups
-                    [relevantGroupDB.n]
-                    relevantGroupDB.groups[relevantGroupDB.n] = nil
-                    relevantGroupDB.n = relevantGroupDB.n - 1
-                end
+                groupDB.unitsInGroups[unit][group] = nil
 
                 -- remove unit from group
                 local size = #group
@@ -471,14 +440,12 @@ do
 
             ---@param unit unit
             groupDBDeregisterUnit = function(unit)
-                local relevantGroupDB = groupDB.unitsInGroups[unit]
-                if not relevantGroupDB then return end
-                for _, group in ipairs(relevantGroupDB.groups) do
+                local relevantGroups = groupDB.unitsInGroups[unit]
+                if not relevantGroups then return end
+                for group, _ in pairs(relevantGroups) do
                     groupDBDeregisterUnitFromGroup(group, unit)
                     if #group == 0 then
-                        groupDB.groups[groupDB.groupIndices[group]] = groupDB.groups[groupDB.n]
-                        groupDB.groups[groupDB.n] = nil
-                        groupDB.n = groupDB.n - 1
+                        groupDB.groups[group] = nil
                     end
                 end
                 groupDB.unitsInGroups[unit] = nil
@@ -486,14 +453,16 @@ do
 
             ---@param group FakeGroup
             groupDBDeregisterGroup = function(group)
-                if not groupDB.groupIndices[group] then return end
+                if not groupDB.groups[group] then return end
                 for i = #group, 1, -1 do
                     groupDBDeregisterUnitFromGroup(group, group[i])
                 end
 
-                groupDB.groups[groupDB.groupIndices[group]] = groupDB.groups[groupDB.n]
-                groupDB.groups[groupDB.n] = nil
-                groupDB.n = groupDB.n - 1
+                groupDB.groups[group] = nil
+            end
+
+            groupDBDeregisterGroupSimple = function(group)
+                groupDB.groups[group] = nil
             end
 
             local groupMt = {
@@ -526,6 +495,7 @@ do
             if check(group ~= nil, 'group cannot be nil') then return end
             if check(unit ~= nil, 'unit cannot be nil') then return end
             groupDBDeregisterUnitFromGroup(group, unit)
+            if #group == 0 then groupDBDeregisterGroupSimple(group) end
         end
 
         ---@param group FakeGroup
