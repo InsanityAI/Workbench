@@ -72,36 +72,36 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
 GUI = {}
 do
     --Configurables
-    local _THROW_ERROR_ON_INVALID_ARG   = false          -- set to true if you want LIGUI to throw errors when incorrect arguments are sent to overriden functions
+    local _THROW_ERROR_ON_INVALID_ARG   = true          -- set to true if you want LIGUI to throw errors when incorrect arguments are sent to overriden functions
     local _PRINT_WARNING_ON_INVALID_ARG = true           -- set to true if you want warnings by LIGUI when incorrect arguments are sent to overriden functions
     local _USE_GLOBAL_REMAP             = false          -- set to true if you want GUI to have extended functionality such as "udg_HashTableArray" (which gives GUI an infinite supply of shared hashtables)
-    local _REMOVE_ABIL                  = FourCC('A000') -- a copy of Defend ability that is used to detect when exactly does a unit get removed.
+    local _REMOVE_ABIL                  = FourCC('A6CC') -- a copy of Defend ability that is used to detect when exactly does a unit get removed.
 
     --Define common variables to be utilized throughout the script.
     local unpack                        = table.unpack
     local assert                        = assert
     -- Used to check if function should exit early due to invalid arguments, instead of executing its internal logic
     local check                         = (function() ---@type fun(condition:boolean, msg: string): shouldEarlyExit: boolean
-        if _THROW_ERROR_ON_INVALID_ARG then
-            return function(condition, msg)
-                return not assert(condition, msg)
-            end
-        elseif _PRINT_WARNING_ON_INVALID_ARG then
-            return function(condition, msg)
-                if not condition then
-                    if Debug then
-                        Debug.errorHandler("LIGUI: " .. msg, 3)
-                    else
-                        print("|cFFFF0000LIGUI: " .. msg)
-                    end
-                end
-                return not condition
-            end
-        else
-            return function(condition)
-                return not condition
-            end
+    if _THROW_ERROR_ON_INVALID_ARG then
+        return function(condition, msg)
+            return not assert(condition, msg)
         end
+    elseif _PRINT_WARNING_ON_INVALID_ARG then
+        return function(condition, msg)
+            if not condition then
+                if Debug then
+                    Debug.errorHandler("LIGUI: " .. msg, 3)
+                else
+                    print("|cFFFF0000LIGUI: " .. msg)
+                end
+            end
+            return not condition
+        end
+    else
+        return function(condition)
+            return not condition
+        end
+    end
     end)()
 
     ---@class FakedType
@@ -231,8 +231,8 @@ do
         ---@return boolean shouldEarlyExit
         local function checkHashtableArgs(whichHashTable, parentKey, childKey)
             return check(whichHashTable ~= nil, 'whichHashTable cannot be nil') or
-                check(parentKey ~= nil, 'parentKey cannot be nil') or
-                check(childKey ~= nil, 'childKey cannot be nil')
+                    check(parentKey ~= nil, 'parentKey cannot be nil') or
+                    check(childKey ~= nil, 'childKey cannot be nil')
         end
 
         ---@return FakeHashtable
@@ -383,7 +383,7 @@ do
     --]=============================]
     local unitRemovedEvent ---@type fun(unit: unit)
     do
-        local mainGroup = bj_lastCreatedGroup
+        local mainGroup = CreateGroup()
         local issueGroup = CreateGroup() --[[@as group]]
         DestroyGroup(bj_suspendDecayFleshGroup --[[@as group]])
         DestroyGroup(bj_suspendDecayBoneGroup --[[@as group]])
@@ -467,20 +467,22 @@ do
                 groupDB.groups[group] = nil
             end
         end
-        bj_lastCreatedGroup = CreateGroup()
-        bj_suspendDecayFleshGroup = CreateGroup()
-        bj_suspendDecayBoneGroup = CreateGroup()
 
         ---@return FakeGroup
         function CreateGroup()
             return { indexOf = {}, __faketype = "userdata" }
         end
 
+        bj_lastCreatedGroup = CreateGroup()
+        bj_suspendDecayFleshGroup = CreateGroup()
+        bj_suspendDecayBoneGroup = CreateGroup()
+
         ---@param group FakeGroup
         ---@param unit unit
         function GroupAddUnit(group, unit)
             if check(group ~= nil, 'group cannot be nil') then return end
             if check(unit ~= nil, 'unit cannot be nil') then return end
+
             if group.indexOf[unit] then return end
             groupDBRegisterUnitInGroup(group, unit)
         end
@@ -1326,7 +1328,7 @@ do
             has been reduced to just this one function (in addition to the bj override).
         -----------------------------------------------------------------------------------------------]]
         local fStack, tStack, oldBJ = {}, {},
-            TriggerRegisterAnyUnitEventBJ ---@type {[eventid]: function[]}, {[eventid]: trigger[]}
+        TriggerRegisterAnyUnitEventBJ ---@type {[eventid]: function[]}, {[eventid]: trigger[]}
 
         ---@param event playerunitevent
         ---@param userFunc function
@@ -1584,7 +1586,7 @@ do
             return string.upper(source)
         else
             return
-                string.lower(source)
+            string.lower(source)
         end
     end ---@type fun(source: string, upper: boolean): string
 
@@ -1592,7 +1594,7 @@ do
       • UNIT REMOVAL DETECTOR •
     --]=======================]
     do
-        local DEFEND_ORDER_ID = 852056
+        local UNDEFEND_ORDER_ID = 852056
         local allUnits = {} ---@type table<unit, boolean>
 
         ---@alias UnitRemovalEventListener fun(removedUnit: unit)
@@ -1603,36 +1605,41 @@ do
         ---@field n integer
         local eventListeners = { n = 0 }
 
-        local enterTrigger = CreateTrigger()
-        TriggerRegisterEnterRectSimple(enterTrigger, GetWorldBounds() --[[@as rect]]) -- returns FakeRect but due to all overrides, the BJ will be able to process it
-        TriggerAddAction(enterTrigger, function()
-            local unit = GetTriggerUnit()
+        local function indexUnit(unit)
             if not allUnits[unit] then
                 allUnits[unit] = true
                 UnitAddAbility(unit, _REMOVE_ABIL)
                 UnitMakeAbilityPermanent(unit, true, _REMOVE_ABIL)
-                -- else - the unit was dead, but has re-entered the map (e.g. unloaded from meat wagon)
-            end
-        end)
-
-        local deindexTrigger = CreateTrigger()
-        TriggerRegisterAnyUnitEventBJ(deindexTrigger, EVENT_PLAYER_UNIT_ISSUED_ORDER)
-        TriggerAddAction(deindexTrigger, function()
-            local unit = GetTriggerUnit()
-            if GetIssuedOrderId() == DEFEND_ORDER_ID and (not UnitAlive(unit)) and allUnits[unit] then
-                allUnits[unit] = nil
-                for _, listener in ipairs(eventListeners) do
-                    -- todo: wrap it in a coroutine so that TSA/yields don't pause this entire thing (after coroutine recycler is added)
-                    pcall(listener --[[@as UnitRemovalEventListener]], unit)
-                end
-                unitRemovedEvent(unit)
-            end
-        end)
-
-        local playerCountMax = GetBJMaxPlayerSlots() - 1 -- 24 + 4 neutrals
-        for j = 0, playerCountMax do
-            SetPlayerAbilityAvailable(Player(j), _REMOVE_ABIL, false)
+            end -- else - the unit was dead, but has re-entered the map (e.g. unloaded from meat wagon)
         end
+
+        OnInit.main(function()
+            local enterTrigger = CreateTrigger()
+            TriggerRegisterEnterRectSimple(enterTrigger, GetWorldBounds() --[[@as rect]]) -- returns FakeRect but due to all overrides, the BJ will be able to process it
+            TriggerAddAction(enterTrigger, function()
+                local unit = GetTriggerUnit()
+                indexUnit(unit)
+            end)
+
+            local deindexTrigger = CreateTrigger()
+            TriggerRegisterAnyUnitEventBJ(deindexTrigger, EVENT_PLAYER_UNIT_ISSUED_ORDER)
+            TriggerAddAction(deindexTrigger, function()
+                local unit = GetTriggerUnit()
+                if GetIssuedOrderId() == UNDEFEND_ORDER_ID and not UnitAlive(unit) and allUnits[unit] and GetUnitAbilityLevel(unit, _REMOVE_ABIL) == 0 then
+                    allUnits[unit] = nil
+                    for _, listener in ipairs(eventListeners) do
+                        -- todo: wrap it in a coroutine so that TSA/yields don't pause this entire thing (after coroutine recycler is added)
+                        pcall(listener --[[@as UnitRemovalEventListener]], unit)
+                    end
+                    unitRemovedEvent(unit)
+                end
+            end)
+
+            local playerCountMax = GetBJMaxPlayerSlots() - 1 -- 24 + 4 neutrals
+            for j = 0, playerCountMax do
+                SetPlayerAbilityAvailable(Player(j), _REMOVE_ABIL, false)
+            end
+        end)
 
         ---@param listener fun(removedUnit: unit)
         function GUI.RegisterUnitRemovedEventListener(listener)
