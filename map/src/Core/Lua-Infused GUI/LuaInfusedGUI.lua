@@ -17,6 +17,7 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
     Changes:
         - Groups now auto-remove units that were removed from the game
         - Added GUI.RegisterUnitRemovedEventListener and GUI.DeregisterUnitRemovedEventListener
+        - Added GUI.forForce and fixed Force and Group being able to remove units/players within their respective loops
 
     Update: 30 Mar 2026 by Macielos
     Changes:
@@ -529,8 +530,14 @@ do
         function GUI.forGroup(group, code)
             if check(group ~= nil, 'group cannot be nil') then return end
             if check(code ~= nil, 'code cannot be nil') then return end
-            for i = 1, #group do
-                code(group[i])
+            local i = 1
+            local unit
+            while i <= #group do
+                unit = group[i]
+                code(unit)
+                if group.indexOf[unit] then
+                    i = i + 1
+                end
             end
         end
 
@@ -1166,6 +1173,22 @@ do
         local oldForForce = ForForce
         local oldEnumPlayer = GetEnumPlayer
 
+        ---@param force FakeForce
+        ---@param code fun(p: player)
+        function GUI.forForce(force, code)
+            if check(force ~= nil, 'force cannot be nil') then return end
+            if check(code ~= nil, 'code cannot be nil') then return end
+            local i = 1
+            local player
+            while i <= #force do
+                player = force[i]
+                code(player)
+                if force.indexOf[player] then
+                    i = i + 1
+                end
+            end
+        end
+
         ---@return player
         function GetEnumPlayer()
             return enumPlayer
@@ -1177,10 +1200,10 @@ do
             if check(force ~= nil, 'force cannot be nil') then return end
             if check(code ~= nil, 'code cannot be nil') then return end
             local old = enumPlayer
-            for _, player in ipairs(force) do
+            GUI.forForce(force, function(player)
                 enumPlayer = player
                 code()
-            end
+            end)
             enumPlayer = old
         end
 
