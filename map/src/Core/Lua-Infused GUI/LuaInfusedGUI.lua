@@ -13,7 +13,7 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
 
     Provides GUI.loopArray for safe iteration over a __jarray
 
-    Update: XX May 2026 by InsanityAI & Marcielos
+    Update: 24 May 2026 by InsanityAI & Marcielos
     Changes:
         - Groups now auto-remove units that were removed from the game
         - Added GUI.RegisterUnitRemovedEventListener and GUI.DeregisterUnitRemovedEventListener
