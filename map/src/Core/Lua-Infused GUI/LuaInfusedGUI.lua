@@ -152,8 +152,7 @@ do
     end
 
     -- Required in order to access cached event responses
-    local threadKeys = setmetatable({}, { __mode = 'k' }) ---@type table<thread, table> -- map of threads to tbl keys for threadData
-    local threadData = setmetatable({}, { __mode = 'k' }) ---@type table<table, table<string, unknown>>
+    local threadData = setmetatable({}, { __mode = 'k' }) ---@type table<thread, table<string, unknown>> -- map of threads to tbl keys for threadData
     local threadDataMt = { __mode = 'k' }
     ---@param currentThread thread
     ---@param parentThread thread?
@@ -162,33 +161,30 @@ do
     local function setupThreadData(currentThread, parentThread, toRoot)
         local tbl = {}
         if parentThread then
-            local parentKey = threadKeys[parentThread]
+            local parentKey = threadData[parentThread]
             if toRoot then
-                local parentMt = getmetatable(threadData[parentKey])
+                local parentMt = getmetatable(parentKey)
                 if parentMt.__index then
                     setmetatable(tbl, parentMt) -- copy to directly refer to master thread table
                 else
                     setmetatable(tbl, {
-                        __index = threadData[parentKey],
-                        __newindex = threadData[parentKey],
+                        __index = parentKey,
+                        __newindex = parentKey,
                         __mode = 'k'
                     }) -- create new one as this is the first descendant thread
                 end
             else
-                setmetatable(tbl, threadData[parentKey])
+                setmetatable(tbl, parentKey)
             end
         else
             setmetatable(tbl, threadDataMt)
         end
-        threadKeys[currentThread] = tbl
-        threadData[tbl] = tbl
+        threadData[currentThread] = tbl
         return tbl
     end
 
     local function clearThreadData(thread)
-        local key = threadKeys[thread]
-        threadData[key] = nil
-        threadKeys[thread] = nil
+        threadData[thread] = nil
     end
 
     --[=============[
