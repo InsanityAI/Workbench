@@ -1450,16 +1450,22 @@ do
         end
     end
 
-    -- ExecuteFunc native is useless in Lua, so let's replace it:
+    -- local oldExecuteFunc = ExecuteFunc
+    -- ExecuteFunc native can be useful to create a blizzard thread, but why'd you want that?
     ---@param funcName string
     function ExecuteFunc(funcName)
         local func = _ENV[funcName]
         if func == nil then
             check(false, 'Function by the name ' .. funcName .. ' is not found!')
         else
+            -- oldExecuteFunc(funcName)
             func()
         end
     end
+
+    -- todo: test this 
+    -- SyncSelections apparently doesn't work properly, and only does weird things where it deselects player units if done too quickly (not to mention, breaks unit selections if spammed)
+    SyncSelections = DoNothing
 
     --The next part of the code is purely optional, as it is intended to optimize rather than add new functionality
     CommentString                        = nil
