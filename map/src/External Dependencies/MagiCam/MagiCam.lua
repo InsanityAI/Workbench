@@ -206,15 +206,7 @@ do
     local lastCamUpdateTick = 0;
     local lastRefreshCamFieldsTick = -1;
     local lastUpdateViewAxesTick = -1;
-    local spaceBarDownTick = -1;
     local mainTick = 0;
-
-    local lastMouseMoveFrame = 0;
-
-    local worldRectMinX = 0.0;
-    local worldRectMinY = 0.0;
-    local worldRectMaxX = 0.0;
-    local worldRectMaxY = 0.0;
 
     local mouseX = 0.5;
     local mouseY = 0.5;
@@ -251,7 +243,7 @@ do
     local camDirY;
     local camDirZ;
 
-    local vecViewPlaneN, vecViewPlaneOri, vecViewPlaneDist, vecCamSide, vecCamUp;
+    local vecViewPlaneN, vecViewPlaneOri, vecViewPlaneDist, viewPlaneConst, vecCamSide, vecCamUp;
 
     local vecViewAxisX = { 1, 0, 0 };
     local vecViewAxisY = { 0, 1, 0 };
@@ -260,108 +252,180 @@ do
 
     local tempLoc;
 
+    ---@param ... unknown
     local function PrintDebug(...)
         if MagiCam.debugMode then print(...) end;
     end
 
+    ---@param x number
+    ---@param y number
+    ---@return number z
     function GetLocZ(x, y)
         MoveLocation(tempLoc, x, y);
         return GetLocationZ(tempLoc);
     end
 
+    ---@param val number
+    ---@return number
     local function Round(val)
         return math.floor(val + .5);
     end
 
+    ---@param v0 number
+    ---@param v1 number
+    ---@param t number
+    ---@return number
     local function Lerp(v0, v1, t)
         return v0 + (v1 - v0) * t;
     end
 
+    ---@param v number
+    ---@param v0 number
+    ---@param v1 number
+    ---@return number
     local function Clamp(v, v0, v1)
         return v < v0 and v0 or (v > v1 and v1 or v);
     end
 
+    ---@param val number
+    ---@return number
     local function Sign(val)
         return val < 0 and -1 or 1;
     end
 
+    ---@param vec0 [number, number]
+    ---@param vec1 [number, number]
+    ---@return number
     local function Vec2Dot(vec0, vec1)
         return vec0[1] * vec1[1] + vec0[2] * vec1[2];
     end
 
+    ---@param vec [number, number]
+    ---@return number
     local function Vec2Mag(vec)
         return math.sqrt(Vec2Dot(vec, vec));
     end
 
+    ---@param vec [number, number]
+    ---@param scalar number
+    ---@return [number, number]
     local function Vec2Scale(vec, scalar)
         return { vec[1] * scalar, vec[2] * scalar };
     end
 
+    ---@param vec [number, number]
+    ---@return [number, number]
     local function Vec2Normalize(vec)
         return Vec2Scale(vec, 1.0 / Vec2Mag(vec));
     end
 
+    ---@param vecTo [number, number]
+    ---@param vecFrom [number, number]
+    ---@return number
     local function Vec2RadGap(vecTo, vecFrom)
         return math.atan(vecFrom[1] * vecTo[2] - vecFrom[2] * vecTo[1], vecTo[1] * vecFrom[1] + vecTo[2] * vecFrom[2]);
     end
 
+    ---@param vec0 [number, number, number]
+    ---@param vec1 [number, number, number]
+    ---@param t number
+    ---@return [number, number]
     local function Vec3Lerp(vec0, vec1, t)
         return { Lerp(vec0[1], vec1[1], t), Lerp(vec0[2], vec1[2], t), Lerp(vec0[3], vec1[3], t) };
     end
 
+    ---@param vec0 [number, number, number]
+    ---@param vec1 [number, number, number]
+    ---@return number
     local function Vec3Dot(vec0, vec1)
         return vec0[1] * vec1[1] + vec0[2] * vec1[2] + vec0[3] * vec1[3];
     end
 
+    ---@param vec [number, number, number]
+    ---@return number
     local function Vec3SqrMag(vec)
         return vec[1] * vec[1] + vec[2] * vec[2] + vec[3] * vec[3];
     end
 
+    ---@param vec [number, number, number]
+    ---@return number
     local function Vec3Mag(vec)
         return math.sqrt(Vec3SqrMag(vec));
     end
 
+    ---@param vec [number, number, number]
+    ---@param scalar number
+    ---@return [number, number, number]
     local function Vec3Scale(vec, scalar)
         return { vec[1] * scalar, vec[2] * scalar, vec[3] * scalar };
     end
 
+    ---@param vec [number, number, number]
+    ---@param vecBase [number, number, number]
+    ---@return [number, number, number]
     local function Vec3Proj(vec, vecBase)
         return Vec3Scale(vecBase, Vec3Dot(vec, vecBase) / Vec3SqrMag(vecBase));
     end
 
+    ---@param vec0 [number, number, number]
+    ---@param vec1 [number, number, number]
+    ---@return number
     local function Vec3RadGap(vec0, vec1)
         return math.acos(Clamp((Vec3Dot(vec0, vec1) / math.sqrt(Vec3SqrMag(vec0) * Vec3SqrMag(vec1))), -1.0, 1.0))
     end
 
+    ---@param vecTo [number, number, number]
+    ---@param vecFrom [number, number, number]
+    ---@return [number, number, number]
     local function Vec3Cross(vecTo, vecFrom)
         return { vecFrom[2] * vecTo[3] - vecFrom[3] * vecTo[2], vecFrom[3] * vecTo[1] - vecFrom[1] * vecTo[3], vecFrom
         [1] * vecTo[2] - vecFrom[2] * vecTo[1] };
     end
 
+    ---@param vec [number, number, number]
+    ---@return [number, number, number]
     local function Vec3Neg(vec)
         return { -vec[1], -vec[2], -vec[3] };
     end
 
+    ---@param vec [number, number, number]
+    ---@return [number, number, number]
     local function Vec3Sqr(vec)
         return { vec[1] * vec[1], vec[2] * vec[2], vec[3] * vec[3] };
     end
 
+    ---@param vec [number, number, number]
+    ---@return [number, number, number]
     local function Vec3Normalize(vec)
         return Vec3Scale(vec, 1.0 / Vec3Mag(vec));
     end
 
+    ---@param vecTo [number, number, number]
+    ---@param vecFrom [number, number, number]
+    ---@return [number, number, number]
     local function Vec3Subtract(vecTo, vecFrom)
         return { vecTo[1] - vecFrom[1], vecTo[2] - vecFrom[2], vecTo[3] - vecFrom[3] };
     end
 
+    ---@param vec0 [number, number, number]
+    ---@param vec1 [number, number, number]
+    ---@return [number, number, number]
     local function Vec3Add(vec0, vec1)
         return { vec0[1] + vec1[1], vec0[2] + vec1[2], vec0[3] + vec1[3] };
     end
 
+    ---@param vec0 [number, number, number]
+    ---@param vec1 [number, number, number]
+    ---@param vec2 [number, number, number]
+    ---@return [number, number, number]
     local function Vec3Add_3(vec0, vec1, vec2)
         return { vec0[1] + vec1[1] + vec2[1], vec0[2] + vec1[2] + vec2[2], vec0[3] + vec1[3] + vec2[3] };
     end
 
+    ---@param v [number, number, number]
+    ---@param n [number, number, number]
+    ---@param radVal number
+    ---@return [number, number, number]
     local function Vec3RotateByVec(v, n, radVal)
         local cosrad = math.cos(radVal);
 
@@ -369,7 +433,11 @@ do
             Vec3Scale(n, Vec3Dot(n, v) * (1.0 - cosrad)));
     end
 
-
+    ---@param vecLine0 [number, number, number]
+    ---@param vecLine1 [number, number, number]
+    ---@param vecPlaneNorm [number, number, number]
+    ---@param viewPlaneConst number
+    ---@return [number, number, number]?, number?
     local function LinePlaneIntersectionVecScalar(vecLine0, vecLine1, vecPlaneNorm, viewPlaneConst)
         local dLine = Vec3Subtract(vecLine1, vecLine0);
 
@@ -389,7 +457,6 @@ do
     local function HideMouseWheelCatcher()
         BlzFrameSetVisible(mouseWheelCatcher, false);
         BlzFrameCageMouse(mouseWheelCatcher, false);
-        spaceBarDownTick = -1;
     end
 
     local function TrigToggleKeyDown()
@@ -495,6 +562,8 @@ do
     local MCGVPD_memoArg = 70.0 * DEG2RAD;
     local MCGVPD_memoVal = 740.66448;
     local CAM_ASPECT_RATIO_FOV_FIX = 1.05 / (2 * math.sqrt(CAM_VIEW_ASPECT_RATIO + 1.0));
+    ---@param fov number
+    ---@return number memoVal
     function MagiCam.FoVToViewPlaneDist(fov)
         MCGVPD_memoVal = MCGVPD_memoArg == fov and MCGVPD_memoVal or
         CAM_VIEWPORT_HEIGHT / math.tan(fov * CAM_ASPECT_RATIO_FOV_FIX);
@@ -555,7 +624,7 @@ do
             ),
             vecViewPlaneN,
             viewPlaneConst
-        );
+        ) --[[@as [number, number, number] ]];
 
         vecViewAxisY = Vec3Subtract(vecViewAxisY, vecViewPlaneOri);
         vecViewAxisY = Vec3Normalize(vecViewAxisY);
@@ -565,11 +634,18 @@ do
         lastUpdateViewAxesTick = mainTick;
     end
 
+    ---@param frameX number
+    ---@param frameY number
+    ---@return number x, number y
     function MagiCam.FrameXY2SaneXY(frameX, frameY)
         return 1.666667 * ((frameX - .4) + .3 * MagiCam.screenAspectRatio) / MagiCam.screenAspectRatio,
             (1.0 - 1.666667 * frameY);
     end
 
+    ---@param worldX number
+    ---@param worldY number
+    ---@param worldZ number
+    ---@return number? projX, number? projY
     function MagiCam.WorldXYZToFrameXY(worldX, worldY, worldZ)
         if lastUpdateViewAxesTick < mainTick then UpdateViewAxes() end;
 
@@ -584,7 +660,7 @@ do
             return nil;
         end
 
-        local vecIntersectDif = Vec3Subtract(vecIntersect, vecViewPlaneOri);
+        local vecIntersectDif = Vec3Subtract(vecIntersect --[[@as [number,number,number] ]], vecViewPlaneOri);
 
         local projX = Vec3Dot(vecIntersectDif, vecViewAxisX);
         local projY = Vec3Dot(vecIntersectDif, vecViewAxisY) + CAM_CONSOLE_HEIGHT * (1.0 - math.cos(MagiCam.aoa));
@@ -602,18 +678,30 @@ do
         return projX, projY;
     end
 
+    ---@param x number
+    ---@param y number
+    ---@param z number
+    ---@return number? x, number? y
     function MagiCam.WorldXYZToSaneXY(x, y, z)
         local frameX, frameY = MagiCam.WorldXYZToFrameXY(x, y, z);
 
         if not frameX then return nil end;
 
-        return MagiCam.FrameXY2SaneXY(frameX, frameY);
+        return MagiCam.FrameXY2SaneXY(frameX, frameY --[[@as number]]);
     end
 
+    ---@param x number
+    ---@param y number
+    ---@param z number
+    ---@return boolean
     function MagiCam.IsWorldXYZInsideScreen(x, y, z)
         return MagiCam.WorldXYZToSaneXY(x, y, z) ~= nil;
     end
 
+    ---@param x number
+    ---@param y number
+    ---@param z number
+    ---@return boolean
     function MagiCam.IsWorldXYZInsideViewCone(x, y, z)
         if lastRefreshCamFieldsTick < mainTick then MagiCam.RefreshCamFields() end;
 
@@ -865,6 +953,7 @@ do
         end
     end
 
+    ---@param u unit?
     function MagiCam.SetCamHolder(u)
         if u and GetUnitTypeId(u) == 0 then u = nil end;
 
@@ -884,6 +973,8 @@ do
         end
     end
 
+    ---@param enabled boolean
+    ---@param willResetCam boolean
     function MagiCam.SetEnable(enabled, willResetCam)
         MagiCam.isRMBDown = false;
         MagiCam.isLMBDown = false;
@@ -937,14 +1028,6 @@ do
 
     local function InitLocationStuff()
         tempLoc = Location(0.0, 0.0);
-
-        local worldBounds = GetWorldBounds();
-        worldRectMinX = GetRectMinX(worldBounds);
-        worldRectMinY = GetRectMinY(worldBounds);
-        worldRectMaxX = GetRectMaxX(worldBounds) - 32;
-        worldRectMaxY = GetRectMaxY(worldBounds) - 32;
-        RemoveRect(worldBounds);
-        worldBounds = nil;
     end
 
     local function TriggerRegisterPlayerKeyEventForAllMetaKeys(trig, player, oskey, onDown, metaKeys)
@@ -1005,7 +1088,7 @@ do
     local function InitLocalTriggers()
         local p = GetLocalPlayer();
 
-        trig = CreateTrigger();
+        local trig = CreateTrigger();
         TriggerRegisterPlayerEvent(trig, p, EVENT_PLAYER_MOUSE_DOWN);
         TriggerAddAction(trig, TrigMouseDown);
 

@@ -128,8 +128,8 @@ do
 
     local TRACKER_LEVELS = #trackerTilesGaps;
 
-    local trackerTilesButtons = {};
-    local trackerTilesTooltips = {};
+    local trackerTilesButtons = {} ---@type framehandle[];
+    local trackerTilesTooltips = {} ---@type framehandle[];
     local trackerTilesN = 0;
 
     local trackerRawX = 0.0;
@@ -138,29 +138,41 @@ do
     local trackerFailedCount = 0;
     local trackerFlickerTick = 0;
 
-    local demoMouseTargetFrame = nil;
+    local demoMouseTargetFrame = nil; ---@type framehandle
 
-    local demoMouseTextFrame = nil;
-    local demoMouseTextFrameX, demoMouseTextFrameY, demoMouseTargetFrameX, demoMouseTargetFrameY;
+    local demoMouseTextFrame = nil; ---@type framehandle
+    local demoMouseTextFrameX, demoMouseTextFrameY, demoMouseTargetFrameX, demoMouseTargetFrameY; ---@type number
 
-    local screenWid;
-    local screenHei;
-    local screenAspectRatio;
+    local screenWid; ---@type number
+    local screenHei; ---@type number
+    local screenAspectRatio; ---@type number
 
-    local mainTimer;
+    local mainTimer; ---@type timer
 
+    ---@param v0 number
+    ---@param v1 number
+    ---@param t number
+    ---@return number
     local function Lerp(v0, v1, t)
         return v0 + (v1 - v0) * t;
     end
 
+    ---@param v number
+    ---@param v0 number
+    ---@param v1 number
+    ---@return number
     local function Clamp(v, v0, v1)
         return v < v0 and v0 or (v > v1 and v1 or v);
     end
 
+    ---@param val number
+    ---@return number
     local function Sign(val)
         return val < 0 and -1 or 1;
     end
 
+    ---@param x number
+    ---@param y number
     local function MoveTracker(x, y)
         local testX = 1.666667 * (x + .3 * screenAspectRatio) / screenAspectRatio;
         local testY = (1.0 - 1.666667 * (y + .3));
@@ -202,12 +214,14 @@ do
         end
     end
 
+    ---@param val boolean
     local function SetTrackerVisible(val)
         for i = 1, trackerTilesN do
             BlzFrameSetVisible(trackerTilesButtons[i], val);
         end
     end
 
+    ---@return boolean
     local function UpdateTracker()
         local curSize, curGap, gapInd0, gapInd1, curClms, clmCenter, ind;
 
@@ -245,6 +259,8 @@ do
         return false;
     end
 
+    ---@param size number
+    ---@return framehandle
     local function CreateTrackerButton(size)
         local button = BlzCreateSimpleFrame('MagiMouseTile', BlzGetOriginFrame(ORIGIN_FRAME_SIMPLE_UI_PARENT, 0), 0);
 
@@ -254,6 +270,8 @@ do
         return button;
     end
 
+    ---@param button framehandle
+    ---@return framehandle
     local function CreateTrackerTooltip(button)
         local tooltip = BlzCreateFrameByType('SIMPLEFRAME', '', button, '', 0);
 
@@ -315,6 +333,7 @@ do
         MagiMouse.InitDemo = DoNothing;
     end
 
+    ---@param val boolean
     function MagiMouse.SetDemoVisible(val)
         BlzFrameSetVisible(demoMouseTargetFrame, val);
         BlzFrameSetVisible(demoMouseTextFrame, val);
@@ -388,10 +407,15 @@ do
         end
     end
 
+    ---@param frameX number
+    ---@param frameY number
     function MagiMouse.FrameXY2SaneXY(frameX, frameY)
         return 1.666667 * ((frameX - .4) + .3 * screenAspectRatio) / screenAspectRatio, (1.0 - 1.666667 * frameY);
     end
 
+    ---@param enabled boolean
+    ---@param newFrameX number?
+    ---@param newFrameY number?
     function MagiMouse.SetEnable(enabled, newFrameX, newFrameY)
         if enabled then
             UpdateScreenVars();
@@ -423,6 +447,10 @@ do
         MagiMouse.isEnabled = enabled;
     end
 
+    ---@param debugEnabled boolean?
+    ---@param startFrameX number?
+    ---@param startFrameY number?
+    ---@return boolean success
     function MagiMouse.Init(debugEnabled, startFrameX, startFrameY)
         MagiMouse.debugMode = debugEnabled == nil and false or debugEnabled;
 

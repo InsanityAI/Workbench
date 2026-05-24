@@ -1,15 +1,15 @@
 do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils begins.
 --[[
- -------------------------
- -- | Debug Utils 2.5 | --
- -------------------------
+ --------------------------
+ -- | Debug Utils 2.5b | --
+ --------------------------
 
  --> https://www.hiveworkshop.com/threads/lua-debug-utils-incl-ingame-console.353720/
 
  - by Eikonium, with special thanks to:
     - @Bribe, for pretty table print, showing that xpcall's message handler executes before the stack unwinds and useful suggestions like name caching and stack trace improvements.
     - @Jampion, for useful suggestions like print caching and applying Debug.try to all code entry points
-    - @Luashine, for useful feedback and building "WC3 Debug Console Paste Helper​" (https://github.com/Luashine/wc3-debug-console-paste-helper#readme)
+    - @Luashine, for useful feedback and building "WC3 Debug Console Paste Helper" (https://github.com/Luashine/wc3-debug-console-paste-helper#readme)
     - @HerlySQR, for showing a way to get a stack trace in Wc3 (https://www.hiveworkshop.com/threads/lua-getstacktrace.340841/)
     - @Macadamia, for showing a way to print warnings upon accessing nil globals, where this all started with (https://www.hiveworkshop.com/threads/lua-very-simply-trick-to-help-lua-users-track-syntax-errors.326266/)
 
@@ -30,16 +30,17 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 | Installation:                                                                                                                                                             |
 |                                                                                                                                                                           |
-|   1. Copy the code (DebugUtils.lua, StringWidth.lua and IngameConsole.lua) into your map. Use script files (Ctrl+U) in your trigger editor, not text-based triggers!      |
-|   2. Order the files: DebugUtils above StringWidth above IngameConsole. Make sure they are above ALL other scripts (crucial for local line number feature).               |
-|   3. Adjust the settings in the settings-section further below to receive the debug environment that fits your needs.                                                     |
+|   1. Copy the code (DebugUtils.lua and IngameConsole.lua) into your map. Use script files (Ctrl+U) in your trigger editor, not text-based triggers!                       |
+|   2. Rearrange the script files in your map: DebugUtils MUST be the topmost script. Place IngameConsole below it.                                                         |
+|   2b. If you use Total Initialization, place it third. Afterwards, place your own scripts.                                                                                |
+|   3. Adjust the settings further below until they fit your needs.                                                                                                         |
 |                                                                                                                                                                           |
 | Deinstallation:                                                                                                                                                           |
 |                                                                                                                                                                           |
 |  - Debug Utils is meant to provide debugging utility and as such, shall be removed or invalidated from the map closely before release.                                    |
 |  - Optimally delete the whole Debug library. If that isn't suitable (because you have used library functions at too many places), you can instead replace Debug Utils     |
 |    by the following line of code that will invalidate all Debug functionality (without breaking your code):                                                               |
-|    Debug = setmetatable({try = function(...) return select(2,pcall(...)) end, original = _G}, {__index = function(t,k) return DoNothing end}); try = Debug.try                           |
+|    Debug = setmetatable({try = function(...) return select(2,pcall(...)) end, original = _G}, {__index = function(t,k) return DoNothing end}); try = Debug.try            |
 |  - If that is also not suitable for you (because your systems rely on the Debug functionality to some degree), at least set ALLOW_INGAME_CODE_EXECUTION to false.         |
 |  - Be sure to test your map thoroughly after removing Debug Utils.                                                                                                        |
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -193,18 +194,20 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
     Debug = {
         --BEGIN OF SETTINGS--
         settings = {
+            --Auto-map Functions
+                AUTO_MAP_FUNCTIONS = true,
             --Ingame Error Messages
                 SHOW_TRACE_ON_ERROR = true                      ---Set to true to show a stack trace on every error in addition to the regular message (msg sources: automatic error handling, Debug.try, Debug.throwError, ...)
             ,   INCLUDE_DEBUGUTILS_INTO_TRACE = true            ---Set to true to include lines from Debug Utils into the stack trace. Those show the source of error handling, which you might consider redundant.
-            ,   USE_TRY_ON_TRIGGERADDACTION = false              ---Set to true for automatic error handling on TriggerAddAction (applies Debug.try on every trigger action).
-            ,   USE_TRY_ON_CONDITION = false                     ---Set to true for automatic error handling on boolexpressions created via Condition() or Filter() (essentially applies Debug.try on every trigger condition).
-            ,   USE_TRY_ON_TIMERSTART = false                    ---Set to true for automatic error handling on TimerStart (applies Debug.try on every timer callback).
-            ,   USE_TRY_ON_ENUMFUNCS = false                     ---Set to true for automatic error handling on ForGroup, ForForce, EnumItemsInRect and EnumDestructablesInRect (applies Debug.try on every enum callback)
-            ,   USE_TRY_ON_COROUTINES = false                    ---Set to true for improved stack traces on errors within coroutines (applies Debug.try on coroutine.create and coroutine.wrap). This lets stack traces point to the erroneous function executed within the coroutine (instead of the function creating the coroutine).
+            ,   USE_TRY_ON_TRIGGERADDACTION = true              ---Set to true for automatic error handling on TriggerAddAction (applies Debug.try on every trigger action).
+            ,   USE_TRY_ON_CONDITION = true                     ---Set to true for automatic error handling on boolexpressions created via Condition() or Filter() (essentially applies Debug.try on every trigger condition).
+            ,   USE_TRY_ON_TIMERSTART = true                    ---Set to true for automatic error handling on TimerStart (applies Debug.try on every timer callback).
+            ,   USE_TRY_ON_ENUMFUNCS = true                     ---Set to true for automatic error handling on ForGroup, ForForce, EnumItemsInRect and EnumDestructablesInRect (applies Debug.try on every enum callback)
+            ,   USE_TRY_ON_COROUTINES = true                    ---Set to true for improved stack traces on errors within coroutines (applies Debug.try on coroutine.create and coroutine.wrap). This lets stack traces point to the erroneous function executed within the coroutine (instead of the function creating the coroutine).
             --Ingame Console and -exec
             ,   ALLOW_INGAME_CODE_EXECUTION = true              ---Set to true to enable IngameConsole and -exec command.
             --Warnings for nil globals
-            ,   WARNING_FOR_NIL_GLOBALS = false                 ---Set to true to print warnings upon accessing nil-globals (i.e. globals containing no value).
+            ,   WARNING_FOR_NIL_GLOBALS = true                  ---Set to true to print warnings upon accessing nil-globals (i.e. globals containing no value).
             ,   SHOW_TRACE_FOR_NIL_WARNINGS = false              ---Set to true to include a stack trace into nil-warnings.
             ,   EXCLUDE_BJ_GLOBALS_FROM_NIL_WARNINGS = false    ---Set to true to exclude bj_ variables from nil-warnings.
             ,   EXCLUDE_INITIALIZED_GLOBALS_FROM_NIL_WARNINGS = true  ---Set to true to disable warnings for initialized globals, (i.e. nil globals that held a value at some point will be treated intentionally nilled and no longer prompt warnings).
@@ -256,7 +259,7 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
     local settings, paramLog, nameCache, nameDepths, autoIndexedTables, nameCacheMirror, sourceMap, printCache, data = Debug.settings, Debug.data.paramLog, Debug.data.nameCache, Debug.data.nameDepths, Debug.data.autoIndexedTables, Debug.data.nameCacheMirror, Debug.data.sourceMap, Debug.data.printCache, Debug.data
 
     --Write DebugUtils first line number to sourceMap:
-    Debug.data.sourceMap[1].firstLine = tonumber(codeLoc:match(":%d+"):sub(2,-1))
+    Debug.data.sourceMap[1].firstLine = tonumber(codeLoc:match(":\x25d+"):sub(2,-1))
 
     local originalToString, originalPrint = Debug.original.tostring, Debug.original.print
     Debug.original.rawprint = function(...)
@@ -281,7 +284,7 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
     function Debug.getLine(depth)
         depth = depth or 0
         local _, location = pcall(error, "", depth + 3)
-        local line = location:match(":%d+") --extracts ":1000" from "war3map.lua:1000:..."
+        local line = location:match(":\x25d+") --extracts ":1000" from "war3map.lua:1000:..."
         return tonumber(line and line:sub(2,-1)) --check if line is nil before applying string.sub to prevent errors (nil can result from string.match above, although it should never do so in our case)
     end
 
@@ -317,7 +320,7 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
     ---@param errorMsg string must be formatted like "<document>:<linenumber><RestOfMsg>".
     ---@return string convertedMsg a string of the form "<localDocument>:<localLinenumber><RestOfMsg>"
     function Debug.getLocalErrorMsg(errorMsg)
-        local startPos, endPos = errorMsg:find(":%d*") --start and end position of line number. The part before that is the document, part after the error msg.
+        local startPos, endPos = errorMsg:find(":\x25d*") --start and end position of line number. The part before that is the document, part after the error msg.
         if startPos and endPos then --can be nil, if input string was not of the desired form "<document>:<linenumber><RestOfMsg>".
             local document, line, rest = errorMsg:sub(1, startPos), tonumber(errorMsg:sub(startPos+1, endPos)), errorMsg:sub(endPos+1, -1) --get error line in war3map.lua
             if document == 'war3map.lua:' and line then --only convert war3map.lua-references to local position. Other files such as Blizzard.j.lua are not converted (obiously).
@@ -364,12 +367,12 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
         local _, currentFile, lastFile, tracePiece, lastTracePiece
         for loopDepth = startDepth, endDepth do --get trace on different depth level
             _, tracePiece = pcall(error, "", loopDepth) ---@type boolean, string
-            tracePiece = Debug.getLocalErrorMsg(tracePiece):gsub("do; local", "KEK")
+            tracePiece = Debug.getLocalErrorMsg(tracePiece)
             if #tracePiece > 0 and lastTracePiece ~= tracePiece then --some trace pieces can be empty, but there can still be valid ones beyond that
                 currentFile = tracePiece:match("^.-:")
                 --Hide DebugUtils in the stack trace (except main reference), if settings.INCLUDE_DEBUGUTILS_INTO_TRACE is set to true.
                 if settings.INCLUDE_DEBUGUTILS_INTO_TRACE or (loopDepth == startDepth) or currentFile ~= "DebugUtils:" then
-                    trace = trace .. separator .. ((currentFile == lastFile) and tracePiece:match(":%d+"):sub(2,-1) or tracePiece:match("^.-:%d+"))
+                    trace = trace .. separator .. ((currentFile == lastFile) and tracePiece:match(":\x25d+"):sub(2,-1) or tracePiece:match("^.-:\x25d+"))
                     lastFile, lastTracePiece, separator = currentFile, tracePiece, " <- "
                 end
             end
@@ -392,7 +395,7 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
             toPrint = toPrint .. "\n|cff" .. settings.colors.error .. "Traceback (most recent call first):|r\n|cff" .. settings.colors.error .. Debug.traceback(startDepth,202) .. "|r"
         end
         --Also print entries from param log, if there are any.
-        for location, loggedParams in next, paramLog do
+        for location, loggedParams in pairs(paramLog) do
             toPrint = toPrint .. "\n|cff" .. settings.colors.log .. "Logged at " .. Debug.getLocalErrorMsg(location) .. loggedParams .. "|r"
             paramLog[location] = nil
         end
@@ -424,9 +427,7 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
     ---@param ... any objects/errormessages to be printed (doesn't have to be strings)
     ---@return string errorMsg including stack trace
     function Debug.throwError(...)
-        if not data.firstError then
-            Debug.errorHandler(Debug.traceback(2,2) .. ": " .. concat(...), 3)
-        end
+        Debug.errorHandler(Debug.traceback(2,2) .. ": " .. concat(...), 3)
     end
 
     ---Prints the specified error message, if the specified condition fails (i.e. if it resolves to false or nil).
@@ -523,7 +524,7 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
         end
         local name
         --apply dot-syntax for string keys without whitespace
-        if type(key) == 'string' and not string.find(key, "%s") then
+        if type(key) == 'string' and not string.find(key, "\x25s") then
             if parentTableName == "" then
                 name = key
                 nameDepths[object] = 0
@@ -552,7 +553,7 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
     local function registerAllObjectsInTable(parentTable, parentTableName)
         parentTableName = parentTableName or nameCache[parentTable] or ""
         --Register all call-by-ref-objects in parentTable
-        for key, object in next, parentTable do --use native pairs even if a custom __pairs metamethod has been defined. We only want to add names for true subtables, not pseudo-ones. This should also prevent bugs with multi-parameter implementations of next,  like in MDTable.
+        for key, object in next, parentTable do --use native pairs even if a custom __pairs metamethod has been defined. We only want to add names for true subtables, not pseudo-ones. This should also prevent bugs with multi-parameter implementations of pairs() like in MDTable.
             addNameToCache(parentTableName, key, object, nameDepths[parentTable])
         end
     end
@@ -583,7 +584,7 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
         registerAllObjectsInTable(parentTable, parentTableName)
         --if depth > 1 was specified, also register Names from subtables.
         if depth > 1 then
-            for _, object in next, parentTable do --use native pairs even if a custom __pairs metamethod has been defined. We only want to add names for true subtables, not pseudo-ones. This should also prevent bugs with multi-parameter implementations of next,  like in MDTable.
+            for _, object in next, parentTable do --use native pairs even if a custom __pairs metamethod has been defined. We only want to add names for true subtables, not pseudo-ones. This should also prevent bugs with multi-parameter implementations of pairs() like in MDTable.
                 if type(object) == 'table' then
                     Debug.registerNamesFrom(object, nil, depth - 1)
                 end
@@ -641,9 +642,6 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
             ---@param skipRawset? boolean set this to true when combined with another __newindex. Suppresses rawset(t,k,v) (because the other __newindex is responsible for that).
             nameRegisterNewIndex = function(t,k,v, skipRawset)
                 local parentDepth = nameDepths[t] or 0
-                if k == nil then
-                    error("table index is nil", 3)
-                end
                 --Make sure the parent table has an existing name before using it as part of the child name
                 if t == _G or nameCache[t] then
                     local existingName = nameCache[v]
@@ -746,7 +744,10 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
         Condition = function(func)
             return originalCondition(getTryWrapper(func))
         end
-        Filter = Condition
+        local originalFilter = Filter
+        Filter = function(func)
+            return originalFilter(getTryWrapper(func))
+        end
     end
     if settings.USE_TRY_ON_ENUMFUNCS then
         local originalForGroup = ForGroup
@@ -794,7 +795,7 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
         local oldPrint = print
         --loading screen print will write the values into the printCache
         print = function(...)
-            if not settings.USE_PRINT_CACHE then
+            if bj_gameStarted then
                 oldPrint(...)
             else --during loading screen only: concatenate input arguments 4-space-separated, implicitely apply tostring on each, cache to table
                 printCache.n = printCache.n + 1
@@ -815,6 +816,32 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
         getmetatable(_G).__newindex = function(t,k,v)
             --First, exclude the initialized global from future warnings
             globalWarningExclusions[k] = true
+            --Second, execute existing newindex, if there is one in place.
+            if existingNewIndex then
+                if isTable_yn then
+                    existingNewIndex[k] = v
+                else
+                    existingNewIndex(t,k,v)
+                end
+            else
+                rawset(t,k,v)
+            end
+        end
+    end
+
+    -------------------------------------------
+    --| Function Auto Mapping |--
+    -------------------------------------------
+
+    if settings.AUTO_MAP_FUNCTIONS then
+        local existingNewIndex = getmetatable(_G).__newindex
+        local isTable_yn = (type(existingNewIndex) == 'table')
+        getmetatable(_G).__newindex = function(t,k,v)
+            --First, register function's line number
+            if type(v) == 'function' and type(k) == 'string' then
+                Debug.beginFile(k, 1)
+            end
+            
             --Second, execute existing newindex, if there is one in place.
             if existingNewIndex then
                 if isTable_yn then
@@ -858,33 +885,24 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
         --Add names to Debug.data.objectNames again to ensure that overwritten natives also make it to the name cache.
         --Overwritten natives have a new value, but the old key, so __newindex didn't trigger. But we can be sure that objectNames[v] doesn't yet exist, so adding again is safe.
         if settings.USE_NAME_CACHE then
-            for _,v in next, _G do
+            for _,v in pairs(_G) do
                 nameCache[v] = nil
             end
             registerNamesFromGlobalScope()
         end
 
+        --Print messages that have been cached during loading screen.
+        if settings.USE_PRINT_CACHE then
+            --Note that we don't restore the old print. The overwritten variant only applies caching behaviour to loading screen prints anyway and "unhooking" always adds other risks.
+            for _, str in ipairs(printCache) do
+                print(str)
+            end
+            printCache = nil --frees reference for the garbage collector
+        end
+
         --Create triggers listening to "-console" and "-exec" chat input.
         if settings.ALLOW_INGAME_CODE_EXECUTION and IngameConsole then
             IngameConsole.createTriggers()
-        end
-    end
-
-    if settings.USE_PRINT_CACHE then
-        local originalInitGlobals = InitGlobals
-        InitGlobals = function()
-            local t = CreateTimer()
-            TimerStart(t, 0.01, false, function()
-                --Print messages that have been cached during loading screen.
-                --Note that we don't restore the old print. The overwritten variant only applies caching behaviour to loading screen prints anyway and "unhooking" always adds other risks.
-                settings.USE_PRINT_CACHE = nil
-                for _, str in ipairs(printCache) do
-                    print(str)
-                end
-                printCache = nil --frees reference for the garbage collector
-                DestroyTimer(t)
-            end)
-            originalInitGlobals()
         end
     end
 
@@ -921,7 +939,7 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
             elseif depth ~= 0 and type(object) == 'table' then
                 local elementArray = {}
                 local keyAsString
-                for k,v in next, object do
+                for k,v in pairs(object) do
                     keyAsString = type(k) == 'string' and ('"' .. tostring(k) .. '"') or tostring(k)
                     table.insert(elementArray, '(' .. keyAsString .. ', ' .. conciseTostring(v, depth -1) .. ')')
                 end
@@ -954,7 +972,7 @@ do; local _, codeLoc = pcall(error, "", 2) --get line number where DebugUtils be
                         return constTable[object]..": {}"
                     else
                         local mappedKV = {}
-                        for k,v in next, object do
+                        for k,v in pairs(object) do
                             table.insert(mappedKV, '\n  ' .. indent ..'[' .. prettyTostring(k, depth - 1, constTable, indent .. "  ") .. '] = ' .. prettyTostring(v, depth - 1, constTable, indent .. "  "))
                         end
                         return constTable[object]..': {'.. table.concat(mappedKV, ',') .. '\n'..indent..'}'

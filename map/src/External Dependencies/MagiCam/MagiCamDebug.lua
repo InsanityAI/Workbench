@@ -28,10 +28,7 @@ freely, subject to the following restrictions:
 do
     MagiCamDebug = {};
 
-    local DEG2RAD = 0.017453292519943295;
     local RAD2DEG = 57.29577951308232;
-    local HALF_PI = 0.5 * bj_PI;
-    local TWO_PI = 2.0 * bj_PI;
 
     local camEngagedWarningTextFrames = {};
     local camLockTextFrame, camControlsHintFrame;
@@ -289,7 +286,7 @@ do
         BlzFrameSetAbsPoint(lockButton, FRAMEPOINT_CENTER, 0.86, 0.265);
         BlzFrameSetText(lockButton, 'Lock Camera to Selected Unit');
 
-        unlockButton = BlzCreateFrameByType("GLUETEXTBUTTON", '', BlzGetFrameByName('ConsoleUIBackdrop', 0),
+        local unlockButton = BlzCreateFrameByType("GLUETEXTBUTTON", '', BlzGetFrameByName('ConsoleUIBackdrop', 0),
             "ScriptDialogButton", 0);
         BlzFrameSetLevel(unlockButton, 8);
         BlzFrameSetAbsPoint(unlockButton, FRAMEPOINT_CENTER, 0.86, 0.23);
