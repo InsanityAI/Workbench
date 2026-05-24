@@ -152,7 +152,8 @@ do
     end
 
     -- Required in order to access cached event responses
-    local threadData = setmetatable({}, { __mode = 'kv' }) ---@type table<thread, table<string, unknown>>
+    local threadKeys = setmetatable({}, { __mode = 'k' }) ---@type table<thread, table> -- map of threads to tbl keys for threadData
+    local threadData = setmetatable({}, { __mode = 'k' }) ---@type table<table, table<string, unknown>>
     local threadDataMt = { __mode = 'k' }
     ---@param currentThread thread
     ---@param parentThread thread?
@@ -161,25 +162,33 @@ do
     local function setupThreadData(currentThread, parentThread, toRoot)
         local tbl = {}
         if parentThread then
+            local parentKey = threadKeys[parentThread]
             if toRoot then
-                local parentMt = getmetatable(threadData[parentThread])
+                local parentMt = getmetatable(threadData[parentKey])
                 if parentMt.__index then
                     setmetatable(tbl, parentMt) -- copy to directly refer to master thread table
                 else
                     setmetatable(tbl, {
-                        __index = threadData[parentThread],
-                        __newindex = threadData[parentThread],
+                        __index = threadData[parentKey],
+                        __newindex = threadData[parentKey],
                         __mode = 'k'
                     }) -- create new one as this is the first descendant thread
                 end
             else
-                setmetatable(tbl, threadData[parentThread])
+                setmetatable(tbl, threadData[parentKey])
             end
         else
             setmetatable(tbl, threadDataMt)
         end
-        threadData[currentThread] = tbl
+        threadKeys[currentThread] = tbl
+        threadData[tbl] = tbl
         return tbl
+    end
+
+    local function clearThreadData(thread)
+        local key = threadKeys[thread]
+        threadData[key] = nil
+        threadKeys[thread] = nil
     end
 
     --[=============[
@@ -187,29 +196,29 @@ do
     --]=============]
     -- Coroutine recycler + Override coroutine.create to automatically setup threadData entry to carry over event responses
     if _EXPERIMENTAL then
+        --- some optimizations probably could be done about this
+        local function pack(args, ...)
+            local argN = select(..., '#')
+            if argN < args.n then
+                for i = argN + 1, args.n do
+                    args[i] = nil
+                end
+            end
+
+            args.n = argN
+            for i = 1, argN do
+                args[i] = select(..., i)
+            end
+        end
+
+        local unpack = table.unpack
+
         if _COROUTINE_RECYCLER then
             local coroutine = coroutine
             local threadPool = { n = 0 } ---@type thread[]|{n: integer}
             local threadJobMap = setmetatable({}, { __mode = 'k' }) ---@type table<thread, fun(...):...>
             local threadDead = setmetatable({}, { __mode = 'k' }) ---@type table<thread, true>
             local args = {} -- One table to pass all the data, ALL OF IT
-
-            --- some optimizations probably could be done about this
-            local function pack(args, ...)
-                local argN = select(..., '#')
-                if argN < args.n then
-                    for i = argN + 1, args.n do
-                        args[i] = nil
-                    end
-                end
-
-                args.n = argN
-                for i = 1, argN do
-                    args[i] = select(..., i)
-                end
-            end
-
-            local unpack = table.unpack
 
             local function coroutineCallback(...)
                 local thread = coroutine.running()
@@ -293,6 +302,21 @@ do
             setupThreadData(thread, coroutine.running())
             return thread
         end
+
+        local args = {}
+        local oldCoroutineResume = coroutine.resume
+        ---@param co thread
+        ---@param val1 any?
+        ---@param ... any
+        ---@return boolean success
+        ---@return any ...
+        function coroutine.resume(co, val1, ...)
+            pack(args, oldCoroutineResume(co, val1, ...))
+            if coroutine.status(co) == 'dead' then
+                clearThreadData(co)
+            end
+            return unpack(args)
+        end
     end
 
     --[[-----------------------------------------------------------------------------------------
@@ -353,14 +377,7 @@ do
             return filterUpvalue()
         end)
 
-        --todo: override enum natives
-        -- TriggerRegisterEnterRegion
-        -- TriggerRegisterLeaveRegion
-        -- TriggerRegisterPlayerUnitEvent
-        -- TriggerRegisterFilterUnitEvent
-
         -- TriggerAddCondition -- overridden later via FakeTrigger
-        --
 
         ---@param filter fun(): boolean
         ---@param enumNative fun(): unknown
@@ -3312,7 +3329,7 @@ do
     if _EXPERIMENTAL then
         local variableThreadLocals = {} ---@type table<string, true>
         setmetatable(_ENV, {
-            __newindex = function (t, k, v)
+            __newindex = function(t, k, v)
                 if string.match(string.lower(k), 'udg_temp') then
                     variableThreadLocals[k] = true
                     threadData[coroutine.running()][k] = v
@@ -3320,7 +3337,7 @@ do
                     rawset(t, k, v)
                 end
             end,
-            __index = function (t, k)
+            __index = function(t, k)
                 if variableThreadLocals[k] then
                     return threadData[coroutine.running()][k]
                 else
