@@ -446,6 +446,7 @@ do
 
     ---Creates a Stopwatch.
     ---@param startImmediately_yn boolean Set to true to start immediately. If not specified or set to false, the Stopwatch will not start to count upwards.
+    ---@return Stopwatch
     function Stopwatch.create(startImmediately_yn)
         local new = {}
         setmetatable(new, Stopwatch)
