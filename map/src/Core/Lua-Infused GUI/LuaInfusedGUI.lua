@@ -76,7 +76,7 @@ do
     local _THROW_ERROR_ON_INVALID_ARG   = true          -- set to true if you want LIGUI to throw errors when incorrect arguments are sent to overriden functions
     local _PRINT_WARNING_ON_INVALID_ARG = true           -- set to true if you want warnings by LIGUI when incorrect arguments are sent to overriden functions
     local _USE_GLOBAL_REMAP             = false          -- set to true if you want GUI to have extended functionality such as "udg_HashTableArray" (which gives GUI an infinite supply of shared hashtables)
-    local _REMOVE_ABIL                  = FourCC('A6CC') -- a copy of Defend ability that is used to detect when exactly does a unit get removed.
+    local _REMOVE_ABIL                  = FourCC('Aurm') -- a copy of Defend ability that is used to detect when exactly does a unit get removed.
 
     --Define common variables to be utilized throughout the script.
     local unpack                        = table.unpack
