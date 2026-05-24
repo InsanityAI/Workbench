@@ -12,7 +12,7 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
          - Total Initialization
          - LuaInfusedGUI
          - everything else
-        2. Copy the "Unit Remove Event (LIGUI)" (Aurm) Ability from trigger editor into your map
+        2. Copy the "Unit Remove Event (LIGUI)" (Aurm) Ability from object editor into your map
          - or create your own by basing it off of footman's Defend ability, just modify the _REMOVE_ABIL constant below
 
     Transforming rects, locations, groups, forces and BJ hashtable wrappers into Lua tables, which are automatically garbage collected.
