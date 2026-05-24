@@ -5,6 +5,16 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
     Credits:
         Bribe, Tasyen, Dr Super Good, HerlySQR, Antares, Marcielos
 
+    Installation:
+        1. Get the following scripts at the top of your trigger editor in following order:
+         - DebugUtils (Optional)
+         - IngameConsole (Optional)
+         - Total Initialization
+         - LuaInfusedGUI
+         - everything else
+        2. Copy the "Unit Remove Event (LIGUI)" (Aurm) Ability from trigger editor into your map
+         - or create your own by basing it off of footman's Defend ability, just modify the _REMOVE_ABIL constant below
+
     Transforming rects, locations, groups, forces and BJ hashtable wrappers into Lua tables, which are automatically garbage collected.
 
     Provides RegisterAnyPlayerUnitEvent to cut down on handle count and simplify syntax for Lua users while benefitting GUI.
@@ -65,9 +75,10 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
         - WC3 Native Math API replaced with Lua's math API
         - SubStringBJ replaced with string.sub
 
-    Uses optionally:
+    Requires: 
         https://github.com/BribeFromTheHive/Lua-Core/blob/main/Total_Initialization.lua
-        https://github.com/BribeFromTheHive/Lua-Core/blob/main/Hook.lua
+
+    Uses optionally:
         https://github.com/BribeFromTheHive/Lua-Core/blob/main/Global_Variable_Remapper.lua
 --]]
 GUI = {}
