@@ -55,7 +55,18 @@ if Debug and Debug.beginFile then Debug.beginFile("IngameConsole") end
 * @Luashine has created a tool that simplifies pasting multiple lines of code from outside Wc3 into the IngameConsole.
 * This is particularly useful, when you want to execute a large chunk of testcode containing several linebreaks.
 * Goto: https://github.com/Luashine/wc3-debug-console-paste-helper#readme
+***********************
+* ------------
+* |Public API|
+* ------------
+* The console can be started and closed via the following API, if preferred over the "-console" and "exit" chat commands:
 *
+* IngameConsole.startFor(player)
+*   - creates and starts up a console for the specified player, if not already present. Shows the existing console otherwise.
+*   - overrides the print function to print to console
+* IngameConsole.exitFor(player)
+*   - destroys and exits the console for the specified player, if present.
+*   - reverts the print function to original, if no active console is left for any player.
 *************************************************/
 --]]
 
@@ -107,6 +118,45 @@ IngameConsole = {
 }
 IngameConsole.__index = IngameConsole
 IngameConsole.__name = 'IngameConsole'
+
+------------------
+--| Public API |--
+------------------
+
+---Creates a new console for the specified player, if not already present. Shows the existing console otherwise.
+---Overrides the print-function to print to console.
+---@param consolePlayer player
+function IngameConsole.startFor(consolePlayer)
+    --if the triggering player already has a console, show that console and stop executing further actions
+    if IngameConsole.playerConsoles[consolePlayer] then
+        IngameConsole.playerConsoles[consolePlayer]:showToOwners()
+        return
+    end
+    --create Ingame Console object
+    IngameConsole.playerConsoles[consolePlayer] = IngameConsole.create(consolePlayer)
+    --overwrite print function
+    print = function(...)
+        IngameConsole.originalPrint(...) --the new print function will also print "normally", but clear the text immediately after. This is to add the message to the F12-log.
+        if IngameConsole.playerConsoles[GetLocalPlayer()] and IngameConsole.playerConsoles[GetLocalPlayer()].printToConsole then
+            ClearTextMessages() --clear text messages for all players having an active console
+        end
+        for player, console in pairs(IngameConsole.playerConsoles) do
+            if console.printToConsole and (player == console.player) then --player == console.player ensures that the console only prints once, even if the console was shared among all players
+                console:out(nil, 0, false, ...)
+            end
+        end
+    end
+end
+
+---Exits the existing console of the specified player, if present.
+---Reverts the print-function to original, if no player has an active console left.
+---@param consolePlayer player
+function IngameConsole.exitFor(consolePlayer)
+    local console = IngameConsole.playerConsoles[consolePlayer]
+    if console then
+        console:exit()
+    end
+end
 
 ------------------------
 --| Console Creation |--
@@ -207,6 +257,26 @@ function IngameConsole:makeShared()
         end
     end
     self.sharedConsole = true
+end
+
+---Destroys the ingame console and exits it for the owning player and all players it has been shared with.
+function IngameConsole:exit()
+    DestroyMultiboard(self.multiboard)
+    DestroyTrigger(self.trigger)
+    DestroyTimer(self.timer)
+    --deregister for all players, if shared
+    if self.sharedConsole then
+        for i = 0, GetBJMaxPlayers() - 1 do
+            IngameConsole.playerConsoles[Player(i)] = nil
+        end
+    --and for the owning player otherwise
+    elseif IngameConsole.playerConsoles[self.player] == self then --registered at all?
+        IngameConsole.playerConsoles[self.player] = nil
+    end
+    --revert print function, if no active console left.
+    if next(IngameConsole.playerConsoles) == nil then
+        print = IngameConsole.originalPrint
+    end
 end
 
 ---------------------
@@ -401,13 +471,7 @@ end
 ---Exits the Console
 ---@param self IngameConsole
 function IngameConsole.keywords.exit(self)
-    DestroyMultiboard(self.multiboard)
-    DestroyTrigger(self.trigger)
-    DestroyTimer(self.timer)
-    IngameConsole.playerConsoles[self.player] = nil
-    if next(IngameConsole.playerConsoles) == nil then --set print function back to original, when no one has an active console left.
-        print = IngameConsole.originalPrint
-    end
+    self:exit()
 end
 
 ---Lets the console print to chat
@@ -470,7 +534,7 @@ function IngameConsole.keywords.share(self)
     end
     self:makeShared()
     self:showToOwners() --showing it to the other players.
-    self:out('info', 0,false, "The console of player " .. GetConvertedPlayerId(self.player) .. " is now shared with all players.")
+    self:out('info', 0,false, "The console of Player(" .. GetPlayerId(self.player) .. ") is now shared with all players.")
 end
 
 ---Enables auto-sizing of console (will grow and shrink together with text size)
@@ -541,26 +605,8 @@ do
         return string.sub(GetEventPlayerChatString(), 1, 6) == "-exec "
     end
 
-    local function startIngameConsole()
-        --if the triggering player already has a console, show that console and stop executing further actions
-        if IngameConsole.playerConsoles[GetTriggerPlayer()] then
-            IngameConsole.playerConsoles[GetTriggerPlayer()]:showToOwners()
-            return
-        end
-        --create Ingame Console object
-        IngameConsole.playerConsoles[GetTriggerPlayer()] = IngameConsole.create(GetTriggerPlayer())
-        --overwrite print function
-        print = function(...)
-            IngameConsole.originalPrint(...) --the new print function will also print "normally", but clear the text immediately after. This is to add the message to the F12-log.
-            if IngameConsole.playerConsoles[GetLocalPlayer()] and IngameConsole.playerConsoles[GetLocalPlayer()].printToConsole then
-                ClearTextMessages() --clear text messages for all players having an active console
-            end
-            for player, console in pairs(IngameConsole.playerConsoles) do
-                if console.printToConsole and (player == console.player) then --player == console.player ensures that the console only prints once, even if the console was shared among all players
-                    console:out(nil, 0, false, ...)
-                end
-            end
-        end
+    local function consoleCommand_Actions()
+        IngameConsole.startFor(GetTriggerPlayer())
     end
 
     ---Creates the triggers listening to "-console" and "-exec" chat input.
@@ -572,7 +618,7 @@ do
         TriggerAddAction(execTrigger, execCommand_Actions)
         --Real Console
         local consoleTrigger = CreateTrigger()
-        TriggerAddAction(consoleTrigger, startIngameConsole)
+        TriggerAddAction(consoleTrigger, consoleCommand_Actions)
         --Events
         for i = 0, GetBJMaxPlayers() -1 do
             TriggerRegisterPlayerChatEvent(execTrigger, Player(i), "-exec ", false)
