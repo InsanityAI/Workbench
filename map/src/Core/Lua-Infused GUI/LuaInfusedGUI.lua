@@ -85,22 +85,21 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
         - WC3 Native Math API replaced with Lua's math API
         - SubStringBJ replaced with string.sub
 
-    Requires: 
+    Requires:
         https://www.hiveworkshop.com/threads/total-initialization.317099/page-2#post-3641920
 
     Uses optionally:
         https://github.com/BribeFromTheHive/Lua-Core/blob/main/Global_Variable_Remapper.lua
-        https://github.com/BribeFromTheHive/Lua-Core/blob/main/UnitEvent.lua
         https://www.hiveworkshop.com/threads/syncedtable.353715/
         https://www.hiveworkshop.com/threads/timerqueue-stopwatch.353718/
 --]]
 GUI = {}
 do
     --Configurables
-    local _THROW_ERROR_ON_INVALID_ARG   = true          -- set to true if you want LIGUI to throw errors when incorrect arguments are sent to overriden functions
-    local _PRINT_WARNING_ON_INVALID_ARG = true           -- set to true if you want warnings by LIGUI when incorrect arguments are sent to overriden functions
-    local _USE_GLOBAL_REMAP             = false          -- set to true if you want GUI to have extended functionality such as "udg_HashTableArray" (which gives GUI an infinite supply of shared hashtables)
-    local _REMOVE_ABIL                  = FourCC('Aurm') -- a copy of Defend ability that is used to detect when exactly does a unit get removed.
+    local _THROW_ERROR_ON_INVALID_ARG    = true           -- set to true if you want LIGUI to throw errors when incorrect arguments are sent to overriden functions
+    local _PRINT_WARNING_ON_INVALID_ARG  = true           -- set to true if you want warnings by LIGUI when incorrect arguments are sent to overriden functions
+    local _USE_GLOBAL_REMAP              = false          -- set to true if you want GUI to have extended functionality such as "udg_HashTableArray" (which gives GUI an infinite supply of shared hashtables)
+    local _REMOVE_ABIL                   = FourCC('Aurm') -- a copy of Defend ability that is used to detect when exactly does a unit get removed.
 
     -- Experimental features
     local _EXPERIMENTAL                  = true -- experimental features; overriding coroutines, triggers, timers and boolexprs
@@ -152,6 +151,7 @@ do
     end
 
     -- Required in order to access cached event responses
+    -- Note: This relies on __index and __newindex chain instead of threads as keys to lookup data
     local threadData = setmetatable({}, { __mode = 'k' }) ---@type table<thread, table<string, unknown>> -- map of threads to tbl keys for threadData
     local threadDataMt = { __mode = 'k' }
     ---@param currentThread thread
@@ -187,6 +187,17 @@ do
         threadData[thread] = nil
     end
 
+    ---@param threads thread[]
+    ---@return boolean
+    local function allDone(threads)
+        for _, thread in threads do
+            if coroutine.status(thread) ~= 'dead' then
+                return false
+            end
+        end
+        return true
+    end
+
     --[=============[
       • Coroutines •
     --]=============]
@@ -194,7 +205,7 @@ do
     if _EXPERIMENTAL then
         --- some optimizations probably could be done about this
         local function pack(args, ...)
-            local argN = select(..., '#')
+            local argN = select('#', ...)
             if argN < args.n then
                 for i = argN + 1, args.n do
                     args[i] = nil
@@ -203,7 +214,7 @@ do
 
             args.n = argN
             for i = 1, argN do
-                args[i] = select(..., i)
+                args[i] = select(i, ...)
             end
         end
 
@@ -214,7 +225,7 @@ do
             local threadPool = { n = 0 } ---@type thread[]|{n: integer}
             local threadJobMap = setmetatable({}, { __mode = 'k' }) ---@type table<thread, fun(...):...>
             local threadDead = setmetatable({}, { __mode = 'k' }) ---@type table<thread, true>
-            local args = {} -- One table to pass all the data, ALL OF IT
+            local args = { n = 0 } -- One table to pass all the data, ALL OF IT
 
             local function coroutineCallback(...)
                 local thread = coroutine.running()
@@ -241,7 +252,7 @@ do
                 if threadPool.n > 0 then
                     thread = threadPool[threadPool.n]
                     threadPool[threadPool.n] = nil
-                    threadPool.n = threadPool - 1
+                    threadPool.n = threadPool.n - 1
                 else
                     thread = coroutine.create(coroutineCallback)
                 end
@@ -299,7 +310,7 @@ do
             return thread
         end
 
-        local args = {}
+        local args = { n = 0 }
         local oldCoroutineResume = coroutine.resume
         ---@param co thread
         ---@param val1 any?
@@ -366,276 +377,279 @@ do
       • BOOLEXPRS •
     --]=============]
     if _EXPERIMENTAL then
-        -- ForGroup/ForForce will use regular loops
-        local filterUpvalue = nil ---@type fun(): boolean
-        local nativeFilter = Filter(function()
-            -- note: this runs in a "blizzard" thread and cannot be paused/yielded, so we're safe
-            return filterUpvalue()
+        OnInit.main("LIGUI_Boolexprs", function(require)
+            print("Run boolexpr override")
+            -- ForGroup/ForForce will use regular loops
+            local filterUpvalue = nil ---@type fun(): boolean
+            local nativeFilter = Filter(function()
+                -- note: this runs in a "blizzard" thread and cannot be paused/yielded, so we're safe
+                return filterUpvalue()
+            end)
+
+            -- TriggerAddCondition -- overridden later via FakeTrigger
+
+            ---@param filter fun(): boolean
+            ---@param enumNative fun(): unknown
+            ---@param enumName string
+            ---@return fun(): boolean
+            local function wrapFilter(filter, enumNative, enumName)
+                local parentThread = coroutine.running()
+                return function()
+                    local thisThread = coroutine.running()
+                    local data = setupThreadData(thisThread, parentThread)
+                    rawset(data, enumName, enumNative())
+                    return filter()
+                end
+            end
+
+            -- Unit API
+            do
+                local oldGetFilterUnit = GetFilterUnit
+                local function wrapUnitFilter(filter)
+                    if not filter then return nil end
+                    filterUpvalue = wrapFilter(filter --[[@as fun(): boolean]], oldGetFilterUnit, "GetFilterUnit")
+                    return nativeFilter
+                end
+
+                local oldGroupEnumUnitsOfType = GroupEnumUnitsOfType
+                ---@param whichGroup group
+                ---@param unitName string
+                ---@param filter? boolexpr|fun():boolean
+                function GroupEnumUnitsOfType(whichGroup, unitName, filter)
+                    oldGroupEnumUnitsOfType(whichGroup, unitName, wrapUnitFilter(filter))
+                end
+
+                local oldGroupEnumUnitsOfPlayer = GroupEnumUnitsOfPlayer
+                ---@param whichGroup group
+                ---@param whichPlayer player
+                ---@param filter? boolexpr|fun(): boolean
+                function GroupEnumUnitsOfPlayer(whichGroup, whichPlayer, filter)
+                    oldGroupEnumUnitsOfPlayer(whichGroup, whichPlayer, wrapUnitFilter(filter))
+                end
+
+                local oldGroupEnumUnitsInRect = GroupEnumUnitsInRect
+                ---@param whichGroup group
+                ---@param r rect
+                ---@param filter? boolexpr|fun(): boolean
+                function GroupEnumUnitsInRect(whichGroup, r, filter)
+                    oldGroupEnumUnitsInRect(whichGroup, r, wrapUnitFilter(filter))
+                end
+
+                local oldGroupEnumUnitsInRange = GroupEnumUnitsInRange
+                ---@param whichGroup group
+                ---@param x number
+                ---@param y number
+                ---@param radius number
+                ---@param filter? boolexpr|fun():boolean
+                function GroupEnumUnitsInRange(whichGroup, x, y, radius, filter)
+                    oldGroupEnumUnitsInRange(whichGroup, x, y, radius, wrapUnitFilter(filter))
+                end
+
+                local oldGroupEnumUnitsInRangeOfLoc = GroupEnumUnitsInRangeOfLoc
+                ---@param whichGroup group
+                ---@param whichLocation location
+                ---@param radius number
+                ---@param filter? boolexpr|fun(): boolean
+                function GroupEnumUnitsInRangeOfLoc(whichGroup, whichLocation, radius, filter)
+                    oldGroupEnumUnitsInRangeOfLoc(whichGroup, whichLocation, radius, wrapUnitFilter(filter))
+                end
+
+                local oldGroupEnumUnitsSelected = GroupEnumUnitsSelected
+                ---@param whichGroup group
+                ---@param whichPlayer player
+                ---@param filter? boolexpr|fun(): boolean
+                function GroupEnumUnitsSelected(whichGroup, whichPlayer, filter)
+                    oldGroupEnumUnitsSelected(whichGroup, whichPlayer, wrapUnitFilter(filter))
+                end
+
+                local oldGroupEnumUnitsInRectCounted = GroupEnumUnitsInRectCounted
+                ---@param whichGroup group
+                ---@param r rect
+                ---@param filter? boolexpr|fun(): boolean
+                ---@param countLimit integer
+                function GroupEnumUnitsInRectCounted(whichGroup, r, filter, countLimit)
+                    oldGroupEnumUnitsInRectCounted(whichGroup, r, wrapUnitFilter(filter), countLimit)
+                end
+
+                local oldGroupEnumUnitsOfTypeCounted = GroupEnumUnitsOfTypeCounted
+                ---@param whichGroup group
+                ---@param unitName string
+                ---@param filter? boolexpr|fun(): boolean
+                ---@param countLimit integer
+                function GroupEnumUnitsOfTypeCounted(whichGroup, unitName, filter, countLimit)
+                    oldGroupEnumUnitsOfTypeCounted(whichGroup, unitName, wrapUnitFilter(filter), countLimit)
+                end
+
+                local oldGroupEnumUnitsInRangeCounted = GroupEnumUnitsInRangeCounted
+                ---@param whichGroup group
+                ---@param x number
+                ---@param y number
+                ---@param radius number
+                ---@param filter? boolexpr|fun(): boolean
+                ---@param countLimit integer
+                function GroupEnumUnitsInRangeCounted(whichGroup, x, y, radius, filter, countLimit)
+                    oldGroupEnumUnitsInRangeCounted(whichGroup, x, y, radius, wrapUnitFilter(filter), countLimit)
+                end
+
+                local oldGroupEnumUnitsInRangeOfLocCounted = GroupEnumUnitsInRangeOfLocCounted
+                ---@param whichGroup group
+                ---@param whichLocation location
+                ---@param radius number
+                ---@param filter? boolexpr|fun(): boolean
+                ---@param countLimit integer
+                function GroupEnumUnitsInRangeOfLocCounted(whichGroup, whichLocation, radius, filter, countLimit)
+                    oldGroupEnumUnitsInRangeOfLocCounted(whichGroup, whichLocation, radius, wrapUnitFilter(filter),
+                        countLimit)
+                end
+            end
+
+            -- Player API
+            do
+                local oldGetFilterPlayer = GetFilterPlayer
+                local function wrapPlayerFilter(filter)
+                    if not filter then return nil end
+                    filterUpvalue = wrapFilter(filter --[[@as fun(): boolean]], oldGetFilterPlayer, "GetFilterPlayer")
+                    return nativeFilter
+                end
+
+                local oldForceEnumPlayers = ForceEnumPlayers
+                ---@param whichForce force
+                ---@param filter? boolexpr|fun():boolean
+                function ForceEnumPlayers(whichForce, filter)
+                    oldForceEnumPlayers(whichForce, wrapPlayerFilter(filter))
+                end
+
+                local oldForceEnumPlayersCounted = ForceEnumPlayersCounted
+                ---@param whichForce force
+                ---@param filter? boolexpr|fun():boolean
+                ---@param countLimit integer
+                function ForceEnumPlayersCounted(whichForce, filter, countLimit)
+                    oldForceEnumPlayersCounted(whichForce, wrapPlayerFilter(filter), countLimit)
+                end
+
+                local oldForceEnumAllies = ForceEnumAllies
+                ---@param whichForce force
+                ---@param filter? boolexpr|fun():boolean
+                function ForceEnumAllies(whichForce, filter)
+                    oldForceEnumAllies(whichForce, wrapPlayerFilter(filter))
+                end
+
+                local oldForceEnumEnemies = ForceEnumEnemies
+                ---@param whichForce force
+                ---@param filter? boolexpr|fun():boolean
+                function ForceEnumEnemies(whichForce, filter)
+                    oldForceEnumEnemies(whichForce, wrapPlayerFilter(filter))
+                end
+            end
+
+            -- Items and Destructables
+            do
+                local oldGetFilterDestructable = GetFilterDestructable
+                local oldGetEnumDestructable = GetEnumDestructable
+                local oldEnumDestructablesInRect = EnumDestructablesInRect
+                ---@param r rect
+                ---@param filter? boolexpr|fun():boolean
+                ---@param actionFunc fun()
+                function EnumDestructablesInRect(r, filter, actionFunc)
+                    if not filter and not actionFunc then return end
+                    local filterFunc
+                    if filter then
+                        filterUpvalue = wrapFilter(filter --[[@as fun(): boolean]], oldGetFilterDestructable,
+                            "GetFilterDestructable")
+                        filterFunc = nativeFilter
+                    else
+                        filterFunc = nil
+                    end
+
+                    local callback
+                    if actionFunc then
+                        callback = function()
+                            local parentThread = coroutine.running()
+                            return function()
+                                local thisThread = coroutine.running()
+                                local data = setupThreadData(thisThread, parentThread)
+                                rawset(data, "GetEnumDestructable", oldGetEnumDestructable())
+                                return actionFunc()
+                            end
+                        end
+                    else
+                        callback = nil
+                    end
+
+                    oldEnumDestructablesInRect(r, filterFunc, callback)
+                end
+
+                local oldEnumItemsInRect = EnumItemsInRect
+                local oldGetFilterItem = GetFilterItem
+                local oldGetEnumItem = GetEnumItem
+                ---@param r rect
+                ---@param filter? boolexpr|fun():boolean
+                ---@param actionFunc fun()
+                function EnumItemsInRect(r, filter, actionFunc)
+                    if not filter and not actionFunc then return end
+                    local filterFunc
+                    if filter then
+                        filterUpvalue = wrapFilter(filter --[[@as fun(): boolean]], oldGetFilterItem, "GetFilterItem")
+                        filterFunc = nativeFilter
+                    else
+                        filterFunc = nil
+                    end
+
+                    local callback
+                    if actionFunc then
+                        callback = function()
+                            local parentThread = coroutine.running()
+                            return function()
+                                local thisThread = coroutine.running()
+                                local data = setupThreadData(thisThread, parentThread)
+                                rawset(data, "GetEnumItem", oldGetEnumItem())
+                                return actionFunc()
+                            end
+                        end
+                    else
+                        callback = nil
+                    end
+
+                    oldEnumItemsInRect(r, filterFunc, callback)
+                end
+            end
+
+            ---@param func fun(): boolean
+            ---@return conditionfunc|fun(): boolean
+            function Condition(func)
+                return func
+            end
+
+            ---@param func fun():boolean
+            ---@return filterfunc|fun(): boolean
+            function Filter(func)
+                return func
+            end
+
+            ---@param boolexpr1 boolexpr|fun(): boolean
+            ---@param boolexpr2 boolexpr|fun(): boolean
+            ---@return boolexpr|fun(): boolean
+            function And(boolexpr1, boolexpr2)
+                return function()
+                    return boolexpr1() and boolexpr2()
+                end
+            end
+
+            ---@param boolexpr1 boolexpr|fun(): boolean
+            ---@param boolexpr2 boolexpr|fun(): boolean
+            ---@return boolexpr|fun(): boolean
+            function Or(boolexpr1, boolexpr2)
+                return function()
+                    return boolexpr1() or boolexpr2()
+                end
+            end
+
+            DestroyFilter = DoNothing
+            DestroyCondition = DoNothing
+            DestroyBoolExpr = DoNothing
+            print("Run boolexpr override done")
         end)
-
-        -- TriggerAddCondition -- overridden later via FakeTrigger
-
-        ---@param filter fun(): boolean
-        ---@param enumNative fun(): unknown
-        ---@param enumName string
-        ---@return fun(): boolean
-        local function wrapFilter(filter, enumNative, enumName)
-            local parentThread = coroutine.running()
-            return function()
-                local thisThread = coroutine.running()
-                local data = setupThreadData(thisThread, parentThread)
-                rawset(data, enumName, enumNative())
-                return filter()
-            end
-        end
-
-        -- Unit API
-        do
-            local oldGetFilterUnit = GetFilterUnit
-            local function wrapUnitFilter(filter)
-                if not filter then return nil end
-                filterUpvalue = wrapFilter(filter --[[@as fun(): boolean]], oldGetFilterUnit, "GetFilterUnit")
-                return nativeFilter
-            end
-
-            local oldGroupEnumUnitsOfType = GroupEnumUnitsOfType
-            ---@param whichGroup group
-            ---@param unitName string
-            ---@param filter? boolexpr|fun():boolean
-            function GroupEnumUnitsOfType(whichGroup, unitName, filter)
-                oldGroupEnumUnitsOfType(whichGroup, unitName, wrapUnitFilter(filter))
-            end
-
-            local oldGroupEnumUnitsOfPlayer = GroupEnumUnitsOfPlayer
-            ---@param whichGroup group
-            ---@param whichPlayer player
-            ---@param filter? boolexpr|fun(): boolean
-            function GroupEnumUnitsOfPlayer(whichGroup, whichPlayer, filter)
-                oldGroupEnumUnitsOfPlayer(whichGroup, whichPlayer, wrapUnitFilter(filter))
-            end
-
-            local oldGroupEnumUnitsInRect = GroupEnumUnitsInRect
-            ---@param whichGroup group
-            ---@param r rect
-            ---@param filter? boolexpr|fun(): boolean
-            function GroupEnumUnitsInRect(whichGroup, r, filter)
-                oldGroupEnumUnitsInRect(whichGroup, r, wrapUnitFilter(filter))
-            end
-
-            local oldGroupEnumUnitsInRange = GroupEnumUnitsInRange
-            ---@param whichGroup group
-            ---@param x number
-            ---@param y number
-            ---@param radius number
-            ---@param filter? boolexpr|fun():boolean
-            function GroupEnumUnitsInRange(whichGroup, x, y, radius, filter)
-                oldGroupEnumUnitsInRange(whichGroup, x, y, radius, wrapUnitFilter(filter))
-            end
-
-            local oldGroupEnumUnitsInRangeOfLoc = GroupEnumUnitsInRangeOfLoc
-            ---@param whichGroup group
-            ---@param whichLocation location
-            ---@param radius number
-            ---@param filter? boolexpr|fun(): boolean
-            function GroupEnumUnitsInRangeOfLoc(whichGroup, whichLocation, radius, filter)
-                oldGroupEnumUnitsInRangeOfLoc(whichGroup, whichLocation, radius, wrapUnitFilter(filter))
-            end
-
-            local oldGroupEnumUnitsSelected = GroupEnumUnitsSelected
-            ---@param whichGroup group
-            ---@param whichPlayer player
-            ---@param filter? boolexpr|fun(): boolean
-            function GroupEnumUnitsSelected(whichGroup, whichPlayer, filter)
-                oldGroupEnumUnitsSelected(whichGroup, whichPlayer, wrapUnitFilter(filter))
-            end
-
-            local oldGroupEnumUnitsInRectCounted = GroupEnumUnitsInRectCounted
-            ---@param whichGroup group
-            ---@param r rect
-            ---@param filter? boolexpr|fun(): boolean
-            ---@param countLimit integer
-            function GroupEnumUnitsInRectCounted(whichGroup, r, filter, countLimit)
-                oldGroupEnumUnitsInRectCounted(whichGroup, r, wrapUnitFilter(filter), countLimit)
-            end
-
-            local oldGroupEnumUnitsOfTypeCounted = GroupEnumUnitsOfTypeCounted
-            ---@param whichGroup group
-            ---@param unitName string
-            ---@param filter? boolexpr|fun(): boolean
-            ---@param countLimit integer
-            function GroupEnumUnitsOfTypeCounted(whichGroup, unitName, filter, countLimit)
-                oldGroupEnumUnitsOfTypeCounted(whichGroup, unitName, wrapUnitFilter(filter), countLimit)
-            end
-
-            local oldGroupEnumUnitsInRangeCounted = GroupEnumUnitsInRangeCounted
-            ---@param whichGroup group
-            ---@param x number
-            ---@param y number
-            ---@param radius number
-            ---@param filter? boolexpr|fun(): boolean
-            ---@param countLimit integer
-            function GroupEnumUnitsInRangeCounted(whichGroup, x, y, radius, filter, countLimit)
-                oldGroupEnumUnitsInRangeCounted(whichGroup, x, y, radius, wrapUnitFilter(filter), countLimit)
-            end
-
-            local oldGroupEnumUnitsInRangeOfLocCounted = GroupEnumUnitsInRangeOfLocCounted
-            ---@param whichGroup group
-            ---@param whichLocation location
-            ---@param radius number
-            ---@param filter? boolexpr|fun(): boolean
-            ---@param countLimit integer
-            function GroupEnumUnitsInRangeOfLocCounted(whichGroup, whichLocation, radius, filter, countLimit)
-                oldGroupEnumUnitsInRangeOfLocCounted(whichGroup, whichLocation, radius, wrapUnitFilter(filter),
-                    countLimit)
-            end
-        end
-
-        -- Player API
-        do
-            local oldGetFilterPlayer = GetFilterPlayer
-            local function wrapPlayerFilter(filter)
-                if not filter then return nil end
-                filterUpvalue = wrapFilter(filter --[[@as fun(): boolean]], oldGetFilterPlayer, "GetFilterPlayer")
-                return nativeFilter
-            end
-
-            local oldForceEnumPlayers = ForceEnumPlayers
-            ---@param whichForce force
-            ---@param filter? boolexpr|fun():boolean
-            function ForceEnumPlayers(whichForce, filter)
-                oldForceEnumPlayers(whichForce, wrapPlayerFilter(filter))
-            end
-
-            local oldForceEnumPlayersCounted = ForceEnumPlayersCounted
-            ---@param whichForce force
-            ---@param filter? boolexpr|fun():boolean
-            ---@param countLimit integer
-            function ForceEnumPlayersCounted(whichForce, filter, countLimit)
-                oldForceEnumPlayersCounted(whichForce, wrapPlayerFilter(filter), countLimit)
-            end
-
-            local oldForceEnumAllies = ForceEnumAllies
-            ---@param whichForce force
-            ---@param filter? boolexpr|fun():boolean
-            function ForceEnumAllies(whichForce, filter)
-                oldForceEnumAllies(whichForce, wrapPlayerFilter(filter))
-            end
-
-            local oldForceEnumEnemies = ForceEnumEnemies
-            ---@param whichForce force
-            ---@param filter? boolexpr|fun():boolean
-            function ForceEnumEnemies(whichForce, filter)
-                oldForceEnumEnemies(whichForce, wrapPlayerFilter(filter))
-            end
-        end
-
-        -- Items and Destructables
-        do
-            local oldGetFilterDestructable = GetFilterDestructable
-            local oldGetEnumDestructable = GetEnumDestructable
-            local oldEnumDestructablesInRect = EnumDestructablesInRect
-            ---@param r rect
-            ---@param filter? boolexpr|fun():boolean
-            ---@param actionFunc fun()
-            function EnumDestructablesInRect(r, filter, actionFunc)
-                if not filter and not actionFunc then return end
-                local filterFunc
-                if filter then
-                    filterUpvalue = wrapFilter(filter --[[@as fun(): boolean]], oldGetFilterDestructable,
-                        "GetFilterDestructable")
-                    filterFunc = nativeFilter
-                else
-                    filterFunc = nil
-                end
-
-                local callback
-                if actionFunc then
-                    callback = function()
-                        local parentThread = coroutine.running()
-                        return function()
-                            local thisThread = coroutine.running()
-                            local data = setupThreadData(thisThread, parentThread)
-                            rawset(data, "GetEnumDestructable", oldGetEnumDestructable())
-                            return actionFunc()
-                        end
-                    end
-                else
-                    callback = nil
-                end
-
-                oldEnumDestructablesInRect(r, filterFunc, callback)
-            end
-
-            local oldEnumItemsInRect = EnumItemsInRect
-            local oldGetFilterItem = GetFilterItem
-            local oldGetEnumItem = GetEnumItem
-            ---@param r rect
-            ---@param filter? boolexpr|fun():boolean
-            ---@param actionFunc fun()
-            function EnumItemsInRect(r, filter, actionFunc)
-                if not filter and not actionFunc then return end
-                local filterFunc
-                if filter then
-                    filterUpvalue = wrapFilter(filter --[[@as fun(): boolean]], oldGetFilterItem, "GetFilterItem")
-                    filterFunc = nativeFilter
-                else
-                    filterFunc = nil
-                end
-
-                local callback
-                if actionFunc then
-                    callback = function()
-                        local parentThread = coroutine.running()
-                        return function()
-                            local thisThread = coroutine.running()
-                            local data = setupThreadData(thisThread, parentThread)
-                            rawset(data, "GetEnumItem", oldGetEnumItem())
-                            return actionFunc()
-                        end
-                    end
-                else
-                    callback = nil
-                end
-
-                oldEnumItemsInRect(r, filterFunc, callback)
-            end
-        end
-
-        ---@param func fun(): boolean
-        ---@return conditionfunc|fun(): boolean
-        function Condition(func)
-            return func
-        end
-
-        ---@param func fun():boolean
-        ---@return filterfunc|fun(): boolean
-        function Filter(func)
-            return func
-        end
-
-        ---@param boolexpr1 boolexpr|fun(): boolean
-        ---@param boolexpr2 boolexpr|fun(): boolean
-        ---@return boolexpr|fun(): boolean
-        function And(boolexpr1, boolexpr2)
-            return function()
-                return boolexpr1() and boolexpr2()
-            end
-        end
-
-        ---@param boolexpr1 boolexpr|fun(): boolean
-        ---@param boolexpr2 boolexpr|fun(): boolean
-        ---@return boolexpr|fun(): boolean
-        function Or(boolexpr1, boolexpr2)
-            return function()
-                return boolexpr1() or boolexpr2()
-            end
-        end
-
-        DestroyFilter = DoNothing
-        DestroyCondition = DoNothing
-        DestroyBoolExpr = DoNothing
     end
-
     --[=============[
       • HASHTABLES •
     --]=============]
@@ -700,8 +714,8 @@ do
         ---@return boolean shouldEarlyExit
         local function checkHashtableArgs(whichHashTable, parentKey, childKey)
             return check(whichHashTable ~= nil, 'whichHashTable cannot be nil') or
-                    check(parentKey ~= nil, 'parentKey cannot be nil') or
-                    check(childKey ~= nil, 'childKey cannot be nil')
+                check(parentKey ~= nil, 'parentKey cannot be nil') or
+                check(childKey ~= nil, 'childKey cannot be nil')
         end
 
         ---@return FakeHashtable
@@ -987,12 +1001,6 @@ do
             return group[1]
         end
 
-        local enumUnit
-        ---@return unit enumUnit
-        function GetEnumUnit()
-            return enumUnit
-        end
-
         ---@param group FakeGroup
         ---@param code fun(u: unit)
         function GUI.forGroup(group, code)
@@ -1000,27 +1008,35 @@ do
             if check(code ~= nil, 'code cannot be nil') then return end
             local i = 1
             local unit
+            local parentThread = coroutine.running()
+            local threads = {} ---@type thread[]
+            local looped = false
             while i <= #group do
                 unit = group[i]
-                code(unit)
+                local codeThread = coroutine.create(code)
+                table.insert(threads, codeThread)
+
+                local thisThread = coroutine.create(function(...)
+                    coroutine.resume(codeThread, ...)
+                    if looped and allDone(threads) then
+                        coroutine.resume(parentThread)
+                    end
+                end)
+                local data = setupThreadData(codeThread, parentThread)
+                rawset(data, "GetEnumUnit", unit)
+                coroutine.resume(thisThread, unit)
+
                 if group.indexOf[unit] then
                     i = i + 1
                 end
             end
+            if not allDone(threads) then
+                looped = true
+                coroutine.yield(parentThread)
+            end
         end
 
-        ---@param group FakeGroup
-        ---@param code fun(u)
-        function ForGroup(group, code)
-            if check(group ~= nil, 'group cannot be nil') then return end
-            if check(code ~= nil, 'code cannot be nil') then return end
-            local old = enumUnit
-            GUI.forGroup(group, function(unit)
-                enumUnit = unit
-                code()
-            end)
-            enumUnit = old
-        end
+        ForGroup = GUI.forGroup
 
         do
             local oldUnitAt = BlzGroupUnitAt
@@ -1637,7 +1653,6 @@ do
             return force.indexOf[GetOwningPlayer(unit)] and true or false
         end
 
-        local enumPlayer
         local oldForForce = ForForce
         local oldEnumPlayer = GetEnumPlayer
 
@@ -1648,32 +1663,34 @@ do
             if check(code ~= nil, 'code cannot be nil') then return end
             local i = 1
             local player
+            local parentThread = coroutine.running()
+            local threads = {} ---@type thread[]
             while i <= #force do
                 player = force[i]
-                code(player)
+                local codeThread = coroutine.create(code)
+                table.insert(threads, codeThread)
+
+                local thisThread = coroutine.create(function(...)
+                    coroutine.resume(codeThread, ...)
+                    if allDone(threads) then
+                        coroutine.resume(parentThread)
+                    end
+                end)
+                local data = setupThreadData(codeThread, parentThread)
+                rawset(data, "GetEnumPlayer", player)
+                coroutine.resume(thisThread, player)
+
                 if force.indexOf[player] then
                     i = i + 1
                 end
             end
+
+            if not allDone(threads) then
+                coroutine.yield(parentThread)
+            end
         end
 
-        ---@return player
-        function GetEnumPlayer()
-            return enumPlayer
-        end
-
-        ---@param force FakeForce
-        ---@param code function
-        function ForForce(force, code)
-            if check(force ~= nil, 'force cannot be nil') then return end
-            if check(code ~= nil, 'code cannot be nil') then return end
-            local old = enumPlayer
-            GUI.forForce(force, function(player)
-                enumPlayer = player
-                code()
-            end)
-            enumPlayer = old
-        end
+        ForForce = GUI.ForForce
 
         ---@param force FakeForce
         local function funnelEnum(force)
@@ -1725,11 +1742,131 @@ do
         end
     end
 
+    --[=======[
+      • CACHE •
+    --]=======]
+    do
+        local NULL = {}
+
+        -- No point writing generics since this could in theory be variadic param and variadic result, which doesn't work with generic
+        ---@class Cache
+        ---@field getterFunc function
+        ---@field argN integer
+        ---@field keyArgs integer[]?
+        ---@field cachedData table
+        Cache = {}
+        Cache.__index = Cache
+
+        local weakTable = { __mode = "kv" }
+
+        -- Create a cache with specified getter, but also indices of which arguments of the getterFunc are supposed to be used as keys (order of arguments also matters)
+        ---@param getterFunc function
+        ---@param getterFuncArgN integer amount of arguments getter func accepts
+        ---@param ... integer keyArgs
+        ---@return Cache
+        function Cache.create(getterFunc, getterFuncArgN, ...)
+            local keyArgs = { ... } ---@type integer[]?
+            if #keyArgs == 0 then
+                keyArgs = nil
+            end
+            return setmetatable({
+                getterFunc = getterFunc,
+                argN = getterFuncArgN,
+                keyArgs = keyArgs,
+                cachedData = setmetatable({}, weakTable)
+            }, Cache)
+        end
+
+        ---@param self Cache
+        ---@param ... unknown key(s)
+        ---@return table finalTable, unknown finalKey
+        local function fetchFromCache(self, ...)
+            local argv = { ... }
+
+            local currentTable = self.cachedData
+            local finalKey
+            if self.keyArgs == nil then
+                for i = 1, self.argN - 1 do
+                    local arg = argv[i] or NULL
+                    local nextTable = currentTable[arg]
+                    if nextTable == nil then
+                        nextTable = setmetatable({}, weakTable)
+                        currentTable[arg] = nextTable
+                    end
+                    currentTable = nextTable
+                end
+                finalKey = argv[self.argN] or NULL
+            else
+                local argvSize = #self.keyArgs
+                for i = 1, argvSize - 1 do
+                    local arg = argv[self.keyArgs[i]] or NULL
+                    local nextTable = currentTable[arg]
+                    if nextTable == nil then
+                        nextTable = setmetatable({}, weakTable)
+                        currentTable[arg] = nextTable
+                    end
+                    currentTable = nextTable
+                end
+                finalKey = argv[self.keyArgs[argvSize]] or NULL
+            end
+
+            return currentTable, finalKey
+        end
+
+        -- Fetch cached value or get and cache from getterFunc
+        ---@param ... unknown key(s)
+        ---@return unknown value(s)
+        function Cache:get(...)
+            local finalTable, finalKey = fetchFromCache(self, ...)
+            local val = finalTable[finalKey]
+            if val == nil then
+                val = self.getterFunc(...)
+                finalTable[finalKey] = val
+            end
+            return val
+        end
+
+        ---@param ... unknown key(s)
+        ---@return boolean
+        function Cache:hasCached(...)
+            local finalTable, finalKey = fetchFromCache(self, ...)
+            return finalTable[finalKey] ~= nil
+        end
+
+        ---must provide a EmmyLua annotation overriding this implementation
+        ---@param ... unknown key(s), order must be the same as defined in keyArgs, if not all keys are present, the last key's children will be invalidated and deleted
+        function Cache:invalidate(...)
+            local argv = table.pack(...)
+
+            local currentTable = self.cachedData
+            for i = 1, self.argN - 1 do
+                local arg = argv[i] or NULL
+                local nextTable = currentTable[arg]
+                if nextTable == nil then
+                    return
+                end
+                currentTable = nextTable
+            end
+            local finalKey = argv[self.argN] or NULL
+            currentTable[finalKey] = nil
+        end
+
+        -- flush entire cache, any new request will call getterFunc
+        function Cache:invalidateAll()
+            self.cachedData = {}
+        end
+    end
+
     --[==========[
       • TRIGGERS •
     --]==========]
+
+    ---@class EventRegistry
+    EventRegistry = {}
+
     if _EXPERIMENTAL then
-        OnInit.main("LIGUITriggers", function(require)
+        OnInit.global("LIGUITriggers", function(require)
+            print("Run Triggers override")
             local oldCreateTrigger = CreateTrigger
             local oldEnableTrigger = EnableTrigger
             local oldDisableTrigger = DisableTrigger
@@ -1771,7 +1908,7 @@ do
                         __faketype = "userdata",
                         actualTrigger = oldCreateTrigger(),
                         listeners = SyncedTable.create(),
-                        listenersAmount = 0
+                        listenerAmount = 0
                     }, FakeTriggerEvent)
                 end
 
@@ -1802,6 +1939,7 @@ do
                 local eventResponseMap = {} ---@type table<string, fun():unknown>
 
                 local useNativeInstead = {
+                    GetFilterUnit = "GetTriggerUnit",
                     GetEnteringUnit = "GetTriggerUnit",
                     GetLeavingUnit = "GetTriggerUnit",
                     GetDyingUnit = "GetTriggerUnit",
@@ -1891,8 +2029,9 @@ do
                     local abstractTriggerEventCache = Cache.create(createFakeTriggerEvent, nativeArgCount)
                     local eventCache = Cache.create(function(...)
                         local eventResponseNames = table.pack(commonResponse,
-                            table.unpack(eventTypeResponseMap[select(nativeArgCount, ...)]))
+                            table.unpack(eventTypeResponseMap[select(nativeArgCount - 1, ...)]))
                         local trigger = oldCreateTrigger() --[[@as trigger]]
+                        print(table.tostring(eventResponseNames))
                         eventRegistrationNative(trigger, ...)
                         oldTriggerAddAction(trigger, function()
                             processEventCallback(abstractTriggerEventCache, eventResponseNames)
@@ -2083,9 +2222,6 @@ do
                 -- EVENT_DIALOG_BUTTON_CLICK
                 -- EVENT_DIALOG_CLICK
 
-                ---@class EventRegistry
-                EventRegistry = {}
-
                 EventRegistry.Variable = defineEventType(TriggerRegisterVariableEvent, 4,
                     gameEventResponseMap[EVENT_GAME_VARIABLE_LIMIT])
                 EventRegistry.GameState = defineEventType(TriggerRegisterGameStateEvent, 4,
@@ -2274,12 +2410,14 @@ do
 
                 ---@return FakeTrigger
                 function FakeTrigger.create()
+                    print("Created new trigger")
                     return setmetatable({
                         __faketype = "userdata",
                         enabled = true,
                         pauseOnWait = false,
                         execCount = 0,
                         evalCount = 0,
+                        events = SyncedTable.create(),
                         conditions = SyncedTable.create(),
                         actions = SyncedTable.create()
                     }, FakeTrigger)
@@ -2425,17 +2563,6 @@ do
                     end
                 end
 
-                ---@param threads thread[]
-                ---@return boolean
-                local function allDone(threads)
-                    for _, thread in threads do
-                        if coroutine.status(thread) ~= 'dead' then
-                            return false
-                        end
-                    end
-                    return true
-                end
-
                 ---@param withSleep boolean?
                 function FakeTrigger:execute(withSleep)
                     local parentThread = coroutine.running()
@@ -2444,14 +2571,15 @@ do
                         local threads = {}
                         for action, enabled in pairs(self.actions) do
                             if enabled then
+                                local actionThread = coroutine.create(action)
+                                table.insert(threads, actionThread)
+
                                 local thisThread = coroutine.create(function()
-                                    action()
+                                    coroutine.resume(actionThread)
                                     if allDone(threads) then
                                         coroutine.resume(parentThread)
                                     end
                                 end)
-                                table.insert(threads, action)
-
                                 local data = setupThreadData(thisThread, parentThread)
                                 rawset(data, "GetTriggeringTrigger", self) -- don't overwrite master threadData entry
                                 rawset(data, "waitOnSleep", self.waitOnSleep)
@@ -2503,16 +2631,24 @@ do
                     IsTriggerWaitOnSleeps = FakeTrigger.isWaitOnSleep
                     GetTriggerEvalCount = FakeTrigger.getEvalCount
                     GetTriggerExecCount = FakeTrigger.getExecCount
+                    ---@param trigger FakeTrigger
+                    ---@param condition fun(): boolean
+                    ---@return fun(): boolean
                     TriggerAddCondition = function(trigger, condition)
+                        print("Adding condition to trigger")
                         FakeTrigger.addCondition(trigger, condition)
                         return condition
-                    end ---@type fun(trigger: FakeTrigger, condition: function): function
+                    end
                     TriggerRemoveCondition = FakeTrigger.removeCondition
                     TriggerClearConditions = FakeTrigger.clearConditions
+                    ---@param trigger FakeTrigger
+                    ---@param action function
+                    ---@return function
                     TriggerAddAction = function(trigger, action)
+                        print("Adding action to trigger")
                         FakeTrigger.addAction(trigger, action)
                         return action
-                    end ---@type fun(trigger: FakeTrigger, action: function): function
+                    end
                     TriggerRemoveAction = FakeTrigger.removeAction
                     TriggerClearActions = FakeTrigger.clearActions
                     TriggerSleepAction = PolledWait
@@ -2530,7 +2666,7 @@ do
                         ---@param ... unknown
                         ---@return AbstractTriggerEvent
                         return function(trigger, ...)
-                            local event = EventRegistryMethod(..., true)
+                            local event = EventRegistryMethod(...)
                             trigger:addEvent(event)
                             return event
                         end
@@ -2564,6 +2700,7 @@ do
                     BlzTriggerRegisterPlayerKeyEvent = makeTriggerEventOverrideWrapper(EventRegistry.PlayerKey) ---@overload fun(trigger: FakeTrigger,player: player, key: oskeytype, metaKey: integer, keyDown: boolean): AbstractTriggerEvent
                 end
             end
+            print("Run triggers override done")
         end)
     end
 
@@ -2573,9 +2710,9 @@ do
     --[[ Converts GUI's Timer events, native timers into using TimerQueue, if present, and also modifies TimerDialogs ]]
     if _EXPERIMENTAL then
         OnInit.main("LIGUITimers", function(require)
+            print("Run timer override")
             require "TimerQueue"
             require "SyncedTable"
-            require "Hook"
             if not TimerQueue or not SyncedTable then return end
             local stopwatch = Stopwatch.create(false)
             OnInit.final(function() stopwatch:start() end)
@@ -2593,7 +2730,7 @@ do
                 return setmetatable({
                     __faketype = "userdata",
                     listeners = SyncedTable.create(),
-                    listenersAmount = 0,
+                    listenerAmount = 0,
                     timer = timer
                 }, FakeTimerEvent)
             end
@@ -2675,40 +2812,46 @@ do
                     triggersWithTimers[whichTrigger] = triggerEvents
                 end
 
-                local timerEvents = timersWithEvents[t] ---@type table<trigger, boolean>
+                local timerEvents = timersWithEvents[whichTimer] ---@type table<trigger, boolean>
                 if not timerEvents then
                     timerEvents = SyncedTable.create()
-                    timersWithEvents[t] = timerEvents
+                    timersWithEvents[whichTimer] = timerEvents
                 end
 
                 timerEvents[whichTrigger] = true
-                triggerEvents[t] = true
+                triggerEvents[whichTimer] = true
 
                 return event
             end
 
+            local oldDisableTrigger = DisableTrigger
             ---@param whichTrigger trigger
-            Hook.add('DisableTrigger', function(whichTrigger)
+            function DisableTrigger(whichTrigger)
+                oldDisableTrigger(whichTrigger)
                 local timerEvents = triggersWithTimers[whichTrigger]
                 if timerEvents then
                     for timer, _ in pairs(timerEvents) do
                         timersWithEvents[timer][whichTrigger] = false
                     end
                 end
-            end)
+            end
 
+            local oldEnableTrigger = EnableTrigger
             ---@param whichTrigger trigger
-            Hook.add('EnableTrigger', function(whichTrigger)
+            function EnableTrigger(whichTrigger)
+                oldEnableTrigger(whichTrigger)
                 local timerEvents = triggersWithTimers[whichTrigger]
                 if timerEvents then
                     for timer, _ in pairs(timerEvents) do
                         timersWithEvents[timer][whichTrigger] = true
                     end
                 end
-            end)
+            end
 
+            local oldDestroyTrigger = DestroyTrigger
             ---@param whichTrigger trigger
-            Hook.add('DestroyTrigger', function(whichTrigger)
+            function DestroyTrigger(whichTrigger)
+                oldDestroyTrigger(whichTrigger)
                 local timerEvents = triggersWithTimers[whichTrigger]
                 if timerEvents then
                     for timer, _ in pairs(timerEvents) do
@@ -2716,7 +2859,7 @@ do
                     end
                 end
                 triggersWithTimers[whichTrigger] = nil
-            end)
+            end
 
             -- ============================
             --        TimerDialogs
@@ -2726,7 +2869,7 @@ do
             ---@field remainingTime number?
             ---@field speed number
             ---@field timer FakeTimer
-            ---@field task TimerQueueElement?
+            ---@field task integer?
 
             local oldCreateTimerDialog = CreateTimerDialog
             local oldTimerDialogSetRealTimeRemaining = TimerDialogSetRealTimeRemaining
@@ -2781,7 +2924,7 @@ do
                 local tdd = timerDialogs[timerDialog]
                 if tdd then
                     timerDialogs[timerDialog] = nil
-                    tdd.task:disable()
+                    TimerQueue:disableCallback(tdd.task)
                 end
                 oldDestroyTimerDialog(timerDialog)
             end
@@ -2806,7 +2949,7 @@ do
                 local tdd = timerDialogs[whichDialog]
                 if tdd then
                     tdd.speed = speedMultFactor
-                    tdd.task:disable()
+                    TimerQueue:disableCallback(tdd.task)
                     tdd.task = TimerQueue:callDelayed(1 / speedMultFactor, timerDialogCallback, whichDialog)
                 end
                 oldTimerDialogSetSpeed(whichDialog, speedMultFactor)
@@ -2822,7 +2965,7 @@ do
             ---@field periodic boolean?
             ---@field timeout number?
             ---@field pausedTimeout number?
-            ---@field task TimerQueueElement?
+            ---@field task integer?
 
             local expiredTimers = setmetatable({}, { __mode = 'k' }) ---@type table<thread, FakeTimer>
 
@@ -2895,14 +3038,14 @@ do
             ---@param whichTimer FakeTimer
             function PauseTimer(whichTimer)
                 if whichTimer.task then
-                    whichTimer.task:disable()
+                    TimerQueue:disableCallback(whichTimer.task)
                     whichTimer.pausedTimeout = TimerGetRemaining(whichTimer)
                     whichTimer.task = nil
                     local tds = timersWithDialogs[whichTimer]
                     if tds then
                         for timerDialog, _ in pairs(tds) do
                             local tdd = timerDialogs[timerDialog]
-                            tdd.task:disable()
+                            TimerQueue:disableCallback(tdd.task)
                             tdd.task = nil
                         end
                     end
@@ -2921,7 +3064,7 @@ do
                     if tds then
                         for timerDialog, _ in pairs(tds) do
                             local tdd = timerDialogs[timerDialog]
-                            if tdd.task then tdd.task:disable() end
+                            if tdd.task then TimerQueue:disableCallback(tdd.task) end
                             tdd.task = TimerQueue:callDelayed(1 / tdd.speed, timerDialogCallback, timerDialog)
                         end
                     end
@@ -2932,6 +3075,8 @@ do
             function GetExpiredTimer()
                 return expiredTimers[coroutine.running()]
             end
+
+            print("Run timers override done")
         end)
     end
 
@@ -3028,7 +3173,7 @@ do
         end
 
         local fStack, tStack, oldBJ = {}, {},
-        TriggerRegisterAnyUnitEventBJ ---@type {[eventid]: function[]}, {[eventid]: trigger[]}
+            TriggerRegisterAnyUnitEventBJ ---@type {[eventid]: function[]}, {[eventid]: trigger[]}
 
         ---@param event playerunitevent
         ---@param userFunc function
@@ -3367,6 +3512,7 @@ do
         end
 
         OnInit.main(function()
+            print("Run unit removal init")
             local enterTrigger = CreateTrigger()
             TriggerRegisterEnterRectSimple(enterTrigger, GetWorldBounds() --[[@as rect]]) -- returns FakeRect but due to all overrides, the BJ will be able to process it
             TriggerAddAction(enterTrigger, function()
@@ -3378,13 +3524,14 @@ do
             TriggerRegisterAnyUnitEventBJ(deindexTrigger, EVENT_PLAYER_UNIT_ISSUED_ORDER)
             TriggerAddAction(deindexTrigger, function()
                 local unit = GetTriggerUnit()
+                print("New unit action")
                 if GetIssuedOrderId() == UNDEFEND_ORDER_ID and not UnitAlive(unit) and allUnits[unit] and GetUnitAbilityLevel(unit, _REMOVE_ABIL) == 0 then
+                    print("Unit removed")
                     allUnits[unit] = nil
                     for _, listener in ipairs(eventListeners) do
-                        -- todo: wrap it in a coroutine so that TSA/yields don't pause this entire thing (after coroutine recycler is added)
-                        pcall(listener --[[@as UnitRemovalEventListener]], unit)
+                        coroutine.wrap(listener)(unit) -- we don't care about result
                     end
-                    unitRemovedEvent(unit)
+                    unitRemovedEvent(unit)             -- this shouldn't throw errors
                 end
             end)
 
@@ -3392,6 +3539,7 @@ do
             for j = 0, playerCountMax do
                 SetPlayerAbilityAvailable(Player(j), _REMOVE_ABIL, false)
             end
+            print("Run unit removal init done")
         end)
 
         ---@param listener fun(removedUnit: unit)

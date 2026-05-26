@@ -186,10 +186,10 @@ do
     TimerQueue.__index = TimerQueue
     TimerQueue.__name = 'TimerQueue'
 
-    --Creates a timer on first access of the static TimerQueue:callDelayed method. Avoids timer creation inside the Lua root.
-    setmetatable(TimerQueue, {__index = function(t,k) if k == 'timer' then t[k] = CreateTimer() end; return rawget(t,k) end})
+    local unpack, max, createTimer, timerStart, timerGetElapsed, pauseTimer, resumeTimer, destroyTimer, try = table.unpack, math.max, CreateTimer, TimerStart, TimerGetElapsed, PauseTimer, ResumeTimer, DestroyTimer, Debug and Debug.try
 
-    local unpack, max, timerStart, timerGetElapsed, pauseTimer, try = table.unpack, math.max, TimerStart, TimerGetElapsed, PauseTimer, Debug and Debug.try
+    --Creates a timer on first access of the static TimerQueue:callDelayed method. Avoids timer creation inside the Lua root.
+    setmetatable(TimerQueue, {__index = function(t,k) if k == 'timer' then t[k] = createTimer() end; return rawget(t,k) end})
 
     ---Executes the topmost queued callback and removes it from the queue.
     ---@param timerQueue TimerQueue
@@ -228,7 +228,7 @@ do
         new.n = 0
         new.paused = false
         new.runtime = 0.
-        new.timer = CreateTimer()
+        new.timer = createTimer()
         new.queue = TimerQueueElement.create()
         new.on_expire = function() on_expire(new) end
         return new
@@ -338,14 +338,14 @@ do
             self.paused = false
             self.runtime = self.runtime + timerGetElapsed(self.timer)
             self.queue.next.timeout = self.queue.next.timeout - timerGetElapsed(self.timer) --need to restart from 0, because TimerGetElapsed(resumedTimer) is doing so as well after a timer is resumed.
-            ResumeTimer(self.timer)
+            resumeTimer(self.timer)
         end
     end
 
     ---Destroys the timer object behind the TimerQueue. The Lua object will be automatically garbage collected once you ensure that there is no more reference to it.
     function TimerQueue:destroy()
         pauseTimer(self.timer) --https://www.hiveworkshop.com/threads/issues-with-timer-functions.309433/ suggests that non-paused destroyed timers can still execute their callback
-        DestroyTimer(self.timer)
+        destroyTimer(self.timer)
         recycleQueueElements(self)
         self.queue = nil
         setmetatable(self, nil) --prevents consequences on the TimerQueue class, if further methods (like :destroy again) are used on the destroyed TimerQueue.
@@ -462,29 +462,29 @@ do
     ---Starts or restarts a Stopwatch, i.e. resets the elapsed time of the Stopwatch to zero and starts counting upwards.
     function Stopwatch:start()
         self.elapsed = 0.
-        TimerStart(self.timer, CYCLE_LENGTH, true, self.increaseElapsed)
+        timerStart(self.timer, CYCLE_LENGTH, true, self.increaseElapsed)
     end
 
     ---Returns the time in seconds that a Stopwatch is currently running, i.e. the elapsed time since start.
     ---@return number
     function Stopwatch:getElapsed()
-        return self.elapsed + TimerGetElapsed(self.timer)
+        return self.elapsed + timerGetElapsed(self.timer)
     end
 
     ---Pauses a Stopwatch, so it will retain its current elapsed time, until resumed.
     function Stopwatch:pause()
-        PauseTimer(self.timer)
+        pauseTimer(self.timer)
     end
 
     ---Resumes a Stopwatch after having been paused.
     function Stopwatch:resume()
-        self.elapsed = self.elapsed + TimerGetElapsed(self.timer)
-        TimerStart(self.timer, CYCLE_LENGTH, true, self.increaseElapsed) --not using ResumeTimer here, as it actually starts timer from new with the remaining time and thus screws up TimerGetElapsed().
+        self.elapsed = self.elapsed + timerGetElapsed(self.timer)
+        timerStart(self.timer, CYCLE_LENGTH, true, self.increaseElapsed) --not using ResumeTimer here, as it actually starts timer from new with the remaining time and thus screws up TimerGetElapsed().
     end
 
     ---Destroys the timer object behind the Stopwatch. The Lua object will be automatically garbage collected once you ensure that there is no more reference to it.
     function Stopwatch:destroy()
-        DestroyTimer(self.timer)
+        destroyTimer(self.timer)
     end
 end
 if Debug and Debug.endFile then Debug.endFile() end

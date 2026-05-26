@@ -45,6 +45,7 @@ OnInit = {}
 ---@overload async fun(reqName: string, source?: table): string
 Require = {}
 do
+    local coroutine = coroutine
     local library = {} --You can change this to false if you don't use `Require` nor the `OnInit.library` API.
     --CONFIGURABLE LEGACY API FUNCTION:
     ---@param _ENV table

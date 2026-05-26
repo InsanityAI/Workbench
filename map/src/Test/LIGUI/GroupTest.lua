@@ -2,7 +2,6 @@ if Debug then Debug.beginFile "Test/LIGUI/GroupTest" end
 OnInit.final("Test/LIGUI/GroupTest", function(require)
     require "TimerQueue"
 
-    IngameConsole:makeShared()
     IngameConsole.create(Player(0))
     local stopwatch = Stopwatch.create(true)
     local oldPrint = print
@@ -31,5 +30,15 @@ OnInit.final("Test/LIGUI/GroupTest", function(require)
     local unitB = CreateUnit(Player(0), FourCC('hpea'), 0, 0, 0)
     GroupAddUnit(TestGroup, unitA)
     GroupAddUnit(TestGroup, unitB)
+
+    local trig = CreateTrigger()
+    TriggerRegisterAnyUnitEventBJ(trig, EVENT_PLAYER_UNIT_ISSUED_ORDER)
+    TriggerAddCondition(trig, Condition(function()
+        print("Lmao condition")
+        return true
+    end))
+    TriggerAddAction(trig, function()
+        print("Unit action")
+    end)
 end)
 if Debug then Debug.endFile() end
