@@ -2,7 +2,6 @@ if Debug then Debug.beginFile "Test/LIGUI/GroupTest" end
 OnInit.final("Test/LIGUI/GroupTest", function(require)
     require "TimerQueue"
 
-    IngameConsole.create(Player(0))
     local stopwatch = Stopwatch.create(true)
     local oldPrint = print
     local function print(...)
@@ -21,7 +20,7 @@ OnInit.final("Test/LIGUI/GroupTest", function(require)
         print("Unit in group", BlzGroupGetSize(TestGroup))
     end)
 
-    TimerQueue:callDelayed(5.00, function ()
+    TimerQueue:callDelayed(5.00, function()
         RemoveUnit(TestUnit)
         print("Unit has been removed.")
     end)
@@ -31,14 +30,17 @@ OnInit.final("Test/LIGUI/GroupTest", function(require)
     GroupAddUnit(TestGroup, unitA)
     GroupAddUnit(TestGroup, unitB)
 
-    local trig = CreateTrigger()
-    TriggerRegisterAnyUnitEventBJ(trig, EVENT_PLAYER_UNIT_ISSUED_ORDER)
-    TriggerAddCondition(trig, Condition(function()
-        print("Lmao condition")
-        return true
-    end))
-    TriggerAddAction(trig, function()
-        print("Unit action")
+    TimerQueue:callDelayed(5.00, function()
+        local trig = CreateTrigger()
+        TriggerRegisterPlayerChatEvent(trig, Player(0), "", false)
+        TriggerAddCondition(trig, Condition(function()
+            print("Lmao condition")
+            return true
+        end))
+        TriggerAddAction(trig, function()
+            print("Unit action")
+        end)
     end)
+    
 end)
 if Debug then Debug.endFile() end

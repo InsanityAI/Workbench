@@ -150,6 +150,9 @@ do
         end
     end
 
+    -- todo: remove this and other occurances
+    local msg = print
+
     -- Required in order to access cached event responses
     -- Note: This relies on __index and __newindex chain instead of threads as keys to lookup data
     local threadData = setmetatable({}, { __mode = 'k' }) ---@type table<thread, table<string, unknown>> -- map of threads to tbl keys for threadData
@@ -159,6 +162,7 @@ do
     ---@param toRoot true?
     ---@return table<string, unknown>
     local function setupThreadData(currentThread, parentThread, toRoot)
+        msg("Set thread data for", currentThread, "parent thread=", parentThread)
         local tbl = {}
         if parentThread then
             local parentKey = threadData[parentThread]
@@ -184,6 +188,7 @@ do
     end
 
     local function clearThreadData(thread)
+        msg("clear thread data for thread", thread)
         threadData[thread] = nil
     end
 
@@ -232,6 +237,7 @@ do
                 pack(args, ...) -- only for first time coroutine.resume call since native thread is created
                 while true do
                     -- run job function
+                    msg("Coroutine", thread, "starting")
                     pack(args, pcall(threadJobMap[thread], unpack(args)))
 
                     -- mark coroutine as available
@@ -241,6 +247,7 @@ do
                     threadDead[thread] = true
 
                     -- final value return and next coroutine resume call (new job function)
+                    msg("Coroutine", thread, "finished")
                     pack(args, coroutine.yield(unpack(args)))
                 end
             end
@@ -383,6 +390,7 @@ do
             local filterUpvalue = nil ---@type fun(): boolean
             local nativeFilter = Filter(function()
                 -- note: this runs in a "blizzard" thread and cannot be paused/yielded, so we're safe
+                msg("Running boolexpr", filterUpvalue)
                 return filterUpvalue()
             end)
 
@@ -1011,6 +1019,7 @@ do
             local parentThread = coroutine.running()
             local threads = {} ---@type thread[]
             local looped = false
+            msg("Running ForGroup", group, code)
             while i <= #group do
                 unit = group[i]
                 local codeThread = coroutine.create(code)
@@ -1034,6 +1043,7 @@ do
                 looped = true
                 coroutine.yield(parentThread)
             end
+            msg("ForGroup", group, code, "finished")
         end
 
         ForGroup = GUI.forGroup
@@ -1665,6 +1675,7 @@ do
             local player
             local parentThread = coroutine.running()
             local threads = {} ---@type thread[]
+            msg("Running ForForce", force, code)
             while i <= #force do
                 player = force[i]
                 local codeThread = coroutine.create(code)
@@ -1688,6 +1699,7 @@ do
             if not allDone(threads) then
                 coroutine.yield(parentThread)
             end
+            msg("ForForce", force, code, "finished")
         end
 
         ForForce = GUI.ForForce
@@ -1888,7 +1900,10 @@ do
                 FakeTriggerEvent.__index = FakeTriggerEvent
 
                 function FakeTriggerEvent:notifyListeners()
+                    msg("FakeTriggerEvent:notifyListeners", self)
                     if self.listenerAmount == 0 then
+                        msg("No listeners in", self)
+                        msg("Listeners", table.tostring(self.listeners))
                         oldDisableTrigger(self.actualTrigger)
                         return
                     end
@@ -1898,30 +1913,34 @@ do
                             local newThread = coroutine.create(listener.execute)
                             local data = setupThreadData(newThread, thread, true)
                             -- run in a coroutine to avoid TSA/PolledWait congesting every listener/trigger
+                            msg("Executing trigger", listener)
                             coroutine.resume(newThread, listener)
                         end
                     end
                 end
 
                 local function createFakeTriggerEvent()
-                    return setmetatable({
+                    local o = setmetatable({
                         __faketype = "userdata",
                         actualTrigger = oldCreateTrigger(),
                         listeners = SyncedTable.create(),
                         listenerAmount = 0
                     }, FakeTriggerEvent)
+                    msg("Fake trigger event created", o)
+                    return o
                 end
 
                 ---@param self FakeTriggerEvent
                 ---@param listener FakeTrigger
                 function FakeTriggerEvent:addListener(listener)
-                    if self.listeners[listener] then
+                    if not self.listeners[listener] then
                         self.listenerAmount = self.listenerAmount + 1
                     end
                     self.listeners[listener] = true
                     if self.listenerAmount > 0 then
                         oldEnableTrigger(self.actualTrigger)
                     end
+                    msg("Added listener to FakeTriggerEvent", self, listener)
                 end
 
                 ---@param self FakeTriggerEvent
@@ -1934,6 +1953,7 @@ do
                     if self.listenerAmount == 0 then
                         oldDisableTrigger(self.actualTrigger)
                     end
+                    msg("Removed listener from FakeTriggerEvent", self, listener)
                 end
 
                 local eventResponseMap = {} ---@type table<string, fun():unknown>
@@ -1954,10 +1974,10 @@ do
                     GetSpellAbilityUnit = "GetTriggerUnit",
                 }
 
-                ---@param abstractTriggerEventCache Cache
+                ---@param event AbstractTriggerEvent
                 ---@param eventResponseNames string[]
-                local function processEventCallback(abstractTriggerEventCache, eventResponseNames)
-                    local event = abstractTriggerEventCache:get(oldGetTriggeringTrigger()) --[[@as AbstractTriggerEvent]]
+                local function processEventCallback(event, eventResponseNames)
+                    msg("Process event callback")
                     local thread = coroutine.running()
                     local data = setupThreadData(thread)
                     data.GetTriggerEventId = event
@@ -1978,16 +1998,16 @@ do
                 ---@return fun(...): AbstractTriggerEvent
                 local function defineEventType(eventRegistrationNative, nativeArgCount, eventResponseNames)
                     local abstractTriggerEventCache = Cache.create(createFakeTriggerEvent, nativeArgCount)
-
-                    local function triggerCallback()
-                        processEventCallback(abstractTriggerEventCache, eventResponseNames)
-                    end
-
                     local eventCache = Cache.create(function(...)
+                        msg("Registering new ACTUAL event", ...)
                         local trigger = oldCreateTrigger() --[[@as trigger]]
                         eventRegistrationNative(trigger, ...)
-                        oldTriggerAddAction(trigger, triggerCallback)
-                        return abstractTriggerEventCache:get(trigger, ...)
+                        local event = abstractTriggerEventCache:get(trigger, ...)
+                        oldTriggerAddAction(trigger, function()
+                            processEventCallback(event, eventResponseNames)
+                        end)
+                        msg("Created fake trigger event", event)
+                        return event
                     end, nativeArgCount - 1)
                     return function(...)
                         return eventCache:get(...)
@@ -2030,13 +2050,16 @@ do
                     local eventCache = Cache.create(function(...)
                         local eventResponseNames = table.pack(commonResponse,
                             table.unpack(eventTypeResponseMap[select(nativeArgCount - 1, ...)]))
+                        msg("Registering new ACTUAL dynamic event", ...)
                         local trigger = oldCreateTrigger() --[[@as trigger]]
-                        print(table.tostring(eventResponseNames))
-                        eventRegistrationNative(trigger, ...)
+                        local event = eventRegistrationNative(trigger, ...)
+                        msg("Event", event, eventRegistrationNative, trigger)
+                        local event = abstractTriggerEventCache:get(trigger, ...)
                         oldTriggerAddAction(trigger, function()
-                            processEventCallback(abstractTriggerEventCache, eventResponseNames)
+                            processEventCallback(event, eventResponseNames)
                         end)
-                        return abstractTriggerEventCache:get(trigger, ...)
+                        msg("Creating fake dynamic trigger event")
+                        return event
                     end, nativeArgCount - 1)
                     return function(...)
                         return eventCache:get(...)
@@ -2410,7 +2433,6 @@ do
 
                 ---@return FakeTrigger
                 function FakeTrigger.create()
-                    print("Created new trigger")
                     return setmetatable({
                         __faketype = "userdata",
                         enabled = true,
@@ -2463,6 +2485,7 @@ do
 
                 ---@param event AbstractTriggerEvent
                 function FakeTrigger:addEvent(event)
+                    msg("Add event", event, "to trigger", self)
                     self.events[event] = true
                     event:addListener(self)
                 end
@@ -2635,7 +2658,6 @@ do
                     ---@param condition fun(): boolean
                     ---@return fun(): boolean
                     TriggerAddCondition = function(trigger, condition)
-                        print("Adding condition to trigger")
                         FakeTrigger.addCondition(trigger, condition)
                         return condition
                     end
@@ -2645,7 +2667,6 @@ do
                     ---@param action function
                     ---@return function
                     TriggerAddAction = function(trigger, action)
-                        print("Adding action to trigger")
                         FakeTrigger.addAction(trigger, action)
                         return action
                     end
@@ -3137,113 +3158,6 @@ do
             import "GlobalRemap"
             GlobalRemap("udg_INFINITE_LOOP", function() return -1 end) --a readonly variable for infinite looping in GUI.
         end)
-    end
-
-    --[[---------------------------------------------------------------------------------------------
-            RegisterAnyPlayerUnitEvent by Bribe
-
-            RegisterAnyPlayerUnitEvent cuts down on handle count for already-registered events, plus has
-            the benefit for Lua users to just use function calls.
-
-            Adds a third parameter to the RegisterAnyPlayerUnitEvent function: "skip". If true, disables
-            the specified event, while allowing a single function to run discretely. It also allows (if
-            Global Variable Remapper is included) GUI to un-register a playerunitevent by setting
-            udg_RemoveAnyUnitEvent to the trigger they wish to remove.
-
-            The "return" value of RegisterAnyPlayerUnitEvent calls the "remove" method. The API, therefore,
-            has been reduced to just this one function (in addition to the bj override).
-        -----------------------------------------------------------------------------------------------]]
-    do
-        local cache = __jarray()
-
-        ---@param whichTrig trigger
-        ---@return function
-        function GUI.wrapTrigger(whichTrig)
-            if check(whichTrig ~= nil, 'whichTrig cannot be nil') then return nil end
-            local func = cache[whichTrig]
-            if not func then
-                func = function()
-                    if IsTriggerEnabled(whichTrig) and TriggerEvaluate(whichTrig) then
-                        TriggerExecute(whichTrig)
-                    end
-                end
-                cache[whichTrig] = func
-            end
-            return func
-        end
-
-        local fStack, tStack, oldBJ = {}, {},
-            TriggerRegisterAnyUnitEventBJ ---@type {[eventid]: function[]}, {[eventid]: trigger[]}
-
-        ---@param event playerunitevent
-        ---@param userFunc function
-        ---@param skip boolean?
-        function RegisterAnyPlayerUnitEvent(event, userFunc, skip)
-            if check(event ~= nil, 'event cannot be nil') then return end
-            if check(userFunc ~= nil, 'userFunc cannot be nil') then return end
-            if skip then
-                local t = tStack[event]
-                if t and IsTriggerEnabled(t) then
-                    DisableTrigger(t)
-                    userFunc()
-                    EnableTrigger(t)
-                else
-                    userFunc()
-                end
-            else
-                local funcs, insertAt = fStack[event], 1
-                if funcs then
-                    insertAt = #funcs + 1
-                    if insertAt == 1 then EnableTrigger(tStack[event]) end
-                else
-                    local t = CreateTrigger()
-                    oldBJ(t, event)
-                    tStack[event], funcs = t, {}
-                    fStack[event] = funcs
-                    TriggerAddCondition(t, Filter(function()
-                        for _, func in ipairs(funcs) do func() end
-                    end))
-                end
-                funcs[insertAt] = userFunc
-                return function()
-                    local total = #funcs
-                    for i = 1, total do
-                        if funcs[i] == userFunc then
-                            if total == 1 then
-                                DisableTrigger(tStack[event]) --no more events are registered, disable the event (for now).
-                            elseif total > i then
-                                funcs[i] = funcs[total]
-                            end                --pop just the top index down to this vacant slot so we don't have to down-shift the entire stack.
-                            funcs[total] = nil --remove the top entry.
-                            return true
-                        end
-                    end
-                end
-            end
-        end
-
-        local trigFuncs
-        ---@param trig trigger
-        ---@param event playerunitevent
-        ---@return function|nil
-        function TriggerRegisterAnyUnitEventBJ(trig, event)
-            if check(trig ~= nil, 'trig cannot be nil') then return nil end
-            if check(event ~= nil, 'event cannot be nil') then return nil end
-            local removeFunc = RegisterAnyPlayerUnitEvent(event, GUI.wrapTrigger(trig))
-            if _USE_GLOBAL_REMAP then
-                if not trigFuncs then
-                    trigFuncs = __jarray()
-                    GlobalRemap("udg_RemoveAnyUnitEvent", nil, function(t)
-                        if trigFuncs[t] then
-                            trigFuncs[t]()
-                            trigFuncs[t] = nil
-                        end
-                    end)
-                end
-                trigFuncs[trig] = removeFunc
-            end
-            return removeFunc
-        end
     end
 
     -- Modify to allow requests for negative hero stats, as per request from Tasyen.
