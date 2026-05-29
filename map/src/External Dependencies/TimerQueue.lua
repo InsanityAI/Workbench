@@ -450,7 +450,7 @@ do
     function Stopwatch.create(startImmediately_yn)
         local new = {}
         setmetatable(new, Stopwatch)
-        new.timer = CreateTimer()
+        new.timer = createTimer()
         new.elapsed = 0.
         new.increaseElapsed = function() new.elapsed = new.elapsed + CYCLE_LENGTH end
         if startImmediately_yn then

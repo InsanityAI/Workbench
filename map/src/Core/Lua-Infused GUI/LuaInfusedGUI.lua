@@ -162,7 +162,6 @@ do
     ---@param toRoot true?
     ---@return table<string, unknown>
     local function setupThreadData(currentThread, parentThread, toRoot)
-        msg("Set thread data for", currentThread, "parent thread=", parentThread)
         local tbl = {}
         if parentThread then
             local parentKey = threadData[parentThread]
@@ -188,7 +187,6 @@ do
     end
 
     local function clearThreadData(thread)
-        msg("clear thread data for thread", thread)
         threadData[thread] = nil
     end
 
@@ -385,12 +383,10 @@ do
     --]=============]
     if _EXPERIMENTAL then
         OnInit.main("LIGUI_Boolexprs", function(require)
-            print("Run boolexpr override")
             -- ForGroup/ForForce will use regular loops
             local filterUpvalue = nil ---@type fun(): boolean
             local nativeFilter = Filter(function()
                 -- note: this runs in a "blizzard" thread and cannot be paused/yielded, so we're safe
-                msg("Running boolexpr", filterUpvalue)
                 return filterUpvalue()
             end)
 
@@ -655,7 +651,6 @@ do
             DestroyFilter = DoNothing
             DestroyCondition = DoNothing
             DestroyBoolExpr = DoNothing
-            print("Run boolexpr override done")
         end)
     end
     --[=============[
@@ -1877,8 +1872,8 @@ do
     EventRegistry = {}
 
     if _EXPERIMENTAL then
-        OnInit.global("LIGUITriggers", function(require)
-            print("Run Triggers override")
+        OnInit.main("LIGUI_Triggers", function(require)
+            require "LIGUI_Boolexprs"
             local oldCreateTrigger = CreateTrigger
             local oldEnableTrigger = EnableTrigger
             local oldDisableTrigger = DisableTrigger
@@ -1911,7 +1906,7 @@ do
                     for listener in pairs(self.listeners) do
                         if listener:evaluate() then
                             local newThread = coroutine.create(listener.execute)
-                            local data = setupThreadData(newThread, thread, true)
+                            local data = setupThreadData(newThread, thread)
                             -- run in a coroutine to avoid TSA/PolledWait congesting every listener/trigger
                             msg("Executing trigger", listener)
                             coroutine.resume(newThread, listener)
@@ -1926,7 +1921,6 @@ do
                         listeners = SyncedTable.create(),
                         listenerAmount = 0
                     }, FakeTriggerEvent)
-                    msg("Fake trigger event created", o)
                     return o
                 end
 
@@ -1940,7 +1934,6 @@ do
                     if self.listenerAmount > 0 then
                         oldEnableTrigger(self.actualTrigger)
                     end
-                    msg("Added listener to FakeTriggerEvent", self, listener)
                 end
 
                 ---@param self FakeTriggerEvent
@@ -1953,7 +1946,6 @@ do
                     if self.listenerAmount == 0 then
                         oldDisableTrigger(self.actualTrigger)
                     end
-                    msg("Removed listener from FakeTriggerEvent", self, listener)
                 end
 
                 local eventResponseMap = {} ---@type table<string, fun():unknown>
@@ -1983,11 +1975,13 @@ do
                     data.GetTriggerEventId = event
 
                     for _, name in ipairs(eventResponseNames) do
+                        print("Event response", name)
                         if useNativeInstead[name] then
                             threadData[thread][name] = threadData[thread][useNativeInstead[name]]
                         else
                             threadData[thread][name] = eventResponseMap[name]()
                         end
+                        print("Event response", name, threadData[thread][name])
                     end
                     event:notifyListeners()
                 end
@@ -1999,14 +1993,12 @@ do
                 local function defineEventType(eventRegistrationNative, nativeArgCount, eventResponseNames)
                     local abstractTriggerEventCache = Cache.create(createFakeTriggerEvent, nativeArgCount)
                     local eventCache = Cache.create(function(...)
-                        msg("Registering new ACTUAL event", ...)
                         local trigger = oldCreateTrigger() --[[@as trigger]]
                         eventRegistrationNative(trigger, ...)
                         local event = abstractTriggerEventCache:get(trigger, ...)
                         oldTriggerAddAction(trigger, function()
                             processEventCallback(event, eventResponseNames)
                         end)
-                        msg("Created fake trigger event", event)
                         return event
                     end, nativeArgCount - 1)
                     return function(...)
@@ -2050,7 +2042,6 @@ do
                     local eventCache = Cache.create(function(...)
                         local eventResponseNames = table.pack(commonResponse,
                             table.unpack(eventTypeResponseMap[select(nativeArgCount - 1, ...)]))
-                        msg("Registering new ACTUAL dynamic event", ...)
                         local trigger = oldCreateTrigger() --[[@as trigger]]
                         local event = eventRegistrationNative(trigger, ...)
                         msg("Event", event, eventRegistrationNative, trigger)
@@ -2058,7 +2049,6 @@ do
                         oldTriggerAddAction(trigger, function()
                             processEventCallback(event, eventResponseNames)
                         end)
-                        msg("Creating fake dynamic trigger event")
                         return event
                     end, nativeArgCount - 1)
                     return function(...)
@@ -2296,12 +2286,14 @@ do
                     ---@param name string
                     ---@return unknown
                     local function getEventResponse(name)
+                        msg("Get", name, "for", coroutine.running(), "as", threadData[coroutine.running()][name])
                         return threadData[coroutine.running()][name]
                     end
 
                     ---@param name string
                     ---@param value unknown
                     local function setEventResponse(name, value)
+                        msg("Set", name, "for", coroutine.running(), "to", value)
                         threadData[coroutine.running()][name] = value
                     end
 
@@ -2694,8 +2686,6 @@ do
                     end
 
                     TriggerRegisterVariableEvent = makeTriggerEventOverrideWrapper(EventRegistry.Variable) ---@overload fun(trigger: FakeTrigger, varname: string, opcode: limitop, limitval: number): AbstractTriggerEvent
-                    TriggerRegisterTimerEvent = makeTriggerEventOverrideWrapper(EventRegistry.Timer) ---@overload fun(trigger: FakeTrigger, timeout: number, periodic: boolean): AbstractTriggerEvent
-                    TriggerRegisterTimerExpireEvent = makeTriggerEventOverrideWrapper(EventRegistry.TimerExpired) ---@overload fun(trigger: FakeTrigger, timer: timer): AbstractTriggerEvent
                     TriggerRegisterGameStateEvent = makeTriggerEventOverrideWrapper(EventRegistry.GameState) ---@overload fun(trigger: FakeTrigger, gamestate: gamestate, opcode: limitop, limitval: number): AbstractTriggerEvent
                     TriggerRegisterDialogEvent = makeTriggerEventOverrideWrapper(EventRegistry.Dialog) ---@overload fun(trigger: FakeTrigger, dialog: dialog): AbstractTriggerEvent
                     TriggerRegisterDialogButtonEvent = makeTriggerEventOverrideWrapper(EventRegistry.DialogButton) ---@overload fun(trigger: FakeTrigger, button: button): AbstractTriggerEvent
@@ -2721,7 +2711,6 @@ do
                     BlzTriggerRegisterPlayerKeyEvent = makeTriggerEventOverrideWrapper(EventRegistry.PlayerKey) ---@overload fun(trigger: FakeTrigger,player: player, key: oskeytype, metaKey: integer, keyDown: boolean): AbstractTriggerEvent
                 end
             end
-            print("Run triggers override done")
         end)
     end
 
@@ -2730,8 +2719,8 @@ do
     --]========]
     --[[ Converts GUI's Timer events, native timers into using TimerQueue, if present, and also modifies TimerDialogs ]]
     if _EXPERIMENTAL then
-        OnInit.main("LIGUITimers", function(require)
-            print("Run timer override")
+        OnInit.main("LIGUI_Timers", function(require)
+            require "LIGUI_Triggers"
             require "TimerQueue"
             require "SyncedTable"
             if not TimerQueue or not SyncedTable then return end
@@ -2745,8 +2734,10 @@ do
             ---@class FakeTimerEvent: AbstractTriggerEvent
             ---@field timer FakeTimer
             FakeTimerEvent = {}
+            FakeTimerEvent.__index = FakeTimerEvent
 
             ---@param timer FakeTimer?
+            ---@return FakeTimerEvent
             local function createFakeTimerEvent(timer)
                 return setmetatable({
                     __faketype = "userdata",
@@ -2761,14 +2752,14 @@ do
                 for listener in pairs(self.listeners) do
                     if listener:isEnabled() and listener:evaluate() then
                         local newThread = coroutine.create(listener.execute)
-                        local data = setupThreadData(newThread, thread, true)
+                        local data = setupThreadData(newThread, thread)
                         -- run in a coroutine to avoid TSA/PolledWait congesting every listener/trigger
                         coroutine.resume(newThread, listener)
                     end
                 end
             end
 
-            ---@param self FakeTriggerEvent
+            ---@param self FakeTimerEvent
             ---@param listener FakeTrigger
             function FakeTimerEvent:addListener(listener)
                 if self.listeners[listener] then
@@ -2777,7 +2768,7 @@ do
                 self.listeners[listener] = true
             end
 
-            ---@param self FakeTriggerEvent
+            ---@param self FakeTimerEvent
             ---@param listener FakeTrigger
             function FakeTimerEvent:removeListener(listener)
                 if self.listeners[listener] then
@@ -2812,9 +2803,9 @@ do
                 if check(whichTrigger ~= nil, 'trigger cannot be nil') then return nil end
                 if check(timeout ~= nil, 'timeout cannot be nil') then return nil end
                 local event = createFakeTimerEvent(CreateTimer() --[[@as FakeTimer]])
-                event:addListener(whichTrigger)
-                TimerStart(event.timer, timeout, periodic, nil)
-                -- TimerQueue:callDelayed(timeout, triggerTimeCallback, whichTrigger, timeout, periodic)
+                whichTrigger:addEvent(event)
+                -- TimerStart(event.timer, timeout, periodic, nil)
+                TimerQueue:callDelayed(timeout, triggerTimeCallback, whichTrigger, timeout, periodic)
                 return event
             end
 
@@ -2825,7 +2816,7 @@ do
                 if check(whichTrigger ~= nil, 'trigger cannot be nil') then return nil end
                 if check(whichTimer ~= nil, 'timer cannot be nil') then return nil end
                 local event = createFakeTimerEvent(whichTimer)
-                event:addListener(whichTrigger)
+                whichTrigger:addEvent(event)
 
                 local triggerEvents = triggersWithTimers[whichTrigger] ---@type table<FakeTimer, true>
                 if not triggerEvents then
@@ -2844,6 +2835,11 @@ do
 
                 return event
             end
+
+            TriggerRegisterTimerEvent = EventRegistry
+            .Timer ---@overload fun(trigger: FakeTrigger, timeout: number, periodic: boolean): AbstractTriggerEvent
+            TriggerRegisterTimerExpireEvent = EventRegistry
+            .TimerExpire ---@overload fun(trigger: FakeTrigger, timer: timer): AbstractTriggerEvent
 
             local oldDisableTrigger = DisableTrigger
             ---@param whichTrigger trigger
@@ -3097,7 +3093,11 @@ do
                 return expiredTimers[coroutine.running()]
             end
 
-            print("Run timers override done")
+            -- these are now FAKE mauhahahhaha
+            bj_queuedExecTimeoutTimer = CreateTimer()
+            bj_delayedSuspendDecayTimer = CreateTimer()
+            bj_volumeGroupsTimer = CreateTimer()
+            bj_lastStartedTimer = CreateTimer()
         end)
     end
 
@@ -3382,24 +3382,27 @@ do
     end
 
     if _EXPERIMENTAL then
-        local variableThreadLocals = {} ---@type table<string, true>
-        setmetatable(_ENV, {
-            __newindex = function(t, k, v)
+        OnInit.global("LIGUI_QuantumTempVariables", function(require)
+            local gmt = getmetatable(_ENV) or getmetatable(setmetatable(_ENV, {}))
+            local rawset = gmt.__newindex or rawset
+            local rawget = gmt.__index or rawget
+            local variableThreadLocals = {} ---@type table<string, true>
+            gmt.__newindex = function(t, k, v)
                 if string.match(string.lower(k), 'udg_temp') then
                     variableThreadLocals[k] = true
                     threadData[coroutine.running()][k] = v
                 else
                     rawset(t, k, v)
                 end
-            end,
-            __index = function(t, k)
+            end
+            gmt.__index = function(t, k)
                 if variableThreadLocals[k] then
                     return threadData[coroutine.running()][k]
                 else
                     return rawget(t, k)
                 end
             end
-        })
+        end)
     end
 
     --[=======================[
@@ -3425,8 +3428,9 @@ do
             end -- else - the unit was dead, but has re-entered the map (e.g. unloaded from meat wagon)
         end
 
-        OnInit.main(function()
-            print("Run unit removal init")
+        OnInit.main("LIGUI_UnitRemovalDetection", function(require)
+            require "LIGUI_Triggers"
+            if true then return end
             local enterTrigger = CreateTrigger()
             TriggerRegisterEnterRectSimple(enterTrigger, GetWorldBounds() --[[@as rect]]) -- returns FakeRect but due to all overrides, the BJ will be able to process it
             TriggerAddAction(enterTrigger, function()
@@ -3438,14 +3442,15 @@ do
             TriggerRegisterAnyUnitEventBJ(deindexTrigger, EVENT_PLAYER_UNIT_ISSUED_ORDER)
             TriggerAddAction(deindexTrigger, function()
                 local unit = GetTriggerUnit()
-                print("New unit action")
+                msg("New unit action")
                 if GetIssuedOrderId() == UNDEFEND_ORDER_ID and not UnitAlive(unit) and allUnits[unit] and GetUnitAbilityLevel(unit, _REMOVE_ABIL) == 0 then
-                    print("Unit removed")
+                    msg("Unit removed")
                     allUnits[unit] = nil
                     for _, listener in ipairs(eventListeners) do
                         coroutine.wrap(listener)(unit) -- we don't care about result
                     end
                     unitRemovedEvent(unit)             -- this shouldn't throw errors
+                    msg("Unit removed done")
                 end
             end)
 
@@ -3453,7 +3458,6 @@ do
             for j = 0, playerCountMax do
                 SetPlayerAbilityAvailable(Player(j), _REMOVE_ABIL, false)
             end
-            print("Run unit removal init done")
         end)
 
         ---@param listener fun(removedUnit: unit)
