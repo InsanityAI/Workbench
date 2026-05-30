@@ -159,29 +159,20 @@ do
     local threadDataMt = { __mode = 'k' }
     ---@param currentThread thread
     ---@param parentThread thread?
-    ---@param toRoot true?
     ---@return table<string, unknown>
-    local function setupThreadData(currentThread, parentThread, toRoot)
+    local function setupThreadData(currentThread, parentThread)
         local tbl = {}
         if parentThread then
             local parentKey = threadData[parentThread]
-            if toRoot then
-                local parentMt = getmetatable(parentKey)
-                if parentMt.__index then
-                    setmetatable(tbl, parentMt) -- copy to directly refer to master thread table
-                else
-                    setmetatable(tbl, {
-                        __index = parentKey,
-                        __newindex = parentKey,
-                        __mode = 'k'
-                    }) -- create new one as this is the first descendant thread
-                end
-            else
-                setmetatable(tbl, parentKey)
-            end
+            setmetatable(tbl, {
+                __index = parentKey,
+                __newindex = parentKey,
+                __mode = 'k'
+            }) -- create new one as this is the first descendant thread
         else
             setmetatable(tbl, threadDataMt)
         end
+        msg("New thread data", tbl, "for", currentThread, "parent thread", parentThread)
         threadData[currentThread] = tbl
         return tbl
     end
@@ -2369,7 +2360,7 @@ do
                     hijackNativeEventResponse("GetIssuedOrderId")
                     hijackNativeEventResponse("GetOrderPointX")
                     hijackNativeEventResponse("GetOrderPointY")
-                    hijackNativeEventResponse("GetOrderPointLoc")
+                    -- hijackNativeEventResponse("GetOrderPointLoc")
                     hijackNativeEventResponse("GetOrderTarget")
                     hijackNativeEventResponse("GetOrderTargetDestructable")
                     hijackNativeEventResponse("GetOrderTargetItem")
@@ -2379,7 +2370,7 @@ do
                     hijackNativeEventResponse("GetSpellAbility")
                     hijackNativeEventResponse("GetSpellTargetX")
                     hijackNativeEventResponse("GetSpellTargetY")
-                    hijackNativeEventResponse("GetSpellTargetLoc")
+                    -- hijackNativeEventResponse("GetSpellTargetLoc")
                     hijackNativeEventResponse("GetSpellTargetDestructable")
                     hijackNativeEventResponse("GetSpellTargetItem")
                     hijackNativeEventResponse("GetSpellTargetUnit")
@@ -3435,6 +3426,7 @@ do
             TriggerRegisterEnterRectSimple(enterTrigger, GetWorldBounds() --[[@as rect]]) -- returns FakeRect but due to all overrides, the BJ will be able to process it
             TriggerAddAction(enterTrigger, function()
                 local unit = GetTriggerUnit()
+                msg("new unit", unit)
                 indexUnit(unit)
             end)
 
