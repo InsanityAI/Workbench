@@ -33,6 +33,7 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
         - TriggerRegisterTimerEvent and TriggerRegisterTimerExpireEvent now use FakeTimers (based on TimerQueue) -- pending change
         - CreateTimerDialog and DestroyTimerDialog now accept FakeTimers instead
         - TimerDialogSetRealTimeRemaining and TimerDialogSetSpeed modified to reflect actual Game behavior with FakeTimers
+        - Removed GetForceOfPlayer override
 
     Update: 24 May 2026 by InsanityAI & Marcielos
     Changes:
@@ -221,8 +222,8 @@ OnInit.root("LIGUI", function(require)
                 mt.__tostring = function(tbl)
                     if mt.__index ~= nil then
                         return "ThreadData for " ..
-                        tostring(currentThread) ..
-                        " with " .. tostring(#tbl) .. " entires and parent:|n" .. tostring(mt.__index)
+                            tostring(currentThread) ..
+                            " with " .. tostring(#tbl) .. " entires and parent:|n" .. tostring(mt.__index)
                     else
                         return "ThreadData for " .. tostring(currentThread) .. " with " .. tostring(#tbl) .. " entries."
                     end
@@ -912,6 +913,7 @@ OnInit.root("LIGUI", function(require)
                 GetLevelingUnit = "GetTriggerUnit",
                 GetLearningUnit = "GetTriggerUnit",
                 GetRevivableUnit = "GetTriggerUnit",
+                GetRevivingUnit = "GetTriggerUnit",
                 GetManipulatingUnit = "GetTriggerUnit",
                 GetSpellAbilityUnit = "GetTriggerUnit",
             }
@@ -962,7 +964,7 @@ OnInit.root("LIGUI", function(require)
             ---@param filterEnumGetter string
             ---@return fun(...): AbstractTriggerEvent
             local function defineEventTypeWithFilter(eventRegistrationNative, nativeArgCount, eventResponseNames,
-                                                    filterEnumGetter)
+                                                     filterEnumGetter)
                 local eventConstructor = defineEventType(eventRegistrationNative, nativeArgCount - 1,
                     table.pack(filterEnumGetter, table.unpack(eventResponseNames)))
 
@@ -987,7 +989,7 @@ OnInit.root("LIGUI", function(require)
             ---@param commonResponse string?
             ---@---@return fun(...): AbstractTriggerEvent
             local function defineDynamicEventType(eventRegistrationNative, nativeArgCount, eventTypeResponseMap,
-                                                commonResponse)
+                                                  commonResponse)
                 local abstractTriggerEventCache = Cache.create(createFakeTriggerEvent, nativeArgCount)
                 local eventCache = Cache.create(function(...)
                     local eventResponseNames = table.pack(commonResponse,
@@ -1100,7 +1102,7 @@ OnInit.root("LIGUI", function(require)
                 [EVENT_PLAYER_UNIT_RESEARCH_CANCEL] = { "GetTriggerPlayer", "GetTriggerUnit", "GetResearched", "GetResearchingUnit" },
                 [EVENT_PLAYER_UNIT_RESEARCH_FINISH] = { "GetTriggerPlayer", "GetTriggerUnit", "GetResearched", "GetResearchingUnit" },
                 [EVENT_PLAYER_UNIT_ISSUED_ORDER] = { "GetTriggerPlayer", "GetTriggerUnit", "GetOrderedUnit", "GetIssuedOrderId" },
-                [EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER] = { "GetTriggerPlayer", "GetTriggerUnit", "GetOrderedUnit", "GetIssuedOrderId", "GetOrderPointX", "GetOrderPointY", --[["GetOrderPointLoc"]] },                                                                                              -- todo: triggerUnit = orderedUnit, orderTarget =  multiple things?
+                [EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER] = { "GetTriggerPlayer", "GetTriggerUnit", "GetOrderedUnit", "GetIssuedOrderId", "GetOrderPointX", "GetOrderPointY", --[["GetOrderPointLoc"]] },
                 [EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER] = { "GetTriggerPlayer", "GetTriggerUnit", "GetOrderedUnit", "GetIssuedOrderId", "GetOrderPointX", "GetOrderPointY", --[["GetOrderPointLoc",]] "GetOrderTarget", "GetOrderTargetDestructable", "GetOrderTargetUnit", "GetOrderTargetItem" }, -- todo: triggerUnit = orderedUnit, orderTarget =  multiple things?
                 [EVENT_PLAYER_UNIT_ISSUED_UNIT_ORDER] = { "GetTriggerPlayer", "GetTriggerUnit", "GetOrderedUnit", "GetIssuedOrderId", "GetOrderPointX", "GetOrderPointY", --[["GetOrderPointLoc",]] "GetOrderTarget", "GetOrderTargetDestructable", "GetOrderTargetUnit", "GetOrderTargetItem" },   -- todo: triggerUnit = orderedUnit, orderTarget =  multiple things?
                 [EVENT_PLAYER_HERO_LEVEL] = { "GetTriggerPlayer", "GetTriggerUnit", "GetLevelingUnit" },
@@ -1235,75 +1237,6 @@ OnInit.root("LIGUI", function(require)
                 eventResponseMap = eventResponseMap
             }
             return eventRegistryAPI
-        end
-    end)
-    OnInit.root("LIGUI_BjFixes", function(require)
-        ---@param trig trigger
-        ---@param r FakeRect
-        function TriggerRegisterDestDeathInRegionEvent(trig, r)
-            if check(trig ~= nil, 'trigger cannot be nil') then return end
-            if check(r ~= nil, 'rect cannot be nil') then return end
-            --Removes the limit on the number of destructables that can be registered.
-            EnumDestructablesInRect(r, nil, function() TriggerRegisterDeathEvent(trig, GetEnumDestructable()) end)
-        end
-
-        IsUnitAliveBJ = UnitAlive --use the reliable native instead of the life checks
-
-        ---@param u unit
-        ---@return boolean
-        function IsUnitDeadBJ(u)
-            return not UnitAlive(u)
-        end
-
-        ---@param whichUnit unit
-        ---@param propWindow number
-        function SetUnitPropWindowBJ(whichUnit, propWindow)
-            --Allows the Prop Window to be set to zero to allow unit movement to be suspended.
-            SetUnitPropWindow(whichUnit, math.rad(propWindow))
-        end
-
-        -- Modify to allow requests for negative hero stats, as per request from Tasyen.
-        ---@param whichHero unit
-        ---@param whichStat integer
-        ---@param value integer
-        function SetHeroStat(whichHero, whichStat, value)
-            if check(whichStat ~= nil, 'whichStat cannot be nil') then return end
-            if (whichStat == bj_HEROSTAT_STR) then
-                SetHeroStr(whichHero, value, true)
-            elseif (whichStat == bj_HEROSTAT_AGI) then
-                SetHeroAgi(whichHero, value, true)
-            elseif (whichStat == bj_HEROSTAT_INT) then
-                SetHeroInt(whichHero, value, true)
-            end
-        end
-
-        -- removed SyncSelections from the following BJs
-        ---@param whichPlayer player
-        ---@return FakeGroup|group
-        function GetUnitsSelectedAll(whichPlayer)
-            local g = CreateGroup()
-            -- SyncSelections()
-            GroupEnumUnitsSelected(g --[[@as group]], whichPlayer, nil)
-            return g
-        end
-
-        ---@param whichPlayer player
-        ---@param enumFilter? boolexpr
-        ---@param enumAction function
-        function EnumUnitsSelected(whichPlayer, enumFilter, enumAction)
-            local g = CreateGroup()
-            -- SyncSelections()
-            GroupEnumUnitsSelected(g --[[@as group]], whichPlayer, enumFilter)
-            DestroyBoolExpr(enumFilter)
-            ForGroup(g, enumAction)
-            -- DestroyGroup(g)
-        end
-
-        if _USE_GLOBAL_REMAP then
-            OnInit.global(function(require)
-                require "GlobalRemap"
-                GlobalRemap("udg_INFINITE_LOOP", function() return -1 end) --a readonly variable for infinite looping in GUI.
-            end)
         end
     end)
     OnInit.root("LIGUI_CommonOverrides", function(require)
@@ -1628,26 +1561,31 @@ OnInit.root("LIGUI", function(require)
         function FakeTrigger:execute(withSleep)
             local parentThread = coroutine.running()
             self.execCount = self.execCount + 1
+            -- if execute with sleep and caller is marked with waitOnSleep
             if withSleep and getThreadData(parentThread).waitOnSleep then
-                local threads = {}
+                local threads = {} ---@type thread[]
+                local threadData = {} ---@type table<thread, table>
                 for action, enabled in pairs(self.actions) do
                     if enabled then
                         local actionThread = coroutine.create(action)
                         table.insert(threads, actionThread)
-
-                        local thisThread = coroutine.create(function()
-                            coroutine.resume(actionThread)
-                            if threadsAllDone(threads) then
-                                coroutine.resume(parentThread)
-                            end
-                        end)
-                        local data = setupThreadData(thisThread, parentThread)
+                        local data = setupThreadData(actionThread, parentThread)
+                        threadData[actionThread] = data
+                        --todo: triggering trigger reports the trigger that executed it, right?
                         rawset(data, "GetTriggeringTrigger", self) -- don't overwrite master threadData entry
                         rawset(data, "waitOnSleep", self.waitOnSleep)
-                        coroutine.resume(thisThread)
+                        coroutine.resume(actionThread)
                     end
                 end
                 if not threadsAllDone(threads) then
+                    local function polledWaitCallback()
+                        if threadsAllDone(threads) then
+                            coroutine.resume(parentThread)
+                        end
+                    end
+                    for _, thread in ipairs(threads) do
+                        rawset(threadData[thread], "forkJoinCallback", polledWaitCallback)
+                    end
                     coroutine.yield(parentThread)
                 end
             else
@@ -1678,8 +1616,10 @@ OnInit.root("LIGUI", function(require)
             ---@param thread thread
             local function finishedWait(thread)
                 local callback = getThreadData(thread)["forkJoinCallback"]
-                if callback then callback(coroutine.resume(thread))
-                else coroutine.resume(thread)
+                if callback then
+                    callback(coroutine.resume(thread))
+                else
+                    coroutine.resume(thread)
                 end
             end
 
@@ -2766,6 +2706,7 @@ OnInit.root("LIGUI", function(require)
         local threadDataAPI = require "LIGUI_ThreadData" --[[@as LIGUI_ThreadDataAPI]]
         local coroutineAPI = require "LIGUI_Coroutines" --[[@as LIGUI_CoroutineAPI]]
         local setupThreadData = threadDataAPI.setupThreadData
+        local getThreadData = threadDataAPI.getThreadData
         local threadsAllDone = coroutineAPI.threadsAllDone
 
         ---@class FakeForce: FakedType
@@ -2878,39 +2819,61 @@ OnInit.root("LIGUI", function(require)
 
         ---@param force FakeForce
         ---@param code fun(p: player)
-        function GUI.forForce(force, code)
+        ---@param waitOnSleep boolean?
+        function GUI.forForce(force, code, waitOnSleep)
             if check(force ~= nil, 'force cannot be nil') then return end
             if check(code ~= nil, 'code cannot be nil') then return end
             local i = 1
             local player
             local parentThread = coroutine.running()
-            local threads = {} ---@type thread[]
-            while i <= #force do
-                player = force[i]
-                local codeThread = coroutine.create(code)
-                table.insert(threads, codeThread)
-
-                local thisThread = coroutine.create(function(...)
-                    coroutine.resume(codeThread, ...)
-                    if threadsAllDone(threads) then
-                        coroutine.resume(parentThread)
+            if waitOnSleep then
+                local threads = {} ---@type thread[]
+                local threadData = {} ---@type table<thread, table>
+                while i <= #force do
+                    player = force[i]
+                    local codeThread = coroutine.create(code)
+                    table.insert(threads, codeThread)
+                    local data = setupThreadData(codeThread, parentThread)
+                    threadData[codeThread] = data
+                    coroutine.resume(codeThread, player)
+                    if force.indexOf[player] then
+                        i = i + 1
                     end
-                end)
-                local data = setupThreadData(codeThread, parentThread)
-                rawset(data, "GetEnumPlayer", player)
-                coroutine.resume(thisThread, player)
-
-                if force.indexOf[player] then
-                    i = i + 1
                 end
-            end
-
-            if not threadsAllDone(threads) then
-                coroutine.yield(parentThread)
+                if not threadsAllDone(threads) then
+                    local function polledWaitCallback()
+                        if threadsAllDone(threads) then
+                            coroutine.resume(parentThread)
+                        end
+                    end
+                    for _, thread in ipairs(threads) do
+                        rawset(threadData[thread], "forkJoinCallback", polledWaitCallback)
+                    end
+                    coroutine.yield()
+                end
+            else
+                while i <= #force do
+                    player = force[i]
+                    local codeThread = coroutine.create(code)
+                    setupThreadData(codeThread, parentThread)
+                    coroutine.resume(codeThread, player)
+                    if force.indexOf[player] then
+                        i = i + 1
+                    end
+                end
             end
         end
 
-        ForForce = GUI.ForForce
+        function ForForce(force, code)
+            if check(force ~= nil, 'force cannot be nil') then return end
+            if check(code ~= nil, 'code cannot be nil') then return end
+            local waitOnSleep = GUI.waitOnSleep
+            GUI.waitOnSleep = false
+            GUI.forForce(force, function(player)
+                rawset(getThreadData(coroutine.running()), "GetEnumPlayer", player)
+                code()
+            end, waitOnSleep)
+        end
 
         ---@class LIGUI_ForceOverrideAPI
         local forceOverrideAPI = {
@@ -2927,6 +2890,7 @@ OnInit.root("LIGUI", function(require)
         local coroutineAPI = require "LIGUI_Coroutines" --[[@as LIGUI_CoroutineAPI]]
         local groupsAPI = require "LIGUI_Groups" --[[@as LIGUI_GroupsAPI]]
         local setupThreadData = threadDataAPI.setupThreadData
+        local getThreadData = threadDataAPI.getThreadData
         local threadsAllDone = coroutineAPI.threadsAllDone
         local groupDBRegisterUnitInGroup = groupsAPI.groupDBRegisterUnitInGroup
         local groupDBDeregisterUnitFromGroup = groupsAPI.groupDBDeregisterUnitFromGroup
@@ -3104,47 +3068,63 @@ OnInit.root("LIGUI", function(require)
 
         ---@param group FakeGroup
         ---@param code fun(u: unit)
-        function GUI.forGroup(group, code)
+        ---@param waitOnSleep boolean?
+        function GUI.forGroup(group, code, waitOnSleep)
             if check(group ~= nil, 'group cannot be nil') then return end
             if check(code ~= nil, 'code cannot be nil') then return end
             local i = 1
             local unit
             local parentThread = coroutine.running()
-            local threads = {} ---@type thread[]
-            local threadData = {} ---@type table<thread, table>
-            debug("For group called", parentThread)
-            while i <= #group do
-                unit = group[i]
-                local codeThread = coroutine.create(code)
-                table.insert(threads, codeThread)
-                local data = setupThreadData(codeThread, parentThread)
-                threadData[codeThread] = data
-                rawset(data, "GetEnumUnit", unit)
-                coroutine.resume(codeThread, unit)
-                if group.indexOf[unit] then
-                    i = i + 1
-                end
-            end
-            debug("For group done")
-            if not threadsAllDone(threads) then
-                local function polledWaitCallback()
-                    debug("Thread", coroutine.running(), "done")
-                    if threadsAllDone(threads) then
-                        debug("All done")
-                        coroutine.resume(parentThread)
-                    else
-                        debug("Not all done")
+            if waitOnSleep then
+                local threads = {} ---@type thread[]
+                local threadData = {} ---@type table<thread, table>
+                while i <= #group do
+                    unit = group[i]
+                    local codeThread = coroutine.create(code)
+                    table.insert(threads, codeThread)
+                    local data = setupThreadData(codeThread, parentThread)
+                    threadData[codeThread] = data
+                    coroutine.resume(codeThread, unit)
+                    if group.indexOf[unit] then
+                        i = i + 1
                     end
                 end
-                for _, thread in ipairs(threads) do
-                    rawset(threadData[thread], "forkJoinCallback", polledWaitCallback)
+                if not threadsAllDone(threads) then
+                    local function polledWaitCallback()
+                        if threadsAllDone(threads) then
+                            coroutine.resume(parentThread)
+                        end
+                    end
+                    for _, thread in ipairs(threads) do
+                        rawset(threadData[thread], "forkJoinCallback", polledWaitCallback)
+                    end
+                    coroutine.yield()
                 end
-                debug("Yielding")
-                coroutine.yield()
+            else
+                while i <= #group do
+                    unit = group[i]
+                    local codeThread = coroutine.create(code)
+                    setupThreadData(codeThread, parentThread)
+                    coroutine.resume(codeThread, unit)
+                    if group.indexOf[unit] then
+                        i = i + 1
+                    end
+                end
             end
         end
 
-        ForGroup = GUI.forGroup
+        ---@param group FakeGroup
+        ---@param code function
+        function ForGroup(group, code)
+            if check(group ~= nil, 'group cannot be nil') then return end
+            if check(code ~= nil, 'code cannot be nil') then return end
+            local waitOnSleep = GUI.waitOnSleep
+            GUI.waitOnSleep = false
+            GUI.forGroup(group, function(unit)
+                rawset(getThreadData(coroutine.running()), "GetEnumUnit", unit)
+                code()
+            end, waitOnSleep)
+        end
 
         ---@class LIGUI_GroupOverrideAPI
         local groupOverrideAPI = {
@@ -3835,14 +3815,159 @@ OnInit.root("LIGUI", function(require)
             if check(force ~= nil, 'force cannot be nil') then return 0 end
             return #force
         end
+    end)
+    OnInit.root("LIGUI_BjFixes", function(require)
+        ---@param trig FakeTrigger
+        ---@param r FakeRect
+        function TriggerRegisterDestDeathInRegionEvent(trig, r)
+            if check(trig ~= nil, 'trigger cannot be nil') then return end
+            if check(r ~= nil, 'rect cannot be nil') then return end
+            --Removes the limit on the number of destructables that can be registered.
+            EnumDestructablesInRect(r, nil, function() TriggerRegisterDeathEvent(trig, GetEnumDestructable()) end)
+        end
 
-        -- TODO: remove this, forces are not read-only and this can cause errors in certain cases
-        ---@param player player
-        ---@return FakeForce
-        function GetForceOfPlayer(player)
-            if check(player ~= nil, 'player cannot be nil') then return nil end
-            --No longer leaks. There was no reason to dynamically create forces to begin with.
-            return bj_FORCE_PLAYER[GetPlayerId(player)]
+        IsUnitAliveBJ = UnitAlive --use the reliable native instead of the life checks
+
+        ---@param u unit
+        ---@return boolean
+        function IsUnitDeadBJ(u)
+            return not UnitAlive(u)
+        end
+
+        ---@param whichUnit unit
+        ---@param propWindow number
+        function SetUnitPropWindowBJ(whichUnit, propWindow)
+            --Allows the Prop Window to be set to zero to allow unit movement to be suspended.
+            SetUnitPropWindow(whichUnit, math.rad(propWindow))
+        end
+
+        -- Modify to allow requests for negative hero stats, as per request from Tasyen.
+        ---@param whichHero unit
+        ---@param whichStat integer
+        ---@param value integer
+        function SetHeroStat(whichHero, whichStat, value)
+            if check(whichStat ~= nil, 'whichStat cannot be nil') then return end
+            if (whichStat == bj_HEROSTAT_STR) then
+                SetHeroStr(whichHero, value, true)
+            elseif (whichStat == bj_HEROSTAT_AGI) then
+                SetHeroAgi(whichHero, value, true)
+            elseif (whichStat == bj_HEROSTAT_INT) then
+                SetHeroInt(whichHero, value, true)
+            end
+        end
+
+        -- removed SyncSelections from the following BJs
+        ---@param whichPlayer player
+        ---@return FakeGroup
+        function GetUnitsSelectedAll(whichPlayer)
+            local g = CreateGroup()
+            -- SyncSelections()
+            GroupEnumUnitsSelected(g, whichPlayer, nil)
+            return g --[[@as FakeGroup]]
+        end
+
+        ---@param whichPlayer player
+        ---@param enumFilter? fun():boolean
+        ---@param enumAction function
+        function EnumUnitsSelected(whichPlayer, enumFilter, enumAction)
+            local g = CreateGroup()
+            -- SyncSelections()
+            GroupEnumUnitsSelected(g --[[@as group]], whichPlayer, enumFilter)
+            ForGroup(g, enumAction)
+        end
+
+        --[[---------------------------------------------------------------------------------------------
+            RegisterAnyPlayerUnitEvent by Bribe
+
+            RegisterAnyPlayerUnitEvent cuts down on handle count for alread-registered events, plus has
+            the benefit for Lua users to just use function calls.
+
+            Adds a third parameter to the RegisterAnyPlayerUnitEvent function: "skip". If true, disables
+            the specified event, while allowing a single function to run discretely. It also allows (if
+            Global Variable Remapper is included) GUI to un-register a playerunitevent by setting
+            udg_RemoveAnyUnitEvent to the trigger they wish to remove.
+
+            The "return" value of RegisterAnyPlayerUnitEvent calls the "remove" method. The API, therefore,
+            has been reduced to just this one function (in addition to the bj override).
+        -----------------------------------------------------------------------------------------------]]
+        local fStack, tStack = {}, {} ---@type {[eventid]: function[]}, {[eventid]: trigger[]}
+        local oldBJ = TriggerRegisterAnyUnitEventBJ
+
+        ---@param event playerunitevent
+        ---@param userFunc function
+        ---@param skip boolean?
+        function RegisterAnyPlayerUnitEvent(event, userFunc, skip)
+            if check(event ~= nil, 'event cannot be nil') then return end
+            if check(userFunc ~= nil, 'userFunc cannot be nil') then return end
+            if skip then
+                local t = tStack[event]
+                if t and IsTriggerEnabled(t) then
+                    DisableTrigger(t)
+                    userFunc()
+                    EnableTrigger(t)
+                else
+                    userFunc()
+                end
+            else
+                local funcs, insertAt = fStack[event], 1
+                if funcs then
+                    insertAt = #funcs + 1
+                    if insertAt == 1 then EnableTrigger(tStack[event]) end
+                else
+                    local t = CreateTrigger()
+                    oldBJ(t, event)
+                    tStack[event], funcs = t, {}
+                    fStack[event] = funcs
+                    TriggerAddCondition(t, Filter(function()
+                        for _, func in ipairs(funcs) do func() end
+                    end))
+                end
+                funcs[insertAt] = userFunc
+                return function()
+                    local total = #funcs
+                    for i = 1, total do
+                        if funcs[i] == userFunc then
+                            if total == 1 then
+                                DisableTrigger(tStack[event]) --no more events are registered, disable the event (for now).
+                            elseif total > i then
+                                funcs[i] = funcs[total]
+                            end                --pop just the top index down to this vacant slot so we don't have to down-shift the entire stack.
+                            funcs[total] = nil --remove the top entry.
+                            return true
+                        end
+                    end
+                end
+            end
+        end
+
+        local trigFuncs
+        ---@param trig FakeTrigger
+        ---@param event playerunitevent
+        ---@return function|nil
+        function TriggerRegisterAnyUnitEventBJ(trig, event)
+            if check(trig ~= nil, 'trig cannot be nil') then return nil end
+            if check(event ~= nil, 'event cannot be nil') then return nil end
+            local removeFunc = RegisterAnyPlayerUnitEvent(event, GUI.wrapTrigger(trig))
+            if _USE_GLOBAL_REMAP then
+                if not trigFuncs then
+                    trigFuncs = __jarray()
+                    GlobalRemap("udg_RemoveAnyUnitEvent", nil, function(t)
+                        if trigFuncs[t] then
+                            trigFuncs[t]()
+                            trigFuncs[t] = nil
+                        end
+                    end)
+                end
+                trigFuncs[trig] = removeFunc
+            end
+            return removeFunc
+        end
+
+        if _USE_GLOBAL_REMAP then
+            OnInit.global(function(require)
+                require "GlobalRemap"
+                GlobalRemap("udg_INFINITE_LOOP", function() return -1 end) --a readonly variable for infinite looping in GUI.
+            end)
         end
     end)
     OnInit.root("LIGUI_UnitRemoveDetection", function(require)
@@ -3904,18 +4029,18 @@ OnInit.root("LIGUI", function(require)
         OnInit.main("LIGUI_UnitRemoveDetectInit", function(require)
             require "LIGUI_WorldBounds"
 
-            -- local indexTrigger = CreateTrigger()
-            -- TriggerRegisterEnterRectSimple(indexTrigger, GetWorldBounds() --[[@as rect]]) -- returns FakeRect but due to all overrides, the BJ will be able to process it
-            -- TriggerAddAction(indexTrigger, indexUnitAction)
+            local indexTrigger = CreateTrigger()
+            TriggerRegisterEnterRectSimple(indexTrigger, GetWorldBounds() --[[@as rect]]) -- returns FakeRect but due to all overrides, the BJ will be able to process it
+            TriggerAddAction(indexTrigger, indexUnitAction)
 
-            -- local deindexTrigger = CreateTrigger()
-            -- TriggerRegisterAnyUnitEventBJ(deindexTrigger, EVENT_PLAYER_UNIT_ISSUED_ORDER)
-            -- TriggerAddAction(deindexTrigger, deindexUnitAction)
+            local deindexTrigger = CreateTrigger()
+            TriggerRegisterAnyUnitEventBJ(deindexTrigger, EVENT_PLAYER_UNIT_ISSUED_ORDER)
+            TriggerAddAction(deindexTrigger, deindexUnitAction)
 
-            -- local playerCountMax = GetBJMaxPlayerSlots() - 1 -- 24 + 4 neutrals
-            -- for j = 0, playerCountMax do
-            --     SetPlayerAbilityAvailable(Player(j), _REMOVE_ABIL, false)
-            -- end
+            local playerCountMax = GetBJMaxPlayerSlots() - 1 -- 24 + 4 neutrals
+            for j = 0, playerCountMax do
+                SetPlayerAbilityAvailable(Player(j), _REMOVE_ABIL, false)
+            end
         end)
     end)
     OnInit.root("LIGUI_QuantumTempVariables", function(require)
@@ -3930,7 +4055,7 @@ OnInit.root("LIGUI", function(require)
             if string.match(string.lower(k), 'udg_temp') then
                 variableThreadLocals[k] = true
                 debug("Setting", k, "for", coroutine.running(), "to", v)
-                rawset(getThreadData(coroutine.running()),k, v)
+                rawset(getThreadData(coroutine.running()), k, v)
             else
                 rawset(t, k, v)
             end
@@ -3955,7 +4080,6 @@ OnInit.root("LIGUI", function(require)
     require "LIGUI_Boolexprs"
     require "LIGUI_Groups"
     require "LIGUI_EventRegistry"
-    require "LIGUI_BjFixes"
 
     -- root - overrides
     require "LIGUI_CommonOverrides"
@@ -3970,6 +4094,7 @@ OnInit.root("LIGUI", function(require)
     require "LIGUI_ComboOverrides"
     require "LIGUI_EventResponseOverrides"
     require "LIGUI_BjOverrides"
+    require "LIGUI_BjFixes"
     require "LIGUI_UnitRemoveDetection"
     require "LIGUI_QuantumTempVariables"
 
