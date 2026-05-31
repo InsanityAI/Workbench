@@ -7,13 +7,13 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
 
     Installation:
         1. Get the following scripts at the top of your trigger editor in following order:
-         - DebugUtils (Optional)
-         - IngameConsole (Optional)
-         - Total Initialization
-         - LuaInfusedGUI
-         - everything else
+        - DebugUtils (Optional)
+        - IngameConsole (Optional)
+        - Total Initialization
+        - LuaInfusedGUI
+        - everything else
         2. Copy the "Unit Remove Event (LIGUI)" (Aurm) Ability from object editor into your map
-         - or create your own by basing it off of footman's Defend ability, just modify the _REMOVE_ABIL constant below
+        - or create your own by basing it off of footman's Defend ability, just modify the _REMOVE_ABIL constant below
 
     Transforming rects, locations, groups, forces and BJ hashtable wrappers into Lua tables, which are automatically garbage collected.
 
@@ -94,7 +94,7 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
         https://www.hiveworkshop.com/threads/syncedtable.353715/
         https://www.hiveworkshop.com/threads/timerqueue-stopwatch.353718/
 --]]
-do
+OnInit.root("LIGUI", function(require)
     --Configurables
     local _THROW_ERROR_ON_INVALID_ARG    = true           -- set to true if you want LIGUI to throw errors when incorrect arguments are sent to overriden functions
     local _PRINT_WARNING_ON_INVALID_ARG  = true           -- set to true if you want warnings by LIGUI when incorrect arguments are sent to overriden functions
@@ -133,7 +133,6 @@ do
             end
         end
     end)()
-    local msg                            = print
 
     ---@param ... unknown
     local function debug(...)
@@ -161,21 +160,6 @@ do
                 return obj --[[@as FakedType]].__faketype
             end
             return thisType
-        end
-
-        if GUI.DEBUG_MODE then
-            local nonDebugType = type
-            ---@param obj unknown
-            ---@return string typeName
-            function type(obj)
-                local thisType = oldType(obj)
-                if thisType == 'table' then
-                    debugWithStackTrace("Type table", table.tostring(obj))
-                else
-                    debugWithStackTrace("Type", obj)
-                end
-                return nonDebugType(obj)
-            end
         end
 
         GUI.type = type
@@ -237,10 +221,10 @@ do
                 mt.__tostring = function(tbl)
                     if mt.__index ~= nil then
                         return "ThreadData for " ..
-                            currentThread ..
-                            " with " .. tostring(#tbl) .. " entires and parent:|n" .. tostring(mt.__index)
+                        tostring(currentThread) ..
+                        " with " .. tostring(#tbl) .. " entires and parent:|n" .. tostring(mt.__index)
                     else
-                        return "ThreadData for " .. currentThread .. " with " .. tostring(#tbl) .. " entries."
+                        return "ThreadData for " .. tostring(currentThread) .. " with " .. tostring(#tbl) .. " entries."
                     end
                 end
                 debug("Created" .. tostring(threadData))
@@ -259,6 +243,7 @@ do
             getThreadData = getThreadData,
             clearThreadData = clearThreadData
         }
+        return threadDataAPI
     end)
     OnInit.root("LIGUI_Coroutines", function(require)
         local threadDataAPI = require "LIGUI_ThreadData" --[[@as LIGUI_ThreadDataAPI]]
@@ -414,7 +399,7 @@ do
         local LIGUI_CoroutineAPI = {
             threadsAllDone = threadsAllDone
         }
-        return
+        return LIGUI_CoroutineAPI
     end)
     OnInit.root("LIGUI_MiscellaneousFixes", function(require)
         -- Blizzard forgot to add this, but still enabled it for GUI. Therefore, I've extracted and simplified the code from DebugIdInteger2IdString
@@ -628,7 +613,7 @@ do
         local nativeFilter ---@type filterfunc
 
         local nativeFilterConstructor = Filter
-        OnInit.main(function(require)
+        OnInit.main("LIGUI_NativeFilter", function(require)
             nativeFilter = nativeFilterConstructor(function()
                 -- note: this runs in a "blizzard" thread and cannot be paused/yielded, so we're safe
                 return filterUpvalue()
@@ -860,10 +845,10 @@ do
             FakeTriggerEvent.__index = FakeTriggerEvent
 
             function FakeTriggerEvent:notifyListeners()
-                msg("FakeTriggerEvent:notifyListeners", self)
+                debug("FakeTriggerEvent:notifyListeners", self)
                 if self.listenerAmount == 0 then
-                    msg("No listeners in", self)
-                    msg("Listeners", table.tostring(self.listeners))
+                    debug("No listeners in", self)
+                    debug("Listeners", table.tostring(self.listeners))
                     oldDisableTrigger(self.actualTrigger)
                     return
                 end
@@ -873,7 +858,7 @@ do
                         local newThread = coroutine.create(listener.execute)
                         local data = setupThreadData(newThread, thread)
                         -- run in a coroutine to avoid TSA/PolledWait congesting every listener/trigger
-                        msg("Executing trigger", listener)
+                        debug("Executing trigger", listener)
                         coroutine.resume(newThread, listener)
                     end
                 end
@@ -934,7 +919,7 @@ do
             ---@param event AbstractTriggerEvent
             ---@param eventResponseNames string[]
             local function processEventCallback(event, eventResponseNames)
-                msg("Process event callback")
+                debug("Process event callback")
                 local thread = coroutine.running()
                 local data = setupThreadData(thread)
                 data.GetTriggerEventId = event
@@ -977,7 +962,7 @@ do
             ---@param filterEnumGetter string
             ---@return fun(...): AbstractTriggerEvent
             local function defineEventTypeWithFilter(eventRegistrationNative, nativeArgCount, eventResponseNames,
-                                                     filterEnumGetter)
+                                                    filterEnumGetter)
                 local eventConstructor = defineEventType(eventRegistrationNative, nativeArgCount - 1,
                     table.pack(filterEnumGetter, table.unpack(eventResponseNames)))
 
@@ -1002,14 +987,13 @@ do
             ---@param commonResponse string?
             ---@---@return fun(...): AbstractTriggerEvent
             local function defineDynamicEventType(eventRegistrationNative, nativeArgCount, eventTypeResponseMap,
-                                                  commonResponse)
+                                                commonResponse)
                 local abstractTriggerEventCache = Cache.create(createFakeTriggerEvent, nativeArgCount)
                 local eventCache = Cache.create(function(...)
                     local eventResponseNames = table.pack(commonResponse,
                         table.unpack(eventTypeResponseMap[select(nativeArgCount - 1, ...)]))
                     local trigger = oldCreateTrigger() --[[@as trigger]]
                     local event = eventRegistrationNative(trigger, ...)
-                    msg("Event", event, eventRegistrationNative, trigger)
                     local event = abstractTriggerEventCache:get(trigger, ...)
                     oldTriggerAddAction(trigger, function()
                         processEventCallback(event, eventResponseNames)
@@ -1245,6 +1229,12 @@ do
                 gameEventResponseMap[EVENT_PLAYER_KEY])
 
             -- Timer and TimerExpire events registered in Timer section
+
+            ---@class LIGUI_EventRegistryAPI
+            local eventRegistryAPI = {
+                eventResponseMap = eventResponseMap
+            }
+            return eventRegistryAPI
         end
     end)
     OnInit.root("LIGUI_BjFixes", function(require)
@@ -1533,7 +1523,7 @@ do
 
         ---@param event AbstractTriggerEvent
         function FakeTrigger:addEvent(event)
-            msg("Add event", event, "to trigger", self)
+            debug("Add event", event, "to trigger", self)
             self.events[event] = true
             event:addListener(self)
         end
@@ -1685,11 +1675,19 @@ do
 
         -- Override Natives
         do
+            ---@param thread thread
+            local function finishedWait(thread)
+                local callback = getThreadData(thread)["forkJoinCallback"]
+                if callback then callback(coroutine.resume(thread))
+                else coroutine.resume(thread)
+                end
+            end
+
             ---@param duration number
             function PolledWait(duration)
                 local thread = coroutine.running()
-                TimerQueue:callDelayed(duration, coroutine.resume, thread)
-                coroutine.yield(thread)
+                TimerQueue:callDelayed(duration, finishedWait, thread)
+                coroutine.yield()
             end
 
             CreateTrigger = FakeTrigger.create
@@ -1767,11 +1765,11 @@ do
             BlzTriggerRegisterPlayerKeyEvent = makeTriggerEventOverrideWrapper(EventRegistry.PlayerKey) ---@overload fun(trigger: FakeTrigger,player: player, key: oskeytype, metaKey: integer, keyDown: boolean): AbstractTriggerEvent
         end
     end)
-    OnInit.main("LIGUI_Timers", function(require)
+    OnInit.main("LIGUI_TimerOverride", function(require)
         local threadDataAPI = require "LIGUI_ThreadData" --[[@as LIGUI_ThreadDataAPI]]
         local setupThreadData = threadDataAPI.setupThreadData
 
-        require "LIGUI_Triggers"
+        require "LIGUI_TriggerOverride"
         require "TimerQueue"
         require "SyncedTable"
         if not TimerQueue or not SyncedTable then return end
@@ -2205,7 +2203,7 @@ do
         end
 
         local nativePoint
-        OnInit.main(function(require)
+        OnInit.main("LIGUI_NativeLoc", function(require)
             nativePoint = oldLocation(0, 0)
         end)
 
@@ -2244,7 +2242,9 @@ do
 
         ---@return FakeLocation
         function GetSpellTargetLoc()
-            return Location(GetSpellTargetX(), GetSpellTargetY())
+            local result = Location(GetSpellTargetX(), GetSpellTargetY())
+            debug("Getting spell target location", result)
+            return result
         end
 
         ---@param whichSetup camerasetup
@@ -2281,7 +2281,7 @@ do
         function RegionAddCellAtLoc(whichRegion, whichLocation)
             if check(whichRegion ~= nil, "region cannot be nil") then return end
             if check(whichLocation ~= nil, "location cannot be nil") then return end
-            RegionAddCell(whichRegion, whichLocation[0], whichLocation[1])
+            RegionAddCell(whichRegion, whichLocation[1], whichLocation[2])
         end
 
         ---@param whichRegion region
@@ -2289,7 +2289,7 @@ do
         function RegionClearCellAtLoc(whichRegion, whichLocation)
             if check(whichRegion ~= nil, "region cannot be nil") then return end
             if check(whichLocation ~= nil, "location cannot be nil") then return end
-            RegionClearCell(whichRegion, whichLocation[0], whichLocation[1])
+            RegionClearCell(whichRegion, whichLocation[1], whichLocation[2])
         end
 
         ---@param whichRegion region
@@ -2298,7 +2298,7 @@ do
         function IsLocationInRegion(whichRegion, whichLocation)
             if check(whichRegion ~= nil, "region cannot be nil") then return false end
             if check(whichLocation ~= nil, "location cannot be nil") then return false end
-            return IsPointInRegion(whichRegion, whichLocation[0], whichLocation[1])
+            return IsPointInRegion(whichRegion, whichLocation[1], whichLocation[2])
         end
 
         ---@param whichUnit unit
@@ -2309,7 +2309,7 @@ do
             if check(whichUnit ~= nil, "unit cannot be nil") then return false end
             if check(whichLocation ~= nil, "location cannot be nil") then return false end
             if check(distance ~= nil, "distance cannot be nil") then return false end
-            return IsUnitInRangeXY(whichUnit, whichLocation[0], whichLocation[1], distance)
+            return IsUnitInRangeXY(whichUnit, whichLocation[1], whichLocation[2], distance)
         end
 
         ---@param whichUnit unit
@@ -2320,7 +2320,7 @@ do
             if check(whichUnit ~= nil, "unit cannot be nil") then return false end
             if check(order ~= nil, "order cannot be nil") then return false end
             if check(whichLocation ~= nil, "location cannot be nil") then return false end
-            return IssuePointOrder(whichUnit, order, whichLocation[0], whichLocation[1])
+            return IssuePointOrder(whichUnit, order, whichLocation[1], whichLocation[2])
         end
 
         ---@param whichUnit unit
@@ -2331,7 +2331,7 @@ do
             if check(whichUnit ~= nil, "unit cannot be nil") then return false end
             if check(order ~= nil, "order cannot be nil") then return false end
             if check(whichLocation ~= nil, "location cannot be nil") then return false end
-            return IssuePointOrderById(whichUnit, order, whichLocation[0], whichLocation[1])
+            return IssuePointOrderById(whichUnit, order, whichLocation[1], whichLocation[2])
         end
 
         ---@param whichLocation FakeLocation
@@ -2340,7 +2340,7 @@ do
         function IsLocationVisibleToPlayer(whichLocation, whichPlayer)
             if check(whichLocation ~= nil, "location cannot be nil") then return false end
             if check(whichPlayer ~= nil, "player cannot be nil") then return false end
-            return IsVisibleToPlayer(whichLocation[0], whichLocation[1], whichPlayer)
+            return IsVisibleToPlayer(whichLocation[1], whichLocation[2], whichPlayer)
         end
 
         ---@param whichLocation FakeLocation
@@ -2349,7 +2349,7 @@ do
         function IsLocationFoggedToPlayer(whichLocation, whichPlayer)
             if check(whichLocation ~= nil, "location cannot be nil") then return false end
             if check(whichPlayer ~= nil, "player cannot be nil") then return false end
-            return IsFoggedToPlayer(whichLocation[0], whichLocation[1], whichPlayer)
+            return IsFoggedToPlayer(whichLocation[1], whichLocation[2], whichPlayer)
         end
 
         ---@param whichLocation FakeLocation
@@ -2358,7 +2358,7 @@ do
         function IsLocationMaskedToPlayer(whichLocation, whichPlayer)
             if check(whichLocation ~= nil, "location cannot be nil") then return false end
             if check(whichPlayer ~= nil, "player cannot be nil") then return false end
-            return IsMaskedToPlayer(whichLocation[0], whichLocation[1], whichPlayer)
+            return IsMaskedToPlayer(whichLocation[1], whichLocation[2], whichPlayer)
         end
 
         ---@param forWhichPlayer player
@@ -2375,7 +2375,7 @@ do
             if check(radius ~= nil, "radius cannot be nil") then return nil end
             if check(useSharedVision ~= nil, "useSharedVision cannot be nil") then return nil end
             if check(afterUnits ~= nil, "afterUnits cannot be nil") then return nil end
-            return CreateFogModifierRadius(forWhichPlayer, whichState, center[0], center[1], radius, useSharedVision,
+            return CreateFogModifierRadius(forWhichPlayer, whichState, center[1], center[2], radius, useSharedVision,
                 afterUnits)
         end
 
@@ -2385,7 +2385,7 @@ do
         function AddSpecialEffectLoc(modelName, where)
             if check(modelName ~= nil, "modelName cannot be nil") then return nil end
             if check(where ~= nil, "location cannot be nil") then return nil end
-            return AddSpecialEffect(modelName, where[0], where[1])
+            return AddSpecialEffect(modelName, where[1], where[2])
         end
 
         ---@param abilityString string
@@ -2396,7 +2396,7 @@ do
             if check(abilityString ~= nil, "abilityString cannot be nil") then return nil end
             if check(t ~= nil, "effect type cannot be nil") then return nil end
             if check(where ~= nil, "location cannot be nil") then return nil end
-            return AddSpellEffect(abilityString, t, where[0], where[1])
+            return AddSpellEffect(abilityString, t, where[1], where[2])
         end
 
         ---@param abilityId integer
@@ -2407,7 +2407,7 @@ do
             if check(abilityId ~= nil, "abilityId cannot be nil") then return nil end
             if check(t ~= nil, "effect type cannot be nil") then return nil end
             if check(where ~= nil, "location cannot be nil") then return nil end
-            return AddSpellEffectById(abilityId, t, where[0], where[1])
+            return AddSpellEffectById(abilityId, t, where[1], where[2])
         end
 
         ---@param effect effect
@@ -2428,7 +2428,7 @@ do
             if check(whichLocation ~= nil, "location cannot be nil") then return end
             if check(radius ~= nil, "radius cannot be nil") then return end
             if check(addBlight ~= nil, "addBlight cannot be nil") then return end
-            SetBlight(whichPlayer, whichLocation[0], whichLocation[1], radius, addBlight)
+            SetBlight(whichPlayer, whichLocation[1], whichLocation[2], radius, addBlight)
         end
 
         ---@param whichStartLoc integer
@@ -2436,7 +2436,7 @@ do
         function DefineStartLocationLoc(whichStartLoc, whichLocation)
             if check(whichStartLoc ~= nil, "start location cannot be nil") then return end
             if check(whichLocation ~= nil, "location cannot be nil") then return end
-            DefineStartLocation(whichStartLoc, whichLocation[0], whichLocation[1])
+            DefineStartLocation(whichStartLoc, whichLocation[1], whichLocation[2])
         end
 
         ---@param id player
@@ -2449,7 +2449,7 @@ do
             if check(unitid ~= nil, "unitId cannot be nil") then return nil end
             if check(whichLocation ~= nil, "location cannot be nil") then return nil end
             if check(face ~= nil, "facing angle be nil") then return nil end
-            return CreateUnit(id, unitid, whichLocation[0], whichLocation[1], face)
+            return CreateUnit(id, unitid, whichLocation[1], whichLocation[2], face)
         end
 
         ---@param id player
@@ -2462,7 +2462,7 @@ do
             if check(unitname ~= nil, "unitname cannot be nil") then return nil end
             if check(whichLocation ~= nil, "location cannot be nil") then return nil end
             if check(face ~= nil, "facing angle be nil") then return nil end
-            return CreateUnitByName(id, unitname, whichLocation[0], whichLocation[1], face)
+            return CreateUnitByName(id, unitname, whichLocation[1], whichLocation[2], face)
         end
 
         ---@param whichUnit unit
@@ -2470,7 +2470,7 @@ do
         function SetUnitPositionLoc(whichUnit, whichLocation)
             if check(whichUnit ~= nil, "unit cannot be nil") then return end
             if check(whichLocation ~= nil, "location cannot be nil") then return end
-            SetUnitPosition(whichUnit, whichLocation[0], whichLocation[1])
+            SetUnitPosition(whichUnit, whichLocation[1], whichLocation[2])
         end
 
         ---@param whichHero unit
@@ -2481,7 +2481,7 @@ do
             if check(whichHero ~= nil, "hero cannot be nil") then return false end
             if check(loc ~= nil, "location cannot be nil") then return false end
             if check(doEyecandy ~= nil, "doEyecandy be nil") then return false end
-            return ReviveHero(whichHero, loc[0], loc[1], doEyecandy)
+            return ReviveHero(whichHero, loc[1], loc[2], doEyecandy)
         end
 
         ---@param forWhichPlayer player
@@ -2495,7 +2495,7 @@ do
             if check(center ~= nil, "location be nil") then return end
             if check(radius ~= nil, "radius cannot be nil") then return end
             if check(useSharedVision ~= nil, "useSharedVision cannot be nil") then return end
-            SetFogStateRadius(forWhichPlayer, whichState, center[0], center[1], radius, useSharedVision)
+            SetFogStateRadius(forWhichPlayer, whichState, center[1], center[2], radius, useSharedVision)
         end
 
         ---@param where FakeLocation
@@ -2512,7 +2512,7 @@ do
             if check(blue ~= nil, "blue cannot be nil") then return nil end
             if check(pingPath ~= nil, "pingPath cannot be nil") then return nil end
             if check(fogVisibility ~= nil, "fogstate cannot be nil") then return nil end
-            return CreateMinimapIcon(where[0], where[1], red, green, blue, pingPath, fogVisibility)
+            return CreateMinimapIcon(where[1], where[2], red, green, blue, pingPath, fogVisibility)
         end
     end)
     OnInit.root("LIGUI_BoolexprOverride", function(require)
@@ -2599,14 +2599,14 @@ do
         end
 
         local world ---@type FakeRect
-        OnInit.main(function(require)
+        OnInit.main("LIGUI_WorldBounds", function(require)
             local w = oldWorld() --[[@as rect]]
             world = Rect(getMinX(w), getMinY(w), getMaxX(w), getMaxY(w))
             remover(w)
         end)
         ---@return FakeRect
         function GetWorldBounds()
-            return Rect(table.unpack(world))
+            return Rect(world[1], world[2], world[3], world[4])
         end
 
         ---@param rect FakeRect
@@ -2664,13 +2664,13 @@ do
         end
 
         local nativeRect ---@type rect
-        OnInit.main(function(require)
+        OnInit.main("LIGUI_NativeRect", function(require)
             nativeRect = oldRect(0, 0, 0, 0) --[[@as rect]]
         end)
         ---@param rect FakeRect
         ---@return rect
         local function toNativeRect(rect)
-            oldSetRect(nativeRect, rect[0], rect[1], rect[2], rect[3])
+            oldSetRect(nativeRect, rect[1], rect[2], rect[3], rect[4])
             return nativeRect
         end
 
@@ -2850,7 +2850,7 @@ do
         end
 
         local mainForce ---@type force
-        OnInit.main(function(require)
+        OnInit.main("LIGUI_NativeForce", function(require)
             mainForce = oldForce() --[[@as force]]
         end)
         ---@param player player
@@ -2945,7 +2945,7 @@ do
         do
             local oldGroup1 = bj_suspendDecayFleshGroup
             local oldGroup2 = bj_suspendDecayBoneGroup
-            OnInit.main(function(require)
+            OnInit.main("LIGUI_NativeGroups", function(require)
                 nativeDestroyGroup(oldGroup1 --[[@as group]])
                 nativeDestroyGroup(oldGroup2 --[[@as group]])
                 issueGroup = nativeCreateGroup() --[[@as group]]
@@ -3111,29 +3111,36 @@ do
             local unit
             local parentThread = coroutine.running()
             local threads = {} ---@type thread[]
-            local looped = false
+            local threadData = {} ---@type table<thread, table>
+            debug("For group called", parentThread)
             while i <= #group do
                 unit = group[i]
                 local codeThread = coroutine.create(code)
                 table.insert(threads, codeThread)
-
-                local thisThread = coroutine.create(function(...)
-                    coroutine.resume(codeThread, ...)
-                    if looped and threadsAllDone(threads) then
-                        coroutine.resume(parentThread)
-                    end
-                end)
                 local data = setupThreadData(codeThread, parentThread)
+                threadData[codeThread] = data
                 rawset(data, "GetEnumUnit", unit)
-                coroutine.resume(thisThread, unit)
-
+                coroutine.resume(codeThread, unit)
                 if group.indexOf[unit] then
                     i = i + 1
                 end
             end
+            debug("For group done")
             if not threadsAllDone(threads) then
-                looped = true
-                coroutine.yield(parentThread)
+                local function polledWaitCallback()
+                    debug("Thread", coroutine.running(), "done")
+                    if threadsAllDone(threads) then
+                        debug("All done")
+                        coroutine.resume(parentThread)
+                    else
+                        debug("Not all done")
+                    end
+                end
+                for _, thread in ipairs(threads) do
+                    rawset(threadData[thread], "forkJoinCallback", polledWaitCallback)
+                end
+                debug("Yielding")
+                coroutine.yield()
             end
         end
 
@@ -3263,7 +3270,7 @@ do
                 if check(whichGroup ~= nil, "group cannot be nil") then return end
                 if check(whichLocation ~= nil, "location cannot be nil") then return end
                 if check(radius ~= nil, "radius cannot be nil") then return end
-                oldGroupEnumUnitsInRange(mainGroup, whichLocation[0], whichLocation[1], radius, wrapUnitFilter(filter))
+                oldGroupEnumUnitsInRange(mainGroup, whichLocation[1], whichLocation[2], radius, wrapUnitFilter(filter))
                 toFakeGroup(mainGroup, whichGroup)
             end
 
@@ -3294,7 +3301,7 @@ do
                 if check(whichLocation ~= nil, "location cannot be nil") then return end
                 if check(radius ~= nil, "radius cannot be nil") then return end
                 if check(countLimit ~= nil, "countLimit cannot be nil") then return end
-                oldGroupEnumUnitsInRangeCounted(mainGroup, whichLocation[0], whichLocation[1], radius,
+                oldGroupEnumUnitsInRangeCounted(mainGroup, whichLocation[1], whichLocation[2], radius,
                     wrapUnitFilter(filter), countLimit)
                 toFakeGroup(mainGroup, whichGroup)
             end
@@ -3319,7 +3326,7 @@ do
                 if check(whichGroup ~= nil, "group cannot be nil") then return false end
                 if check(order ~= nil, "order cannot be nil") then return false end
                 if check(whichLocation ~= nil, 'location cannot be nil') then return false end
-                return oldGroupPointOrder(toNativeGroup(whichGroup), order, whichLocation[0], whichLocation[1])
+                return oldGroupPointOrder(toNativeGroup(whichGroup), order, whichLocation[1], whichLocation[2])
             end
 
             local oldGroupPointOrderById = groupOverrideAPI.nativeGroupPointOrderById
@@ -3331,7 +3338,7 @@ do
                 if check(whichGroup ~= nil, "group cannot be nil") then return false end
                 if check(order ~= nil, "order cannot be nil") then return false end
                 if check(whichLocation ~= nil, 'location cannot be nil') then return false end
-                return oldGroupPointOrderById(toNativeGroup(whichGroup), order, whichLocation[0], whichLocation[1])
+                return oldGroupPointOrderById(toNativeGroup(whichGroup), order, whichLocation[1], whichLocation[2])
             end
         end
 
@@ -3341,8 +3348,8 @@ do
             function MoveRectToLoc(whichRect, newCenterLoc)
                 if check(whichRect ~= nil, 'rect cannot be nil') then return end
                 if check(newCenterLoc ~= nil, 'centerLoc cannot be nil') then return end
-                local x = newCenterLoc[0] - GetRectCenterX(whichRect)
-                local y = newCenterLoc[1] - GetRectCenterY(whichRect)
+                local x = newCenterLoc[1] - GetRectCenterX(whichRect)
+                local y = newCenterLoc[2] - GetRectCenterY(whichRect)
                 SetRect(whichRect, whichRect[1] + x, whichRect[2] + y, whichRect[3] + x, whichRect[4] + y)
             end
 
@@ -3489,17 +3496,21 @@ do
     OnInit.root("LIGUI_EventResponseOverrides", function(require)
         local threadDataAPI = require "LIGUI_ThreadData" --[[@as LIGUI_ThreadDataAPI]]
         local getThreadData = threadDataAPI.getThreadData
+
+        local eventRegistryAPI = require "LIGUI_EventRegistry" --[[@as LIGUI_EventRegistryAPI]]
+        local eventResponseMap = eventRegistryAPI.eventResponseMap
+
         ---@param name string
         ---@return unknown
         local function getEventResponse(name)
-            msg("Get", name, "for", coroutine.running(), "as", getThreadData(coroutine.running())[name])
+            debug("Get", name, "for", coroutine.running(), "as", getThreadData(coroutine.running())[name])
             return getThreadData(coroutine.running())[name]
         end
 
         ---@param name string
         ---@param value unknown
         local function setEventResponse(name, value)
-            msg("Set", name, "for", coroutine.running(), "to", value)
+            debug("Set", name, "for", coroutine.running(), "to", value)
             getThreadData(coroutine.running())[name] = value
         end
 
@@ -3612,6 +3623,11 @@ do
         hijackNativeEventResponse("BlzGetTriggerPlayerMouseX")
         hijackNativeEventResponse("BlzGetTriggerPlayerMouseY")
         hijackNativeEventResponse("BlzGetTriggerPlayerMousePosition")
+        -- let's pretend these are also event responses
+        hijackNativeEventResponse("GetEnumUnit")
+        hijackNativeEventResponse("GetEnumDestructable")
+        hijackNativeEventResponse("GetEnumItem")
+        hijackNativeEventResponse("GetEnumPlayer")
     end)
     OnInit.root("LIGUI_BjOverrides", function(require)
         require "LIGUI_CommonOverrides"
@@ -3885,19 +3901,21 @@ do
             eventListeners[listener] = nil
         end
 
-        OnInit.main(function(require)
-            local indexTrigger = CreateTrigger()
-            TriggerRegisterEnterRectSimple(indexTrigger, GetWorldBounds() --[[@as rect]]) -- returns FakeRect but due to all overrides, the BJ will be able to process it
-            TriggerAddAction(indexTrigger, indexUnitAction)
+        OnInit.main("LIGUI_UnitRemoveDetectInit", function(require)
+            require "LIGUI_WorldBounds"
 
-            local deindexTrigger = CreateTrigger()
-            TriggerRegisterAnyUnitEventBJ(deindexTrigger, EVENT_PLAYER_UNIT_ISSUED_ORDER)
-            TriggerAddAction(deindexTrigger, deindexUnitAction)
+            -- local indexTrigger = CreateTrigger()
+            -- TriggerRegisterEnterRectSimple(indexTrigger, GetWorldBounds() --[[@as rect]]) -- returns FakeRect but due to all overrides, the BJ will be able to process it
+            -- TriggerAddAction(indexTrigger, indexUnitAction)
 
-            local playerCountMax = GetBJMaxPlayerSlots() - 1 -- 24 + 4 neutrals
-            for j = 0, playerCountMax do
-                SetPlayerAbilityAvailable(Player(j), _REMOVE_ABIL, false)
-            end
+            -- local deindexTrigger = CreateTrigger()
+            -- TriggerRegisterAnyUnitEventBJ(deindexTrigger, EVENT_PLAYER_UNIT_ISSUED_ORDER)
+            -- TriggerAddAction(deindexTrigger, deindexUnitAction)
+
+            -- local playerCountMax = GetBJMaxPlayerSlots() - 1 -- 24 + 4 neutrals
+            -- for j = 0, playerCountMax do
+            --     SetPlayerAbilityAvailable(Player(j), _REMOVE_ABIL, false)
+            -- end
         end)
     end)
     OnInit.root("LIGUI_QuantumTempVariables", function(require)
@@ -3911,18 +3929,56 @@ do
         gmt.__newindex = function(t, k, v)
             if string.match(string.lower(k), 'udg_temp') then
                 variableThreadLocals[k] = true
-                getThreadData(coroutine.running())[k] = v
+                debug("Setting", k, "for", coroutine.running(), "to", v)
+                rawset(getThreadData(coroutine.running()),k, v)
             else
                 rawset(t, k, v)
             end
         end
         gmt.__index = function(t, k)
             if variableThreadLocals[k] then
-                return getThreadData(coroutine.running())[k]
+                local result = getThreadData(coroutine.running())[k]
+                debug("Getting", k, "for", coroutine.running(), "as", result)
+                return result
             else
                 return rawget(t, k)
             end
         end
     end)
-end
+
+    -- root
+    require "LIGUI_FakeType"
+    require "LIGUI_ThreadData"
+    require "LIGUI_Coroutines"
+    require "LIGUI_MiscellaneousFixes"
+    require "LIGUI_Hashtables"
+    require "LIGUI_Boolexprs"
+    require "LIGUI_Groups"
+    require "LIGUI_EventRegistry"
+    require "LIGUI_BjFixes"
+
+    -- root - overrides
+    require "LIGUI_CommonOverrides"
+    require "LIGUI_HashtableOverride"
+    require "LIGUI_TriggerOverride"
+    require "LIGUI_TimerOverride"
+    require "LIGUI_LocationOverride"
+    require "LIGUI_BoolexprOverride"
+    require "LIGUI_RectOverride"
+    require "LIGUI_ForceOverride"
+    require "LIGUI_GroupOverride"
+    require "LIGUI_ComboOverrides"
+    require "LIGUI_EventResponseOverrides"
+    require "LIGUI_BjOverrides"
+    require "LIGUI_UnitRemoveDetection"
+    require "LIGUI_QuantumTempVariables"
+
+    -- main
+    require "LIGUI_NativeFilter"
+    require "LIGUI_NativeLoc"
+    require "LIGUI_WorldBounds"
+    require "LIGUI_NativeForce"
+    require "LIGUI_NativeGroups"
+    require "LIGUI_UnitRemoveDetectInit"
+end)
 if Debug then Debug.endFile() end
