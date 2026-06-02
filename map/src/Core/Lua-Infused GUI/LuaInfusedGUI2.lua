@@ -26,14 +26,14 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
     Update: XX xxx 2026 by InsanityAI
     Changes:
         - Refactored entire script
-        - Overriden Events and Trigger API to use native triggers as events and fake triggers in place of actual triggers if _EXPERIMENTAL is set to true
-        - TriggerExecute/TriggerEvaluate will now be able to read event responses from the parent trigger if _EXPERIMENTAL is set to true
-        - Overriden Timer API to use TimerQueue instead if _EXPERIMENTAL is set to true
+        - Overriden Events and Trigger API to use native triggers as events and fake triggers in place of actual triggers
+        - TriggerExecute/TriggerEvaluate will now be able to read event responses from the parent trigger
+        - Overriden Timer API to use TimerQueue instead
         - DestroyTimer now no longer does anything
         - TriggerRegisterTimerEvent and TriggerRegisterTimerExpireEvent now use FakeTimers (based on TimerQueue) -- pending change
         - CreateTimerDialog and DestroyTimerDialog now accept FakeTimers instead
         - TimerDialogSetRealTimeRemaining and TimerDialogSetSpeed modified to reflect actual Game behavior with FakeTimers
-        - Removed GetForceOfPlayer override
+        - Removed GetForceOfPlayer override as those forces were never immutable to begin with
 
     Update: 24 May 2026 by InsanityAI & Marcielos
     Changes:
@@ -995,7 +995,7 @@ OnInit.root("LIGUI", function(require)
                     local eventResponseNames = table.pack(commonResponse,
                         table.unpack(eventTypeResponseMap[select(nativeArgCount - 1, ...)]))
                     local trigger = oldCreateTrigger() --[[@as trigger]]
-                    local event = eventRegistrationNative(trigger, ...)
+                    eventRegistrationNative(trigger, ...)
                     local event = abstractTriggerEventCache:get(trigger, ...)
                     oldTriggerAddAction(trigger, function()
                         processEventCallback(event, eventResponseNames)
@@ -1181,6 +1181,25 @@ OnInit.root("LIGUI", function(require)
                 [EVENT_UNIT_STACK_ITEM] = { "GetTriggerUnit", "BlzGetStackingItemSource", "BlzGetStackingItemTarget", "BlzGetStackingItemTargetPreviousCharges", "GetManipulatedItem", "GetManipulatingUnit" }, -- todo: figure out duplicates
             }
 
+            local frameEventResponseMap = {
+                [FRAMEEVENT_CONTROL_CLICK] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" },
+                [FRAMEEVENT_MOUSE_ENTER] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" },
+                [FRAMEEVENT_MOUSE_LEAVE] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" },
+                [FRAMEEVENT_MOUSE_UP] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" },
+                [FRAMEEVENT_MOUSE_DOWN] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" },
+                [FRAMEEVENT_MOUSE_WHEEL] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" },
+                [FRAMEEVENT_CHECKBOX_CHECKED] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" },
+                [FRAMEEVENT_CHECKBOX_UNCHECKED] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" },
+                [FRAMEEVENT_EDITBOX_TEXT_CHANGED] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer", "BlzGetTriggerFrameValue", },
+                [FRAMEEVENT_POPUPMENU_ITEM_CHANGED] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer", "BlzGetTriggerFrameValue", },
+                [FRAMEEVENT_MOUSE_DOUBLECLICK] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" },
+                [FRAMEEVENT_SPRITE_ANIM_UPDATE] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" },
+                [FRAMEEVENT_SLIDER_VALUE_CHANGED] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer", "BlzGetTriggerFrameValue", },
+                [FRAMEEVENT_DIALOG_CANCEL] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" },
+                [FRAMEEVENT_DIALOG_ACCEPT] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" },
+                [FRAMEEVENT_EDITBOX_ENTER] = { "BlzGetTriggerFrameEvent", "BlzGetTriggerFrame", "GetTriggerPlayer" }
+            }
+
             -- unused events - cannot be passed to any native
             -- EVENT_WIDGET_DEATH
             -- EVENT_DIALOG_BUTTON_CLICK
@@ -1223,8 +1242,7 @@ OnInit.root("LIGUI", function(require)
                 unitEventResponseMap, "GetFilterUnit") -- actually overrides TriggerRegisterFilterUnitEvent but uses the no-filter one
             EventRegistry.UnitInRange = defineEventTypeWithFilter(TriggerRegisterUnitInRange, 4,
                 unitEventResponseMap[EVENT_UNIT_TARGET_IN_RANGE], "GetFilterUnit")
-            EventRegistry.Frame = defineEventType(BlzTriggerRegisterFrameEvent, 3,
-                gameEventResponseMap[EVENT_GAME_CUSTOM_UI_FRAME]) -- todo: frame event responses
+            EventRegistry.Frame = defineDynamicEventType(BlzTriggerRegisterFrameEvent, 3, frameEventResponseMap)
             EventRegistry.PlayerSync = defineEventType(BlzTriggerRegisterPlayerSyncEvent, 4,
                 gameEventResponseMap[EVENT_PLAYER_SYNC_DATA])
             EventRegistry.PlayerKey = defineEventType(BlzTriggerRegisterPlayerKeyEvent, 5,
