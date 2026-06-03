@@ -736,6 +736,103 @@ OnInit.root("LIGUI", function(require)
         }
         return groupsAPI
     end)
+    OnInit.root("LIGUI_RandomPool", function(require)
+        require "LIGUI_FakeType"
+
+        local nilRef = {}
+
+        -- A simplified version of WeightedTable
+        ---@generic T
+        ---@class LIGUI_RandomPool<T>
+        ---@field private allowNil boolean
+        ---@field private compiled boolean
+        ---@field private internalWeights number[]
+        ---@field public weights number[]
+        ---@field public [integer] T -- array of objects
+        ---@field public [T] integer -- object index lookup
+        ---@field public size integer
+        local RandomPool = {}
+        RandomPool.__index = RandomPool
+
+        ---@param allowNil true?
+        ---@return LIGUI_RandomPool
+        function RandomPool.create(allowNil)
+            return setmetatable({
+                allowNil = allowNil,
+                weights = {},
+                size = 0,
+                compiled = true
+            }, RandomPool)
+        end
+
+        ---@param obj T
+        ---@param weight number
+        function RandomPool:addObject(obj, weight)
+            if check(weight ~= nil, "Weight must not be nil") then return end
+            if check(type(weight) == 'number', "Weight must be a number!") then return end 
+            if obj == nil then
+                if check(self.allowNil, "RandomPool does not accept nil object") then return end
+                obj = nilRef
+            end
+            if self.allowNil and obj == nil then obj = nilRef end
+            local index = self.objectIndices[obj]
+            if not index then
+                table.insert(self, obj)
+                table.insert(self.weights, weight)
+                self[obj] = self.size
+                self.size = self.size + 1
+            else
+                self.weights[index] = weight
+            end
+            self.compiled = false
+        end
+
+        ---@param obj T
+        function RandomPool:removeObject(obj)
+            if obj == nil then
+                if check(self.allowNil, "RandomPool does not accept nil object") then return end
+                obj = nilRef
+            end
+            if self.allowNil and obj == nil then obj = nilRef end
+            local index = self.objectIndices[obj]
+            if not index then return end
+            table.remove(self.weights, index)
+            table.remove(self, index)
+
+            self.compiled = false
+            self.size = self.size - 1
+        end
+
+        ---@generic T
+        ---@return T?
+        function RandomPool:getRandomObj()
+            if not self.compiled then
+                self.internalWeights = {}
+                local weightSum = 0
+                for _, weight in ipairs(self.weights) do
+                    weightSum = weightSum + weight
+                end
+                local currentCumulativeNormalizedWeight = 0
+                for index, weight in ipairs(self.weights) do
+                    currentCumulativeNormalizedWeight = currentCumulativeNormalizedWeight + weight / weightSum
+                    self.internalWeights[index] = currentCumulativeNormalizedWeight
+                end
+            end
+
+            local rng = math.random()
+            for index, weightedValue in ipairs(self.internalWeights) do
+                if rng <= weightedValue then
+                    local obj = self[index]
+                    if obj == nilRef then obj = nil end
+                    return obj --[[@as unknown]]
+                end
+            end
+        end
+
+        GUI.RandomPool = RandomPool
+
+        return RandomPool
+    end)
     OnInit.root("LIGUI_EventRegistry", function(require)
         require "LIGUI_FakeType"
         local threadDataAPI = require "LIGUI_ThreadData" --[[@as LIGUI_ThreadDataAPI]]
@@ -3154,6 +3251,62 @@ OnInit.root("LIGUI", function(require)
             nativeGroupPointOrderById = nativeGroupPointOrderById
         }
         return groupOverrideAPI
+    end)
+    OnInit.root("LIGUI_UnitPoolOverride", function(require)
+        require "LIGUI_FakeType"
+        local randomPool = require "LIGUI_RandomPool" --[[@as LIGUI_RandomPool]]
+
+        ---@class FakeUnitPool: LIGUI_RandomPool<integer>, FakedType
+
+        ---@return FakeUnitPool
+        function CreateUnitPool()
+            return setmetatable({ __faketype = "userdata" }, randomPool) --[[@as FakeUnitPool]]
+        end
+
+        DestroyUnitPool = nil
+
+        UnitPoolAddUnitType = randomPool
+            .addObject ---@type fun(whichPool: FakeUnitPool, unitId: integer, weight: number)
+        UnitPoolRemoveUnitType = randomPool.removeObject ---@type fun(whichPool: FakeUnitPool, unitId: integer)
+
+        ---@param whichPool FakeUnitPool
+        ---@param forWhichPlayer player
+        ---@param x number
+        ---@param y number
+        ---@param facing number
+        ---@return unit
+        function PlaceRandomUnit(whichPool, forWhichPlayer, x, y, facing)
+            local unitId = whichPool:getRandomObj()
+            if not unitId then return nil end
+            return CreateUnit(forWhichPlayer, unitId, x, y, facing)
+        end
+    end)
+    OnInit.root("LIGUI_ItemPoolOverride", function(require)
+        require "LIGUI_FakeType"
+        local randomPool = require "LIGUI_RandomPool" --[[@as LIGUI_RandomPool]]
+
+        ---@class FakeItemPool: LIGUI_RandomPool<integer>, FakedType
+
+        ---@return FakeItemPool
+        function CreateItemPool()
+            return setmetatable({ __faketype = "userdata" }, randomPool) --[[@as FakeItemPool]]
+        end
+
+        DestroyItemPool = nil
+
+        ItemPoolAddItemType = randomPool
+            .addObject ---@type fun(whichPool: FakeItemPool, unitId: integer, weight: number)
+        ItemPoolRemoveItemType = randomPool.removeObject ---@type fun(whichPool: FakeItemPool, unitId: integer)
+
+        ---@param whichPool FakeItemPool
+        ---@param x number
+        ---@param y number
+        ---@return item
+        function PlaceRandomItem(whichPool, x, y)
+            local itemId = whichPool:getRandomObj()
+            if not itemId then return nil end
+            return CreateItem(itemId, x, y)
+        end
     end)
     OnInit.root("LIGUI_ComboOverrides", function(require)
         local threadDataAPI = require "LIGUI_ThreadData" --[[@as LIGUI_ThreadDataAPI]]
