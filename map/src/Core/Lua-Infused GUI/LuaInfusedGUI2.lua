@@ -618,6 +618,9 @@ OnInit.root("LIGUI", function(require)
         local setupThreadData = threadDataAPI.setupThreadData
         local clearThreadData = threadDataAPI.clearThreadData
 
+        ---@class FakeBoolexpr: boolexpr, FakedType
+        ---@field func fun(): boolean
+
         -- ForGroup/ForForce will use regular loops
         local filterUpvalue = nil ---@type fun(): boolean
         local nativeFilter ---@type filterfunc
@@ -630,7 +633,7 @@ OnInit.root("LIGUI", function(require)
             end) --[[@as filterfunc]]
         end)
 
-        ---@param filter fun(): boolean
+        ---@param filter FakeBoolexpr
         ---@param enumNative fun(): unknown
         ---@param enumName string
         ---@return filterfunc
@@ -650,13 +653,13 @@ OnInit.root("LIGUI", function(require)
         local oldGetFilterUnit = GetFilterUnit
         local function wrapUnitFilter(filter)
             if not filter then return nil end
-            return toNativeFilter(filter --[[@as fun(): boolean]], oldGetFilterUnit, "GetFilterUnit")
+            return toNativeFilter(filter, oldGetFilterUnit, "GetFilterUnit")
         end
 
         local oldGetFilterPlayer = GetFilterPlayer
         local function wrapPlayerFilter(filter)
             if not filter then return nil end
-            return toNativeFilter(filter --[[@as fun(): boolean]], oldGetFilterPlayer, "GetFilterPlayer")
+            return toNativeFilter(filter, oldGetFilterPlayer, "GetFilterPlayer")
         end
 
         ---@class LIGUI_BoolexprAPI
@@ -1078,7 +1081,7 @@ OnInit.root("LIGUI", function(require)
                 return function(trigger, ...)
                     -- remove filter from args
                     local args = table.pack(...)
-                    local filter = args[nativeArgCount] --[[@as nil|fun():boolean]]
+                    local filter = args[nativeArgCount] --[[@as FakeBoolexpr?]]
                     args[nativeArgCount] = nil
 
                     if filter then
@@ -1133,7 +1136,7 @@ OnInit.root("LIGUI", function(require)
                 return function(trigger, ...)
                     -- remove filter from args
                     local args = table.pack(...)
-                    local filter = args[nativeArgCount] --[[@as nil|fun():boolean]]
+                    local filter = args[nativeArgCount] --[[@as FakeBoolexpr?]]
                     args[nativeArgCount] = nil
 
                     if filter then
@@ -1525,7 +1528,7 @@ OnInit.root("LIGUI", function(require)
         ---@field private execCount integer
         ---@field private evalCount integer
         ---@field private events table<AbstractTriggerEvent, boolean>
-        ---@field private conditions table<fun():boolean, boolean>
+        ---@field private conditions table<FakeBoolexpr, boolean>
         ---@field private actions table<fun(), boolean>
         FakeTrigger = {}
         FakeTrigger.__index = FakeTrigger
@@ -1619,12 +1622,12 @@ OnInit.root("LIGUI", function(require)
             end
         end
 
-        ---@param condition fun():boolean
+        ---@param condition FakeBoolexpr
         function FakeTrigger:addCondition(condition)
             self.conditions[condition] = true
         end
 
-        ---@param condition fun():boolean
+        ---@param condition FakeBoolexpr
         function FakeTrigger:removeCondition(condition)
             self.conditions[condition] = nil
         end
@@ -1633,7 +1636,7 @@ OnInit.root("LIGUI", function(require)
             self.conditions = SyncedTable.create()
         end
 
-        ---@param condition fun():boolean
+        ---@param condition FakeBoolexpr
         ---@param state boolean?
         function FakeTrigger:toggleCondition(condition, state)
             if self.conditions[condition] == nil then return end
@@ -1774,8 +1777,8 @@ OnInit.root("LIGUI", function(require)
             GetTriggerEvalCount = FakeTrigger.getEvalCount
             GetTriggerExecCount = FakeTrigger.getExecCount
             ---@param trigger FakeTrigger
-            ---@param condition fun(): boolean
-            ---@return fun(): boolean
+            ---@param condition FakeBoolexpr
+            ---@return FakeBoolexpr
             TriggerAddCondition = function(trigger, condition)
                 FakeTrigger.addCondition(trigger, condition)
                 return condition
@@ -1922,7 +1925,7 @@ OnInit.root("LIGUI", function(require)
             self.listeners[listener] = nil
 
             if self.listenerAmount == 0 then
-                if (not self.timer) and self.timerQueueTaskId then
+                if self.timerQueueTaskId then
                     TimerQueue:disableCallback(self.timerQueueTaskId)
                     self.timerQueueTaskId = nil
                 end
@@ -2563,34 +2566,44 @@ OnInit.root("LIGUI", function(require)
         end
     end)
     OnInit.root("LIGUI_BoolexprOverride", function(require)
+        require "LIGUI_FakeType"
+
+        local fakeBoolexprMt = {
+            __call = function(tbl, ...)
+                return tbl.func(...)
+            end
+        }
+
         ---@param func fun(): boolean
-        ---@return conditionfunc|fun(): boolean
+        ---@return FakeBoolexpr
         function Condition(func)
-            return func
+            return setmetatable({ func = func, __faketype = 'userdata' }, fakeBoolexprMt)
         end
 
-        ---@param func fun():boolean
-        ---@return filterfunc|fun(): boolean
-        function Filter(func)
-            return func
-        end
+        Filter = Condition
 
         ---@param boolexpr1 boolexpr|fun(): boolean
         ---@param boolexpr2 boolexpr|fun(): boolean
-        ---@return boolexpr|fun(): boolean
+        ---@return FakeBoolexpr
         function And(boolexpr1, boolexpr2)
-            return function()
-                return boolexpr1() and boolexpr2()
-            end
+            return setmetatable({
+                func = function()
+                    return boolexpr1() and boolexpr2()
+                end,
+                __faketype = 'userdata'
+            }, fakeBoolexprMt)
         end
 
         ---@param boolexpr1 boolexpr|fun(): boolean
         ---@param boolexpr2 boolexpr|fun(): boolean
-        ---@return boolexpr|fun(): boolean
+        ---@return FakeBoolexpr
         function Or(boolexpr1, boolexpr2)
-            return function()
-                return boolexpr1() or boolexpr2()
-            end
+            return setmetatable({
+                func = function()
+                    return boolexpr1() or boolexpr2()
+                end,
+                __faketype = 'userdata'
+            }, fakeBoolexprMt)
         end
 
         DestroyFilter = DoNothing
@@ -3328,7 +3341,7 @@ OnInit.root("LIGUI", function(require)
             local oldGroupEnumUnitsOfType = GroupEnumUnitsOfType
             ---@param whichGroup FakeGroup
             ---@param unitName string
-            ---@param filter? boolexpr|fun():boolean
+            ---@param filter? FakeBoolexpr
             function GroupEnumUnitsOfType(whichGroup, unitName, filter)
                 if check(whichGroup ~= nil, "group cannot be nil") then return end
                 if check(unitName ~= nil, "unitName cannot be nil") then return end
@@ -3339,7 +3352,7 @@ OnInit.root("LIGUI", function(require)
             local oldGroupEnumUnitsOfPlayer = GroupEnumUnitsOfPlayer
             ---@param whichGroup FakeGroup
             ---@param whichPlayer player
-            ---@param filter? boolexpr|fun(): boolean
+            ---@param filter? FakeBoolexpr
             function GroupEnumUnitsOfPlayer(whichGroup, whichPlayer, filter)
                 if check(whichGroup ~= nil, "group cannot be nil") then return end
                 if check(whichPlayer ~= nil, "player cannot be nil") then return end
@@ -3350,7 +3363,7 @@ OnInit.root("LIGUI", function(require)
             local oldGroupEnumUnitsOfTypeCounted = GroupEnumUnitsOfTypeCounted
             ---@param whichGroup FakeGroup
             ---@param unitName string
-            ---@param filter? boolexpr|fun(): boolean
+            ---@param filter? FakeBoolexpr
             ---@param countLimit integer
             function GroupEnumUnitsOfTypeCounted(whichGroup, unitName, filter, countLimit)
                 if check(whichGroup ~= nil, "group cannot be nil") then return end
@@ -3363,7 +3376,7 @@ OnInit.root("LIGUI", function(require)
             local oldGroupEnumUnitsInRect = GroupEnumUnitsInRect
             ---@param whichGroup FakeGroup
             ---@param r FakeRect
-            ---@param filter? boolexpr|fun(): boolean
+            ---@param filter? FakeBoolexpr
             function GroupEnumUnitsInRect(whichGroup, r, filter)
                 if check(whichGroup ~= nil, "group cannot be nil") then return end
                 if check(r ~= nil, "rect cannot be nil") then return end
@@ -3374,7 +3387,7 @@ OnInit.root("LIGUI", function(require)
             local oldGroupEnumUnitsInRectCounted = GroupEnumUnitsInRectCounted
             ---@param whichGroup FakeGroup
             ---@param r FakeRect
-            ---@param filter? boolexpr|fun(): boolean
+            ---@param filter? FakeBoolexpr
             ---@param countLimit integer
             function GroupEnumUnitsInRectCounted(whichGroup, r, filter, countLimit)
                 if check(whichGroup ~= nil, "group cannot be nil") then return end
@@ -3389,7 +3402,7 @@ OnInit.root("LIGUI", function(require)
             ---@param x number
             ---@param y number
             ---@param radius number
-            ---@param filter? boolexpr|fun():boolean
+            ---@param filter? FakeBoolexpr
             function GroupEnumUnitsInRange(whichGroup, x, y, radius, filter)
                 if check(whichGroup ~= nil, "group cannot be nil") then return end
                 if check(x ~= nil, "x cannot be nil") then return end
@@ -3402,7 +3415,7 @@ OnInit.root("LIGUI", function(require)
             ---@param whichGroup FakeGroup
             ---@param whichLocation FakeLocation
             ---@param radius number
-            ---@param filter? boolexpr|fun(): boolean
+            ---@param filter? FakeBoolexpr
             function GroupEnumUnitsInRangeOfLoc(whichGroup, whichLocation, radius, filter)
                 if check(whichGroup ~= nil, "group cannot be nil") then return end
                 if check(whichLocation ~= nil, "location cannot be nil") then return end
@@ -3416,7 +3429,7 @@ OnInit.root("LIGUI", function(require)
             ---@param x number
             ---@param y number
             ---@param radius number
-            ---@param filter? boolexpr|fun(): boolean
+            ---@param filter? FakeBoolexpr
             ---@param countLimit integer
             function GroupEnumUnitsInRangeCounted(whichGroup, x, y, radius, filter, countLimit)
                 if check(whichGroup ~= nil, "group cannot be nil") then return end
@@ -3431,7 +3444,7 @@ OnInit.root("LIGUI", function(require)
             ---@param whichGroup FakeGroup
             ---@param whichLocation FakeLocation
             ---@param radius number
-            ---@param filter? boolexpr|fun(): boolean
+            ---@param filter? FakeBoolexpr
             ---@param countLimit integer
             function GroupEnumUnitsInRangeOfLocCounted(whichGroup, whichLocation, radius, filter, countLimit)
                 if check(whichGroup ~= nil, "group cannot be nil") then return end
@@ -3446,7 +3459,7 @@ OnInit.root("LIGUI", function(require)
             local oldGroupEnumUnitsSelected = GroupEnumUnitsSelected
             ---@param whichGroup FakeGroup
             ---@param whichPlayer player
-            ---@param filter? boolexpr|fun(): boolean
+            ---@param filter? FakeBoolexpr
             function GroupEnumUnitsSelected(whichGroup, whichPlayer, filter)
                 if check(whichGroup ~= nil, "group cannot be nil") then return end
                 if check(whichPlayer ~= nil, "player cannot be nil") then return end
@@ -3516,14 +3529,13 @@ OnInit.root("LIGUI", function(require)
             local oldGetEnumDestructable = GetEnumDestructable
             local oldEnumDestructablesInRect = EnumDestructablesInRect
             ---@param r FakeRect
-            ---@param filter? boolexpr|fun():boolean
+            ---@param filter? FakeBoolexpr
             ---@param actionFunc fun()
             function EnumDestructablesInRect(r, filter, actionFunc)
                 if not filter and not actionFunc then return end
                 local filterFunc ---@type filterfunc?
                 if filter then
-                    filterFunc = toNativeFilter(filter --[[@as fun(): boolean]], oldGetFilterDestructable,
-                        "GetFilterDestructable")
+                    filterFunc = toNativeFilter(filter, oldGetFilterDestructable, "GetFilterDestructable")
                 else
                     filterFunc = nil
                 end
@@ -3550,13 +3562,13 @@ OnInit.root("LIGUI", function(require)
             local oldGetFilterItem = GetFilterItem
             local oldGetEnumItem = GetEnumItem
             ---@param r FakeRect
-            ---@param filter? boolexpr|fun():boolean
+            ---@param filter? FakeBoolexpr
             ---@param actionFunc fun()
             function EnumItemsInRect(r, filter, actionFunc)
                 if not filter and not actionFunc then return end
                 local filterFunc ---@type filterfunc?
                 if filter then
-                    filterFunc = toNativeFilter(filter --[[@as fun(): boolean]], oldGetFilterItem, "GetFilterItem")
+                    filterFunc = toNativeFilter(filter, oldGetFilterItem, "GetFilterItem")
                 else
                     filterFunc = nil
                 end
@@ -3598,7 +3610,7 @@ OnInit.root("LIGUI", function(require)
 
             local oldForceEnumPlayers = ForceEnumPlayers
             ---@param whichForce FakeForce
-            ---@param filter? boolexpr|fun():boolean
+            ---@param filter? FakeBoolexpr
             function ForceEnumPlayers(whichForce, filter)
                 oldForceEnumPlayers(getMainForce(), wrapPlayerFilter(filter))
                 funnelEnum(whichForce)
@@ -3606,7 +3618,7 @@ OnInit.root("LIGUI", function(require)
 
             local oldForceEnumPlayersCounted = ForceEnumPlayersCounted
             ---@param whichForce FakeForce
-            ---@param filter? boolexpr|fun():boolean
+            ---@param filter? FakeBoolexpr
             ---@param countLimit integer
             function ForceEnumPlayersCounted(whichForce, filter, countLimit)
                 oldForceEnumPlayersCounted(getMainForce(), wrapPlayerFilter(filter), countLimit)
@@ -3615,17 +3627,19 @@ OnInit.root("LIGUI", function(require)
 
             local oldForceEnumAllies = ForceEnumAllies
             ---@param whichForce FakeForce
-            ---@param filter? boolexpr|fun():boolean
-            function ForceEnumAllies(whichForce, filter)
-                oldForceEnumAllies(getMainForce(), wrapPlayerFilter(filter))
+            ---@param whichPlayer player
+            ---@param filter? FakeBoolexpr
+            function ForceEnumAllies(whichForce, whichPlayer, filter)
+                oldForceEnumAllies(getMainForce(), whichPlayer, wrapPlayerFilter(filter))
                 funnelEnum(whichForce)
             end
 
             local oldForceEnumEnemies = ForceEnumEnemies
             ---@param whichForce FakeForce
-            ---@param filter? boolexpr|fun():boolean
-            function ForceEnumEnemies(whichForce, filter)
-                oldForceEnumEnemies(getMainForce(), wrapPlayerFilter(filter))
+            ---@param whichPlayer player
+            ---@param filter? FakeBoolexpr
+            function ForceEnumEnemies(whichForce, whichPlayer, filter)
+                oldForceEnumEnemies(getMainForce(), whichPlayer, wrapPlayerFilter(filter))
                 funnelEnum(whichForce)
             end
         end
@@ -4024,7 +4038,7 @@ OnInit.root("LIGUI", function(require)
         end
 
         ---@param whichPlayer player
-        ---@param enumFilter? fun():boolean
+        ---@param enumFilter? FakeBoolexpr
         ---@param enumAction function
         function EnumUnitsSelected(whichPlayer, enumFilter, enumAction)
             local g = CreateGroup()
@@ -4077,6 +4091,7 @@ OnInit.root("LIGUI", function(require)
                     fStack[event] = funcs
                     TriggerAddCondition(t, Filter(function()
                         for _, func in ipairs(funcs) do func() end
+                        return true
                     end))
                 end
                 funcs[insertAt] = userFunc
