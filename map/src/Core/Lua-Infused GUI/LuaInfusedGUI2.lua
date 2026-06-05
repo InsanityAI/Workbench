@@ -297,13 +297,17 @@ OnInit.root("LIGUI", function(require)
         local threadJobMap = setmetatable({}, { __mode = 'k' }) ---@type table<thread, fun(...):...>
         local threadDead = setmetatable({}, { __mode = 'k' }) ---@type table<thread, true>
         local args = { n = 0 } -- One table to pass all the data, ALL OF IT
+        local try = (Debug and Debug.settings.USE_TRY_ON_COROUTINES) and function(funcToExecute, ...)
+            return xpcall(funcToExecute, Debug.errorHandler, ...)
+        end or pcall
 
         local function coroutineCallback(...)
             local thread = coroutine.running()
             pack(args, ...) -- only for first time coroutine.resume call since native thread is created
             while true do
                 -- run job function
-                pack(args, pcall(threadJobMap[thread], unpack(args)))
+                pack(args, try(threadJobMap[thread], unpack(args)))
+                -- get trace in case of error?
 
                 -- mark coroutine as available
                 threadPool.n = threadPool.n + 1
@@ -311,8 +315,13 @@ OnInit.root("LIGUI", function(require)
                 threadJobMap[thread] = nil
                 threadDead[thread] = true
 
-                -- final value return and next coroutine resume call (new job function)
-                pack(args, coroutine.yield(unpack(args)))
+                -- error occured
+                if not args[1] then
+
+                else
+                    -- final value return and next coroutine resume call (new job function)
+                    pack(args, coroutine.yield(unpack(args)))
+                end
             end
         end
 
@@ -350,7 +359,7 @@ OnInit.root("LIGUI", function(require)
             ---@param whichFunc fun(...):...
             ---@return fun(...):...
             wrap = function(whichFunc)
-                local thread = getCoroutine(whichFunc)
+                local thread = _ENV.coroutine.create(whichFunc)
                 return function(...)
                     return processWrapResult(_ENV.coroutine.resume(thread, ...))
                 end
@@ -769,7 +778,7 @@ OnInit.root("LIGUI", function(require)
         ---@param weight number
         function RandomPool:addObject(obj, weight)
             if check(weight ~= nil, "Weight must not be nil") then return end
-            if check(type(weight) == 'number', "Weight must be a number!") then return end 
+            if check(type(weight) == 'number', "Weight must be a number!") then return end
             if obj == nil then
                 if check(self.allowNil, "RandomPool does not accept nil object") then return end
                 obj = nilRef
@@ -837,7 +846,6 @@ OnInit.root("LIGUI", function(require)
         require "LIGUI_FakeType"
         local threadDataAPI = require "LIGUI_ThreadData" --[[@as LIGUI_ThreadDataAPI]]
         local setupThreadData = threadDataAPI.setupThreadData
-        local getThreadData = threadDataAPI.getThreadData
 
         ---@class EventRegistry
         EventRegistry = {}
@@ -950,14 +958,10 @@ OnInit.root("LIGUI", function(require)
                     oldDisableTrigger(self.actualTrigger)
                     return
                 end
-                local thread = coroutine.running()
                 for listener in pairs(self.listeners) do
                     if listener:evaluate() then
-                        local newThread = coroutine.create(listener.execute)
-                        local data = setupThreadData(newThread, thread)
                         -- run in a coroutine to avoid TSA/PolledWait congesting every listener/trigger
-                        debug("Executing trigger", listener)
-                        coroutine.resume(newThread, listener)
+                        coroutine.wrap(listener.execute)(listener)
                     end
                 end
             end
@@ -1024,13 +1028,11 @@ OnInit.root("LIGUI", function(require)
                 data.GetTriggerEventId = event
 
                 for _, name in ipairs(eventResponseNames) do
-                    print("Event response", name)
                     if useNativeInstead[name] then
-                        getThreadData(thread)[name] = getThreadData(thread)[useNativeInstead[name]]
+                        data[name] = data[useNativeInstead[name]]
                     else
-                        getThreadData(thread)[name] = eventResponseMap[name]()
+                        data[name] = eventResponseMap[name]()
                     end
-                    print("Event response", name, getThreadData(thread)[name])
                 end
                 event:notifyListeners()
             end
@@ -1045,9 +1047,15 @@ OnInit.root("LIGUI", function(require)
                     local trigger = oldCreateTrigger() --[[@as trigger]]
                     eventRegistrationNative(trigger, ...)
                     local event = abstractTriggerEventCache:get(trigger, ...)
-                    oldTriggerAddAction(trigger, function()
-                        processEventCallback(event, eventResponseNames)
-                    end)
+                    if Debug and Debug.settings.USE_TRY_ON_TRIGGERADDACTION then
+                        oldTriggerAddAction(trigger, function()
+                            Debug.try(processEventCallback, event, eventResponseNames)
+                        end)
+                    else
+                        oldTriggerAddAction(trigger, function()
+                            processEventCallback(event, eventResponseNames)
+                        end)
+                    end
                     return event
                 end, nativeArgCount - 1)
                 return function(...)
@@ -1094,9 +1102,15 @@ OnInit.root("LIGUI", function(require)
                     local trigger = oldCreateTrigger() --[[@as trigger]]
                     eventRegistrationNative(trigger, ...)
                     local event = abstractTriggerEventCache:get(trigger, ...)
-                    oldTriggerAddAction(trigger, function()
-                        processEventCallback(event, eventResponseNames)
-                    end)
+                    if Debug and Debug.settings.USE_TRY_ON_TRIGGERADDACTION then
+                        oldTriggerAddAction(trigger, function()
+                            Debug.try(processEventCallback, event, eventResponseNames)
+                        end)
+                    else
+                        oldTriggerAddAction(trigger, function()
+                            processEventCallback(event, eventResponseNames)
+                        end)
+                    end
                     return event
                 end, nativeArgCount - 1)
                 return function(...)
@@ -1503,7 +1517,6 @@ OnInit.root("LIGUI", function(require)
 
         local threadDataAPI = require "LIGUI_ThreadData" --[[@as LIGUI_ThreadDataAPI]]
         local getThreadData = threadDataAPI.getThreadData
-        local setupThreadData = threadDataAPI.setupThreadData
 
         require "LIGUI_Boolexprs"
         ---@class FakeTrigger: FakedType, trigger
@@ -1672,6 +1685,19 @@ OnInit.root("LIGUI", function(require)
             end
         end
 
+        ---@param self FakeTrigger
+        ---@param action function
+        ---@return thread, table<string, unknown>
+        local function setupTriggerThreadAndData(self, action)
+            local thisThread = coroutine.create(action)
+            local data = getThreadData(thisThread)
+            --todo: triggering trigger reports the trigger that executed it, right?
+            rawset(data, "GetTriggeringTrigger", self) -- don't overwrite master threadData entry
+            ---@diagnostic disable-next-line: invisible
+            rawset(data, "waitOnSleep", self.waitOnSleep)
+            return thisThread, data
+        end
+
         ---@param withSleep boolean?
         function FakeTrigger:execute(withSleep)
             local parentThread = coroutine.running()
@@ -1682,13 +1708,9 @@ OnInit.root("LIGUI", function(require)
                 local threadData = {} ---@type table<thread, table>
                 for action, enabled in pairs(self.actions) do
                     if enabled then
-                        local actionThread = coroutine.create(action)
+                        local actionThread, data = setupTriggerThreadAndData(self, action)
                         table.insert(threads, actionThread)
-                        local data = setupThreadData(actionThread, parentThread)
                         threadData[actionThread] = data
-                        --todo: triggering trigger reports the trigger that executed it, right?
-                        rawset(data, "GetTriggeringTrigger", self) -- don't overwrite master threadData entry
-                        rawset(data, "waitOnSleep", self.waitOnSleep)
                         coroutine.resume(actionThread)
                     end
                 end
@@ -1706,11 +1728,7 @@ OnInit.root("LIGUI", function(require)
             else
                 for action, enabled in pairs(self.actions) do
                     if enabled then
-                        local thisThread = coroutine.create(action)
-                        local data = setupThreadData(thisThread, parentThread)
-                        rawset(data, "GetTriggeringTrigger", self) -- don't overwrite master threadData entry
-                        rawset(data, "waitOnSleep", self.waitOnSleep)
-                        coroutine.resume(thisThread)
+                        coroutine.resume(setupTriggerThreadAndData(self, action))
                     end
                 end
             end
@@ -1782,12 +1800,13 @@ OnInit.root("LIGUI", function(require)
             -- TriggerSyncStart -- I'll probably leave this as is
             -- TriggerSyncReady -- I'll probably leave this as is
 
-            ---@param EventRegistryMethod function
+            ---@param EventRegistryMethod fun(...): AbstractTriggerEvent
             local function makeTriggerEventOverrideWrapper(EventRegistryMethod)
                 ---@param trigger FakeTrigger
                 ---@param ... unknown
                 ---@return AbstractTriggerEvent
                 return function(trigger, ...)
+                    if check(trigger ~= nil, 'trigger cannot be nil') then return nil end
                     local event = EventRegistryMethod(...)
                     trigger:addEvent(event)
                     return event
@@ -1818,15 +1837,21 @@ OnInit.root("LIGUI", function(require)
             BlzTriggerRegisterFrameEvent = makeTriggerEventOverrideWrapper(EventRegistry.Frame) ---@overload fun(trigger: FakeTrigger,frame: framehandle, eventType: frameeventtype): AbstractTriggerEvent
             BlzTriggerRegisterPlayerSyncEvent = makeTriggerEventOverrideWrapper(EventRegistry.PlayerSync) ---@overload fun(trigger: FakeTrigger,player: player, prefix: string, fromServer: boolean): AbstractTriggerEvent
             BlzTriggerRegisterPlayerKeyEvent = makeTriggerEventOverrideWrapper(EventRegistry.PlayerKey) ---@overload fun(trigger: FakeTrigger,player: player, key: oskeytype, metaKey: integer, keyDown: boolean): AbstractTriggerEvent
+
+            ---@class LIGUI_TriggerOverrideAPI
+            local triggerOverride = { makeTriggerEventOverrideWrapper = makeTriggerEventOverrideWrapper }
+            return triggerOverride
         end
     end)
     OnInit.main("LIGUI_TimerOverride", function(require)
         local threadDataAPI = require "LIGUI_ThreadData" --[[@as LIGUI_ThreadDataAPI]]
-        local setupThreadData = threadDataAPI.setupThreadData
+        local getThreadData = threadDataAPI.getThreadData
 
-        require "LIGUI_TriggerOverride"
+        local triggerOverride = require "LIGUI_TriggerOverride" --[[@as LIGUI_TriggerOverrideAPI]]
+        local makeTriggerEventOverrideWrapper = triggerOverride.makeTriggerEventOverrideWrapper
         require "TimerQueue"
         require "SyncedTable"
+
         if not TimerQueue or not SyncedTable then return end
         local stopwatch = Stopwatch.create(false)
         OnInit.final(function() stopwatch:start() end)
@@ -1837,150 +1862,113 @@ OnInit.root("LIGUI", function(require)
 
         ---@class FakeTimerEvent: AbstractTriggerEvent
         ---@field timer FakeTimer
+        ---@field timeEvent boolean dictates if it controls the FakeTimer
+        ---@field periodic boolean?
+        ---@field timeout number?
         FakeTimerEvent = {}
         FakeTimerEvent.__index = FakeTimerEvent
 
-        ---@param timer FakeTimer?
-        ---@return FakeTimerEvent
-        local function createFakeTimerEvent(timer)
-            return setmetatable({
-                __faketype = "userdata",
-                listeners = SyncedTable.create(),
-                listenerAmount = 0,
-                timer = timer
-            }, FakeTimerEvent)
-        end
-
         function FakeTimerEvent:notifyListeners()
-            local thread = coroutine.running()
             for listener in pairs(self.listeners) do
                 if listener:isEnabled() and listener:evaluate() then
-                    local newThread = coroutine.create(listener.execute)
-                    local data = setupThreadData(newThread, thread)
-                    -- run in a coroutine to avoid TSA/PolledWait congesting every listener/trigger
-                    coroutine.resume(newThread, listener)
+                    coroutine.wrap(listener.execute)(listener)
                 end
+            end
+        end
+
+        local timersWithEvents = {} ---@type table<FakeTimer, table<FakeTimerEvent, boolean>> -- boolean is enabled/disabled
+
+        ---@param event FakeTimerEvent
+        local function triggerTimeCallback(event)
+            coroutine.wrap(FakeTimerEvent.notifyListeners)(event)
+            if event.periodic then
+                TimerQueue:callDelayed(event.timeout, triggerTimeCallback, event)
             end
         end
 
         ---@param self FakeTimerEvent
         ---@param listener FakeTrigger
         function FakeTimerEvent:addListener(listener)
-            if self.listeners[listener] then
-                self.listenerAmount = self.listenerAmount + 1
+            if self.listeners[listener] then return end
+
+            if self.listenerAmount == 0 then
+                if self.timeEvent then
+                    TimerQueue:callDelayed(self.timeout, triggerTimeCallback, self)
+                end
+
+                local timerEvents = timersWithEvents[self.timer] ---@type table<FakeTimerEvent, boolean>
+                if not timerEvents then
+                    timerEvents = SyncedTable.create()
+                    timersWithEvents[self] = timerEvents
+                end
+                timerEvents[self] = true
             end
+
+            self.listenerAmount = self.listenerAmount + 1
             self.listeners[listener] = true
         end
 
         ---@param self FakeTimerEvent
         ---@param listener FakeTrigger
         function FakeTimerEvent:removeListener(listener)
-            if self.listeners[listener] then
-                self.listenerAmount = self.listenerAmount - 1
-            end
+            if not self.listeners[listener] then return end
+            self.listenerAmount = self.listenerAmount - 1
             self.listeners[listener] = nil
-        end
 
-        ---@param trigger trigger
-        local function triggerCallback(trigger)
-            local success, result = pcall(TriggerEvaluate, trigger)
-            if success and result then
-                pcall(TriggerExecute, trigger)
+            if self.listenerAmount == 0 then
+                if self.timeEvent then
+                    PauseTimer(self.timer)
+                end
+                timersWithEvents[self.timer][self] = nil
             end
         end
 
-        local function triggerTimeCallback(trigger, timeout, periodic)
-            coroutine.wrap(triggerCallback)(trigger)
-            if periodic then
-                TimerQueue:callDelayed(timeout, triggerTimeCallback, trigger, timeout, periodic)
-            end
-        end
-
-        local triggersWithTimers = {} ---@type table<trigger, table<FakeTimer, true>>
-        local timersWithEvents = {} ---@type table<FakeTimer, table<trigger, boolean>> -- boolean is enabled/disabled
-
-        ---@param whichTrigger FakeTrigger
         ---@param timeout number
         ---@param periodic boolean
         ---@return FakeTimerEvent
-        EventRegistry.Timer = function(whichTrigger, timeout, periodic)
-            if check(whichTrigger ~= nil, 'trigger cannot be nil') then return nil end
+        local function createFakeTimeoutEvent(timeout, periodic)
+            return setmetatable({
+                __faketype = "userdata",
+                listeners = SyncedTable.create(),
+                listenerAmount = 0,
+                timer = CreateTimer(),
+                timeEvent = true,
+                timeout = timeout,
+                periodic = periodic
+            }, FakeTimerEvent)
+        end
+
+        ---@param timeout number
+        ---@param periodic boolean
+        ---@return FakeTimerEvent
+        EventRegistry.Timeout = function(timeout, periodic)
             if check(timeout ~= nil, 'timeout cannot be nil') then return nil end
-            local event = createFakeTimerEvent(CreateTimer() --[[@as FakeTimer]])
-            whichTrigger:addEvent(event)
-            -- TimerStart(event.timer, timeout, periodic, nil)
-            TimerQueue:callDelayed(timeout, triggerTimeCallback, whichTrigger, timeout, periodic)
+            local event = createFakeTimeoutEvent(timeout, periodic)
             return event
         end
 
-        ---@param whichTrigger FakeTrigger
+        ---@param timer FakeTimer
+        ---@return FakeTimerEvent
+        local function createFakeTimerEvent(timer)
+            return setmetatable({
+                __faketype = "userdata",
+                listeners = SyncedTable.create(),
+                listenerAmount = 0,
+                timer = timer,
+                timeEvent = false
+            }, FakeTimerEvent)
+        end
+
         ---@param whichTimer FakeTimer,
         ---@return FakeTimerEvent
-        EventRegistry.TimerExpire = function(whichTrigger, whichTimer)
-            if check(whichTrigger ~= nil, 'trigger cannot be nil') then return nil end
+        EventRegistry.TimerExpire = function(whichTimer)
             if check(whichTimer ~= nil, 'timer cannot be nil') then return nil end
             local event = createFakeTimerEvent(whichTimer)
-            whichTrigger:addEvent(event)
-
-            local triggerEvents = triggersWithTimers[whichTrigger] ---@type table<FakeTimer, true>
-            if not triggerEvents then
-                triggerEvents = SyncedTable.create()
-                triggersWithTimers[whichTrigger] = triggerEvents
-            end
-
-            local timerEvents = timersWithEvents[whichTimer] ---@type table<trigger, boolean>
-            if not timerEvents then
-                timerEvents = SyncedTable.create()
-                timersWithEvents[whichTimer] = timerEvents
-            end
-
-            timerEvents[whichTrigger] = true
-            triggerEvents[whichTimer] = true
-
             return event
         end
 
-        TriggerRegisterTimerEvent = EventRegistry
-            .Timer ---@overload fun(trigger: FakeTrigger, timeout: number, periodic: boolean): AbstractTriggerEvent
-        TriggerRegisterTimerExpireEvent = EventRegistry
-            .TimerExpire ---@overload fun(trigger: FakeTrigger, timer: timer): AbstractTriggerEvent
-
-        local oldDisableTrigger = DisableTrigger
-        ---@param whichTrigger trigger
-        function DisableTrigger(whichTrigger)
-            oldDisableTrigger(whichTrigger)
-            local timerEvents = triggersWithTimers[whichTrigger]
-            if timerEvents then
-                for timer, _ in pairs(timerEvents) do
-                    timersWithEvents[timer][whichTrigger] = false
-                end
-            end
-        end
-
-        local oldEnableTrigger = EnableTrigger
-        ---@param whichTrigger trigger
-        function EnableTrigger(whichTrigger)
-            oldEnableTrigger(whichTrigger)
-            local timerEvents = triggersWithTimers[whichTrigger]
-            if timerEvents then
-                for timer, _ in pairs(timerEvents) do
-                    timersWithEvents[timer][whichTrigger] = true
-                end
-            end
-        end
-
-        local oldDestroyTrigger = DestroyTrigger
-        ---@param whichTrigger trigger
-        function DestroyTrigger(whichTrigger)
-            oldDestroyTrigger(whichTrigger)
-            local timerEvents = triggersWithTimers[whichTrigger]
-            if timerEvents then
-                for timer, _ in pairs(timerEvents) do
-                    timersWithEvents[timer][whichTrigger] = nil
-                end
-            end
-            triggersWithTimers[whichTrigger] = nil
-        end
+        TriggerRegisterTimerExpireEvent = makeTriggerEventOverrideWrapper(EventRegistry.TimerExpire)
+        TriggerRegisterTimerEvent = makeTriggerEventOverrideWrapper(EventRegistry.Timeout)
 
         -- ============================
         --        TimerDialogs
@@ -2088,8 +2076,6 @@ OnInit.root("LIGUI", function(require)
         ---@field pausedTimeout number?
         ---@field task integer?
 
-        local expiredTimers = setmetatable({}, { __mode = 'k' }) ---@type table<thread, FakeTimer>
-
         ---@return FakeTimer
         function CreateTimer()
             return { __faketype = "userdata" }
@@ -2102,9 +2088,9 @@ OnInit.root("LIGUI", function(require)
             if whichTimer.handler then whichTimer.handler() end
             local timerEvents = timersWithEvents[whichTimer]
             if timerEvents then
-                for trigger, enabled in pairs(timerEvents) do
+                for event, enabled in pairs(timerEvents) do
                     if enabled then
-                        coroutine.wrap(triggerCallback)(trigger)
+                        coroutine.wrap(event.notifyListeners)(event)
                     end
                 end
             end
@@ -2113,7 +2099,7 @@ OnInit.root("LIGUI", function(require)
         ---@param whichTimer FakeTimer
         local function callback(whichTimer)
             local thread = coroutine.create(processCallbacks)
-            expiredTimers[thread] = whichTimer
+            rawset(getThreadData(thread), "GetExpiringTimer", whichTimer)
             coroutine.resume(thread, whichTimer)
 
             if whichTimer.periodic then
@@ -2820,7 +2806,6 @@ OnInit.root("LIGUI", function(require)
     OnInit.root("LIGUI_ForceOverride", function(require)
         local threadDataAPI = require "LIGUI_ThreadData" --[[@as LIGUI_ThreadDataAPI]]
         local coroutineAPI = require "LIGUI_Coroutines" --[[@as LIGUI_CoroutineAPI]]
-        local setupThreadData = threadDataAPI.setupThreadData
         local getThreadData = threadDataAPI.getThreadData
         local threadsAllDone = coroutineAPI.threadsAllDone
 
@@ -2948,7 +2933,7 @@ OnInit.root("LIGUI", function(require)
                     player = force[i]
                     local codeThread = coroutine.create(code)
                     table.insert(threads, codeThread)
-                    local data = setupThreadData(codeThread, parentThread)
+                    local data = getThreadData(codeThread)
                     threadData[codeThread] = data
                     coroutine.resume(codeThread, player)
                     if force.indexOf[player] then
@@ -2969,9 +2954,7 @@ OnInit.root("LIGUI", function(require)
             else
                 while i <= #force do
                     player = force[i]
-                    local codeThread = coroutine.create(code)
-                    setupThreadData(codeThread, parentThread)
-                    coroutine.resume(codeThread, player)
+                    coroutine.wrap(code)(player)
                     if force.indexOf[player] then
                         i = i + 1
                     end
@@ -3004,7 +2987,6 @@ OnInit.root("LIGUI", function(require)
         local threadDataAPI = require "LIGUI_ThreadData" --[[@as LIGUI_ThreadDataAPI]]
         local coroutineAPI = require "LIGUI_Coroutines" --[[@as LIGUI_CoroutineAPI]]
         local groupsAPI = require "LIGUI_Groups" --[[@as LIGUI_GroupsAPI]]
-        local setupThreadData = threadDataAPI.setupThreadData
         local getThreadData = threadDataAPI.getThreadData
         local threadsAllDone = coroutineAPI.threadsAllDone
         local groupDBRegisterUnitInGroup = groupsAPI.groupDBRegisterUnitInGroup
@@ -3197,7 +3179,7 @@ OnInit.root("LIGUI", function(require)
                     unit = group[i]
                     local codeThread = coroutine.create(code)
                     table.insert(threads, codeThread)
-                    local data = setupThreadData(codeThread, parentThread)
+                    local data = getThreadData(codeThread)
                     threadData[codeThread] = data
                     coroutine.resume(codeThread, unit)
                     if group.indexOf[unit] then
@@ -3218,9 +3200,7 @@ OnInit.root("LIGUI", function(require)
             else
                 while i <= #group do
                     unit = group[i]
-                    local codeThread = coroutine.create(code)
-                    setupThreadData(codeThread, parentThread)
-                    coroutine.resume(codeThread, unit)
+                    coroutine.wrap(code)(unit)
                     if group.indexOf[unit] then
                         i = i + 1
                     end
