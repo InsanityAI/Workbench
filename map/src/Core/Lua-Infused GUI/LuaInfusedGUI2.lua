@@ -1861,7 +1861,8 @@ OnInit.root("LIGUI", function(require)
         -- ============================
 
         ---@class FakeTimerEvent: AbstractTriggerEvent
-        ---@field timer FakeTimer
+        ---@field timer FakeTimer?
+        ---@field timerQueueTaskId integer?
         ---@field timeEvent boolean dictates if it controls the FakeTimer
         ---@field periodic boolean?
         ---@field timeout number?
@@ -1882,7 +1883,13 @@ OnInit.root("LIGUI", function(require)
         local function triggerTimeCallback(event)
             coroutine.wrap(FakeTimerEvent.notifyListeners)(event)
             if event.periodic then
-                TimerQueue:callDelayed(event.timeout, triggerTimeCallback, event)
+                event.timerQueueTaskId = TimerQueue:callDelayed(event.timeout, triggerTimeCallback, event)
+            else
+                event.timerQueueTaskId = nil
+                -- one-shot event, deregister everything
+                for listener, _ in pairs(event.listeners) do
+                    listener:removeEvent(event)
+                end
             end
         end
 
@@ -1893,7 +1900,7 @@ OnInit.root("LIGUI", function(require)
 
             if self.listenerAmount == 0 then
                 if self.timeEvent then
-                    TimerQueue:callDelayed(self.timeout, triggerTimeCallback, self)
+                    self.timerQueueTaskId = TimerQueue:callDelayed(self.timeout, triggerTimeCallback, self)
                 end
 
                 local timerEvents = timersWithEvents[self.timer] ---@type table<FakeTimerEvent, boolean>
@@ -1916,8 +1923,9 @@ OnInit.root("LIGUI", function(require)
             self.listeners[listener] = nil
 
             if self.listenerAmount == 0 then
-                if self.timeEvent then
-                    PauseTimer(self.timer)
+                if self.timeEvent and self.timerQueueTaskId then
+                    TimerQueue:disableCallback(self.timerQueueTaskId)
+                    self.timerQueueTaskId = nil
                 end
                 timersWithEvents[self.timer][self] = nil
             end
