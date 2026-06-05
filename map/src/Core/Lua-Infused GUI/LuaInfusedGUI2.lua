@@ -1863,7 +1863,6 @@ OnInit.root("LIGUI", function(require)
         ---@class FakeTimerEvent: AbstractTriggerEvent
         ---@field timer FakeTimer?
         ---@field timerQueueTaskId integer?
-        ---@field timeEvent boolean dictates if it controls the FakeTimer
         ---@field periodic boolean?
         ---@field timeout number?
         FakeTimerEvent = {}
@@ -1899,7 +1898,7 @@ OnInit.root("LIGUI", function(require)
             if self.listeners[listener] then return end
 
             if self.listenerAmount == 0 then
-                if self.timeEvent then
+                if not self.timer then
                     self.timerQueueTaskId = TimerQueue:callDelayed(self.timeout, triggerTimeCallback, self)
                 end
 
@@ -1923,7 +1922,7 @@ OnInit.root("LIGUI", function(require)
             self.listeners[listener] = nil
 
             if self.listenerAmount == 0 then
-                if self.timeEvent and self.timerQueueTaskId then
+                if (not self.timer) and self.timerQueueTaskId then
                     TimerQueue:disableCallback(self.timerQueueTaskId)
                     self.timerQueueTaskId = nil
                 end
@@ -1939,8 +1938,7 @@ OnInit.root("LIGUI", function(require)
                 __faketype = "userdata",
                 listeners = SyncedTable.create(),
                 listenerAmount = 0,
-                timer = CreateTimer(),
-                timeEvent = true,
+                timer = nil,
                 timeout = timeout,
                 periodic = periodic
             }, FakeTimerEvent)
@@ -1951,6 +1949,7 @@ OnInit.root("LIGUI", function(require)
         ---@return FakeTimerEvent
         EventRegistry.Timeout = function(timeout, periodic)
             if check(timeout ~= nil, 'timeout cannot be nil') then return nil end
+            if check(periodic ~= nil, 'periodic cannot be nil') then return nil end
             local event = createFakeTimeoutEvent(timeout, periodic)
             return event
         end
@@ -1962,8 +1961,7 @@ OnInit.root("LIGUI", function(require)
                 __faketype = "userdata",
                 listeners = SyncedTable.create(),
                 listenerAmount = 0,
-                timer = timer,
-                timeEvent = false
+                timer = timer
             }, FakeTimerEvent)
         end
 
