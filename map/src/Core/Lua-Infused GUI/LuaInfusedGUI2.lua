@@ -147,6 +147,63 @@ OnInit.root("LIGUI", function(require)
         end
     end
 
+    OnInit.root("LIGUI_CrashPrevention", function(require)
+        local nativeGetPLayerAlliance = GetPlayerAlliance
+        ---@param sourcePlayer player
+        ---@param otherPlayer player
+        ---@param whichAllianceSetting alliancetype
+        ---@return boolean
+        function GetPlayerAlliance(sourcePlayer, otherPlayer, whichAllianceSetting)
+            if otherPlayer == nil then return false end
+            return nativeGetPLayerAlliance(sourcePlayer, otherPlayer, whichAllianceSetting)
+        end
+
+        local nativeSetDoodadAnimation = SetDoodadAnimation
+        ---@param x number
+        ---@param y number
+        ---@param radius number
+        ---@param doodadId integer
+        ---@param nearestOnly boolean
+        ---@param animName string
+        ---@param animRandom boolean
+        function SetDoodadAnimation(x, y, radius, doodadId, nearestOnly, animName, animRandom)
+            if animName == nil then return end
+            nativeSetDoodadAnimation(x, y, radius, doodadId, nearestOnly, animName, animRandom)
+        end
+
+        local nativeSetDoodadAnimationRect = SetDoodadAnimationRect
+        ---@param r rect
+        ---@param doodadId integer
+        ---@param animName string
+        ---@param animRandom boolean
+        function SetDoodadAnimation(r, doodadId, animName, animRandom)
+            if animName == nil then return end
+            nativeSetDoodadAnimationRect(r, doodadId, animName, animRandom)
+        end
+
+        local nativeBlzSetUnitName = BlzSetUnitName
+        ---@param whichUnit unit
+        ---@param name string
+        function BlzSetUnitName(whichUnit, name)
+            if name == nil or name == '' then return end
+            nativeBlzSetUnitName(whichUnit, name)
+        end
+
+        -- GetObjectName crashes on Map Init
+        -- Mouse event registrations crash on map init
+        -- CreateQuest crashes if description is empty string or null, also crashes in global init, perhaps delay to final
+        -- CreateLeaderboard crashes on global init
+        -- CreateMultiboard crashes on global init
+        -- Preloader crashes if script has any syntax errors (nothing to be done there)
+        -- BlzSetSpecialEffectHeight & BlzSetSpecialEffectZ crash if used on an attached effect (to a unit)
+        -- BlzCreateFrameByType crashes if using "CONTROL or "SIMPLEMESSAGEFRAME" as type
+        -- BlzFrameSet/GetText used on ORIGIN_FRAME_PORTRAIT_HP/MANA_TEXT crashes the game
+        -- BlzFrameSetTooltip causes crash when used on same frame pair twice
+        -- BlzFrameSetFont crashes when used on some origin frames (lookup in jassbot)
+        -- BlzSet/GetAbilityBooleanLevelField apparently crashes but you can use BlzSet/GetAbilityIntegerLevelField
+        -- BlzGetUnitWeaponXField might crash when used on a unit with no attack
+
+    end)
     OnInit.root("LIGUI_FakeType", function(require)
         ---@class FakedType
         ---@field __faketype string
@@ -4244,6 +4301,7 @@ OnInit.root("LIGUI", function(require)
     end)
 
     -- root
+    require "LIGUI_CrashPrevention"
     require "LIGUI_FakeType"
     require "LIGUI_ThreadData"
     require "LIGUI_Coroutines"
@@ -4251,6 +4309,7 @@ OnInit.root("LIGUI", function(require)
     require "LIGUI_Hashtables"
     require "LIGUI_Boolexprs"
     require "LIGUI_Groups"
+    require "LIGUI_RandomPool"
     require "LIGUI_EventRegistry"
 
     -- root - overrides
@@ -4263,6 +4322,8 @@ OnInit.root("LIGUI", function(require)
     require "LIGUI_RectOverride"
     require "LIGUI_ForceOverride"
     require "LIGUI_GroupOverride"
+    require "LIGUI_UnitPoolOverride"
+    require "LIGUI_ItemPoolOverride"
     require "LIGUI_ComboOverrides"
     require "LIGUI_EventResponseOverrides"
     require "LIGUI_BjOverrides"
