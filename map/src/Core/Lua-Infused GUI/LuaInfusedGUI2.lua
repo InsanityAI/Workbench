@@ -140,12 +140,43 @@ OnInit.root("LIGUI", function(require)
         if GUI.log == 'debug' then print("|cFF00FFFFDebug:|r", ...) end
     end
 
-    local function debugWithStackTrace(...)
-        if GUI.log == 'debug' then
-            print("|cFF00FFFFDebug:|r", ...)
-            print("|cFF00FFFFTrace:|r", Debug.traceback(1))
+    --- some optimizations probably could be done about this
+    local function pack(args, ...)
+        local argN = select('#', ...)
+        if argN < args.n then
+            for i = argN + 1, args.n do
+                args[i] = nil
+            end
+        end
+
+        args.n = argN
+        for i = 1, argN do
+            args[i] = select(i, ...)
         end
     end
+
+    local unpack = table.unpack
+
+    local errorHandler = Debug and function(errorMsg)
+        return Debug.errorHandler(errorMsg, 3, true)
+    end or print
+
+    local processError = Debug and
+        ---@param success boolean
+        ---@param errorMsg string?
+        function(success, errorMsg)
+            if success then return end
+            print(errorMsg)
+        end or DoNothing
+
+    local try = Debug and Debug.try or
+        ---@param func function
+        ---@param ... unknown
+        ---@return true, ...
+        ---@return false, string
+        function(func, ...)
+            return xpcall(func, errorHandler, ...)
+        end
 
     OnInit.root("LIGUI_CrashPrevention", function(require)
         local nativeGetPLayerAlliance = GetPlayerAlliance
@@ -202,7 +233,6 @@ OnInit.root("LIGUI", function(require)
         -- BlzFrameSetFont crashes when used on some origin frames (lookup in jassbot)
         -- BlzSet/GetAbilityBooleanLevelField apparently crashes but you can use BlzSet/GetAbilityIntegerLevelField
         -- BlzGetUnitWeaponXField might crash when used on a unit with no attack
-
     end)
     OnInit.root("LIGUI_FakeType", function(require)
         ---@class FakedType
@@ -332,39 +362,19 @@ OnInit.root("LIGUI", function(require)
 
         -- Coroutine recycler + Override coroutine.create to automatically setup threadData entry to carry over event responses
 
-        --- some optimizations probably could be done about this
-        local function pack(args, ...)
-            local argN = select('#', ...)
-            if argN < args.n then
-                for i = argN + 1, args.n do
-                    args[i] = nil
-                end
-            end
-
-            args.n = argN
-            for i = 1, argN do
-                args[i] = select(i, ...)
-            end
-        end
-
-        local unpack = table.unpack
-
         local coroutine = coroutine
         local threadPool = { n = 0 } ---@type thread[]|{n: integer}
         local threadJobMap = setmetatable({}, { __mode = 'k' }) ---@type table<thread, fun(...):...>
         local threadDead = setmetatable({}, { __mode = 'k' }) ---@type table<thread, true>
         local args = { n = 0 } -- One table to pass all the data, ALL OF IT
-        local try = (Debug and Debug.settings.USE_TRY_ON_COROUTINES) and function(funcToExecute, ...)
-            return xpcall(funcToExecute, Debug.errorHandler, ...)
-        end or pcall
 
+        ---@param ... unknown
         local function coroutineCallback(...)
             local thread = coroutine.running()
             pack(args, ...) -- only for first time coroutine.resume call since native thread is created
             while true do
                 -- run job function
-                pack(args, try(threadJobMap[thread], unpack(args)))
-                -- get trace in case of error?
+                pack(args, xpcall(threadJobMap[thread], errorHandler, unpack(args)))
 
                 -- mark coroutine as available
                 threadPool.n = threadPool.n + 1
@@ -372,13 +382,8 @@ OnInit.root("LIGUI", function(require)
                 threadJobMap[thread] = nil
                 threadDead[thread] = true
 
-                -- error occured
-                if not args[1] then
-
-                else
-                    -- final value return and next coroutine resume call (new job function)
-                    pack(args, coroutine.yield(unpack(args)))
-                end
+                -- final value return and next coroutine resume call (new job function)
+                pack(args, coroutine.yield(unpack(args)))
             end
         end
 
@@ -405,7 +410,7 @@ OnInit.root("LIGUI", function(require)
             if status then
                 return ...
             else
-                error(..., nil)
+                error(..., 0)
             end
         end
 
@@ -452,12 +457,14 @@ OnInit.root("LIGUI", function(require)
                 return thread
             end
         }
-        if GUI.DEBUG_MODE then
+
+        if Debug and Debug.settings.USE_TRY_ON_COROUTINES then
             local nonDebugCoroutineResume = _ENV.coroutine.resume
             _ENV.coroutine.resume = function(co, ...)
-                debug("Thread", co, "resuming with args:", ...)
-                nonDebugCoroutineResume(co, ...)
-                debug("Thread", co, "yielding " .. table.tostring(args))
+                local success, errorMsg = nonDebugCoroutineResume(co, ...)
+                if not success then
+                    print(errorMsg)
+                end
                 return unpack(args)
             end
         end
@@ -678,7 +685,6 @@ OnInit.root("LIGUI", function(require)
         ---@class FakeBoolexpr: boolexpr, FakedType
         ---@field func fun(): boolean
 
-        -- ForGroup/ForForce will use regular loops
         local filterUpvalue = nil ---@type fun(): boolean
         local nativeFilter ---@type filterfunc
 
@@ -1021,7 +1027,7 @@ OnInit.root("LIGUI", function(require)
                 for listener in pairs(self.listeners) do
                     if listener:evaluate() then
                         -- run in a coroutine to avoid TSA/PolledWait congesting every listener/trigger
-                        coroutine.wrap(listener.execute)(listener)
+                        try(coroutine.wrap(listener.execute), listener)
                     end
                 end
             end
@@ -1077,6 +1083,9 @@ OnInit.root("LIGUI", function(require)
                 GetRevivingUnit = "GetTriggerUnit",
                 GetManipulatingUnit = "GetTriggerUnit",
                 GetSpellAbilityUnit = "GetTriggerUnit",
+                GetConstructedStructure = "GetTriggerUnit",
+                GetConstructingStructure = "GetTriggerUnit",
+                GetCancelledStructure = "GetTriggerUnit"
             }
 
             ---@param event AbstractTriggerEvent
@@ -1107,15 +1116,9 @@ OnInit.root("LIGUI", function(require)
                     local trigger = oldCreateTrigger() --[[@as trigger]]
                     eventRegistrationNative(trigger, ...)
                     local event = abstractTriggerEventCache:get(trigger, ...)
-                    if Debug and Debug.settings.USE_TRY_ON_TRIGGERADDACTION then
-                        oldTriggerAddAction(trigger, function()
-                            Debug.try(processEventCallback, event, eventResponseNames)
-                        end)
-                    else
-                        oldTriggerAddAction(trigger, function()
-                            processEventCallback(event, eventResponseNames)
-                        end)
-                    end
+                    oldTriggerAddAction(trigger, function()
+                        processEventCallback(event, eventResponseNames)
+                    end)
                     return event
                 end, nativeArgCount - 1)
                 return function(...)
@@ -1162,15 +1165,9 @@ OnInit.root("LIGUI", function(require)
                     local trigger = oldCreateTrigger() --[[@as trigger]]
                     eventRegistrationNative(trigger, ...)
                     local event = abstractTriggerEventCache:get(trigger, ...)
-                    if Debug and Debug.settings.USE_TRY_ON_TRIGGERADDACTION then
-                        oldTriggerAddAction(trigger, function()
-                            Debug.try(processEventCallback, event, eventResponseNames)
-                        end)
-                    else
-                        oldTriggerAddAction(trigger, function()
-                            processEventCallback(event, eventResponseNames)
-                        end)
-                    end
+                    oldTriggerAddAction(trigger, function()
+                        processEventCallback(event, eventResponseNames)
+                    end)
                     return event
                 end, nativeArgCount - 1)
                 return function(...)
@@ -1758,6 +1755,9 @@ OnInit.root("LIGUI", function(require)
             return thisThread, data
         end
 
+        local processErrorForTriggerAction = (Debug and Debug.settings.USE_TRY_ON_TRIGGERADDACTION) and processError or
+            DoNothing
+
         ---@param withSleep boolean?
         function FakeTrigger:execute(withSleep)
             local parentThread = coroutine.running()
@@ -1771,13 +1771,13 @@ OnInit.root("LIGUI", function(require)
                         local actionThread, data = setupTriggerThreadAndData(self, action)
                         table.insert(threads, actionThread)
                         threadData[actionThread] = data
-                        coroutine.resume(actionThread)
+                        processErrorForTriggerAction(coroutine.resume(actionThread))
                     end
                 end
                 if not threadsAllDone(threads) then
                     local function polledWaitCallback()
                         if threadsAllDone(threads) then
-                            coroutine.resume(parentThread)
+                            processErrorForTriggerAction(coroutine.resume(parentThread))
                         end
                     end
                     for _, thread in ipairs(threads) do
@@ -1788,7 +1788,7 @@ OnInit.root("LIGUI", function(require)
             else
                 for action, enabled in pairs(self.actions) do
                     if enabled then
-                        coroutine.resume(setupTriggerThreadAndData(self, action))
+                        processErrorForTriggerAction(coroutine.resume(setupTriggerThreadAndData(self, action)))
                     end
                 end
             end
@@ -1809,10 +1809,9 @@ OnInit.root("LIGUI", function(require)
             ---@param thread thread
             local function finishedWait(thread)
                 local callback = getThreadData(thread)["forkJoinCallback"]
+                processError(coroutine.resume(thread))
                 if callback then
-                    callback(coroutine.resume(thread))
-                else
-                    coroutine.resume(thread)
+                    callback()
                 end
             end
 
@@ -1916,6 +1915,8 @@ OnInit.root("LIGUI", function(require)
         local stopwatch = Stopwatch.create(false)
         OnInit.final(function() stopwatch:start() end)
 
+        local processError = (Debug and Debug.settings.USE_TRY_ON_TIMERSTART) and processError or DoNothing
+
         -- ============================
         --       Trigger Events
         -- ============================
@@ -1931,7 +1932,7 @@ OnInit.root("LIGUI", function(require)
         function FakeTimerEvent:notifyListeners()
             for listener in pairs(self.listeners) do
                 if listener:isEnabled() and listener:evaluate() then
-                    coroutine.wrap(listener.execute)(listener)
+                    try(coroutine.wrap(listener.execute), listener)
                 end
             end
         end
@@ -1940,7 +1941,7 @@ OnInit.root("LIGUI", function(require)
 
         ---@param event FakeTimerEvent
         local function triggerTimeCallback(event)
-            coroutine.wrap(FakeTimerEvent.notifyListeners)(event)
+            try(coroutine.wrap(FakeTimerEvent.notifyListeners), event)
             if event.periodic then
                 event.timerQueueTaskId = TimerQueue:callDelayed(event.timeout, triggerTimeCallback, event)
             else
@@ -2156,7 +2157,7 @@ OnInit.root("LIGUI", function(require)
             if timerEvents then
                 for event, enabled in pairs(timerEvents) do
                     if enabled then
-                        coroutine.wrap(event.notifyListeners)(event)
+                        try(coroutine.wrap(event.notifyListeners), event)
                     end
                 end
             end
@@ -2166,7 +2167,7 @@ OnInit.root("LIGUI", function(require)
         local function callback(whichTimer)
             local thread = coroutine.create(processCallbacks)
             rawset(getThreadData(thread), "GetExpiringTimer", whichTimer)
-            coroutine.resume(thread, whichTimer)
+            processError(coroutine.resume(thread, whichTimer))
 
             if whichTimer.periodic then
                 whichTimer.startTime = stopwatch:getElapsed()
@@ -2992,6 +2993,7 @@ OnInit.root("LIGUI", function(require)
 
         local oldForForce = ForForce
         local oldEnumPlayer = GetEnumPlayer
+        local processError = (Debug and Debug.settings.USE_TRY_ON_ENUMFUNCS) and processError or DoNothing
 
         ---@param force FakeForce
         ---@param code fun(p: player)
@@ -3011,7 +3013,7 @@ OnInit.root("LIGUI", function(require)
                     table.insert(threads, codeThread)
                     local data = getThreadData(codeThread)
                     threadData[codeThread] = data
-                    coroutine.resume(codeThread, player)
+                    processError(coroutine.resume(codeThread, player))
                     if force.indexOf[player] then
                         i = i + 1
                     end
@@ -3019,7 +3021,7 @@ OnInit.root("LIGUI", function(require)
                 if not threadsAllDone(threads) then
                     local function polledWaitCallback()
                         if threadsAllDone(threads) then
-                            coroutine.resume(parentThread)
+                            processError(coroutine.resume(parentThread))
                         end
                     end
                     for _, thread in ipairs(threads) do
@@ -3030,7 +3032,7 @@ OnInit.root("LIGUI", function(require)
             else
                 while i <= #force do
                     player = force[i]
-                    coroutine.wrap(code)(player)
+                    try(coroutine.wrap(code), player)
                     if force.indexOf[player] then
                         i = i + 1
                     end
@@ -3239,6 +3241,8 @@ OnInit.root("LIGUI", function(require)
             return nativeGroupTargetOrderById(toNativeGroup(whichGroup), order, targetWidget)
         end
 
+        local processError = (Debug and Debug.settings.USE_TRY_ON_ENUMFUNCS) and processError or DoNothing
+
         ---@param group FakeGroup
         ---@param code fun(u: unit)
         ---@param waitOnSleep boolean?
@@ -3257,7 +3261,7 @@ OnInit.root("LIGUI", function(require)
                     table.insert(threads, codeThread)
                     local data = getThreadData(codeThread)
                     threadData[codeThread] = data
-                    coroutine.resume(codeThread, unit)
+                    processError(coroutine.resume(codeThread, unit))
                     if group.indexOf[unit] then
                         i = i + 1
                     end
@@ -3265,7 +3269,7 @@ OnInit.root("LIGUI", function(require)
                 if not threadsAllDone(threads) then
                     local function polledWaitCallback()
                         if threadsAllDone(threads) then
-                            coroutine.resume(parentThread)
+                            processError(coroutine.resume(parentThread))
                         end
                     end
                     for _, thread in ipairs(threads) do
@@ -3276,7 +3280,7 @@ OnInit.root("LIGUI", function(require)
             else
                 while i <= #group do
                     unit = group[i]
-                    coroutine.wrap(code)(unit)
+                    try(coroutine.wrap(code), unit)
                     if group.indexOf[unit] then
                         i = i + 1
                     end
@@ -4228,9 +4232,9 @@ OnInit.root("LIGUI", function(require)
             if GetIssuedOrderId() == UNDEFEND_ORDER_ID and not UnitAlive(unit) and allUnits[unit] and GetUnitAbilityLevel(unit, _REMOVE_ABIL) == 0 then
                 allUnits[unit] = nil
                 for _, listener in ipairs(eventListeners) do
-                    coroutine.wrap(listener)(unit) -- we don't care about result
+                    try(coroutine.wrap(listener), unit) -- we don't care about result
                 end
-                groupDBDeregisterUnit(unit)        -- this shouldn't throw errors
+                groupDBDeregisterUnit(unit)             -- this shouldn't throw errors
             end
         end
 
