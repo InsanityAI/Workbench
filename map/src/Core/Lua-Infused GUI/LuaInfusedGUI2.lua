@@ -107,7 +107,7 @@ OnInit.root("LIGUI", function(require)
 
     --Define common variables to be utilized throughout the script.
     GUI                                  = {
-        DEBUG_MODE = true,
+        DEBUG_MODE = false,
         log = nil ---@type 'debug'|'warning'|nil
     }
     local assert                         = assert
@@ -158,7 +158,7 @@ OnInit.root("LIGUI", function(require)
     local unpack = table.unpack
 
     local errorHandler = Debug and function(errorMsg)
-        return Debug.errorHandler(errorMsg, 3, true)
+        return Debug.errorHandler(errorMsg, 1, true)
     end or print
 
     local processError = Debug and
@@ -169,14 +169,13 @@ OnInit.root("LIGUI", function(require)
             print(errorMsg)
         end or DoNothing
 
-    local try = Debug and Debug.try or
-        ---@param func function
-        ---@param ... unknown
-        ---@return true, ...
-        ---@return false, string
-        function(func, ...)
-            return xpcall(func, errorHandler, ...)
-        end
+    ---@param func function
+    ---@param ... unknown
+    ---@return true, ...
+    ---@return false, string
+    local function try(func, ...)
+        return xpcall(func, errorHandler, ...)
+    end
 
     OnInit.root("LIGUI_CrashPrevention", function(require)
         local nativeGetPLayerAlliance = GetPlayerAlliance
@@ -410,7 +409,7 @@ OnInit.root("LIGUI", function(require)
             if status then
                 return ...
             else
-                error(..., 0)
+                error(...)
             end
         end
 
@@ -4180,7 +4179,7 @@ OnInit.root("LIGUI", function(require)
         function TriggerRegisterAnyUnitEventBJ(trig, event)
             if check(trig ~= nil, 'trig cannot be nil') then return nil end
             if check(event ~= nil, 'event cannot be nil') then return nil end
-            local removeFunc = RegisterAnyPlayerUnitEvent(event, GUI.wrapTrigger(trig))
+            local removeFunc = RegisterAnyPlayerUnitEvent(event, function() if trig:isEnabled() then trig:execute() end end)
             if _USE_GLOBAL_REMAP then
                 if not trigFuncs then
                     trigFuncs = __jarray()
