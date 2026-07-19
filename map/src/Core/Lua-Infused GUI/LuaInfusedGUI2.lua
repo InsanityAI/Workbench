@@ -97,6 +97,9 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
 --]]
 OnInit.root("LIGUI", function(require)
     --Configurables
+    -- todo: re-hook DebugUtils coroutine wrappers if enabled in settings (internal framework uses non-hooked version, user uses hooked version)
+    local _INCLUDE_LIGUI2_INTO_TRACE     = true           -- includes LIGUI2 lines in stack traceback
+    local _PROPAGATE_ERRORS_TO_START     = true           -- propagates errors to start of execution thread in order to obtain the full stack trace
     local _THROW_ERROR_ON_INVALID_ARG    = true           -- set to true if you want LIGUI to throw errors when incorrect arguments are sent to overriden functions
     local _PRINT_WARNING_ON_INVALID_ARG  = true           -- set to true if you want warnings by LIGUI when incorrect arguments are sent to overriden functions
     local _USE_GLOBAL_REMAP              = false          -- set to true if you want GUI to have extended functionality such as "udg_HashTableArray" (which gives GUI an infinite supply of shared hashtables)
@@ -157,25 +160,119 @@ OnInit.root("LIGUI", function(require)
 
     local unpack = table.unpack
 
-    local errorHandler = Debug and function(errorMsg)
-        return Debug.errorHandler(errorMsg, 1, true)
-    end or print
+    local propagatedError = false
+    local traceStack = {} ---@type string[]
+
+    ---Returns the stack trace at the code position where this function is called.
+    ---The trace lists file names and line numbers in order of execution (i.e. most recent call last). File name is only listed, if it has changed from the previous traced line. It does NOT include function names.
+    ---You can optionally specify a startDepth and an endDepth to limit the stack trace to a specific range. Do this, if you call Debug.traceback within a wrapper to get to the desired code level.
+    ---@param startDepth? integer default: 0 (level where Debug.traceback is called)
+    ---@param endDepth? integer default: 200
+    ---@param removeLastX? integer default: 0
+    ---@return string trace
+    function Debug.traceback(startDepth, endDepth, removeLastX)
+        startDepth = (startDepth or 0) + 2
+        endDepth = (endDepth or 200) + 2
+        removeLastX = removeLastX or 0
+        local _, currentFile, lastFile, tracePiece, lastTracePiece, include
+        local maxDepth = 0
+        for loopDepth = startDepth, endDepth do --get trace on different depth level
+            _, tracePiece = pcall(error, "", loopDepth) ---@type boolean, string
+            tracePiece = Debug.getLocalErrorMsg(tracePiece):gsub("do; local", "KEK")
+            if #tracePiece > 0 and lastTracePiece ~= tracePiece then --some trace pieces can be empty, but there can still be valid ones beyond that
+                currentFile = tracePiece:match("^.-:")
+                if loopDepth == startDepth then
+                    include = not propagatedError
+                else
+                    --Hide DebugUtils in the stack trace (except main reference), if settings.INCLUDE_DEBUGUTILS_INTO_TRACE is set to true.
+                    if currentFile == 'DebugUtils:' then
+                        include = Debug.settings.INCLUDE_DEBUGUTILS_INTO_TRACE
+                        --Hide LIGUI2 in the stack trace (except main reference), if _INCLUDE_LIGUI2_INTO_TRACE is set to true.
+                    elseif currentFile == 'LuaInfusedGUI:' then
+                        include = _INCLUDE_LIGUI2_INTO_TRACE
+                    else
+                        include = true
+                    end
+                end
+
+                if include then
+                    maxDepth = maxDepth + 1
+                    traceStack[maxDepth] = ((currentFile == lastFile) and tracePiece:match(":%d+"):sub(2, -1) or tracePiece:match("^.-:%d+"))
+                    lastFile, lastTracePiece = currentFile, tracePiece
+                end
+            end
+        end
+        return table.concat(traceStack, ' <- ', 1, maxDepth - removeLastX)
+    end
+
+    ---@param errorMsg string
+    ---@param startDepth integer?
+    ---@param removeLastX integer?
+    ---@return string
+    local errorHandler = Debug and function(errorMsg, startDepth, removeLastX)
+        if propagatedError then
+            local _, endIndex = errorMsg:find(":%d*") --[[@as integer]]
+            errorMsg = errorMsg:sub(endIndex + 3)
+        end
+        errorMsg = Debug.getLocalErrorMsg(errorMsg)
+        --Original error message and stack trace.
+        local toPrint = errorMsg
+        if Debug.settings.SHOW_TRACE_ON_ERROR then
+            startDepth = startDepth or 2
+            removeLastX = removeLastX or 0
+            if propagatedError then
+                toPrint = toPrint ..
+                    "|cff" ..
+                    Debug.settings.colors.error .. " <- " .. Debug.traceback(startDepth + 1, 202, removeLastX) .. "|r"
+            else
+                toPrint = toPrint ..
+                    "\n|cff" ..
+                    Debug.settings.colors.error ..
+                    "Traceback (most recent call first):|r\n|cff" ..
+                    Debug.settings.colors.error .. Debug.traceback(startDepth, 202, removeLastX) .. "|r"
+            end
+        end
+        propagatedError = false
+        --Also print entries from param log, if there are any.
+        for location, loggedParams in next, Debug.data.paramLog do
+            toPrint = toPrint ..
+                "\n|cff" ..
+                Debug.settings.colors.log .. "Logged at " .. Debug.getLocalErrorMsg(location) .. loggedParams .. "|r"
+            Debug.data.paramLog[location] = nil
+        end
+        return toPrint
+    end or DoNothing
+
+    if Debug then
+        ---Message Handler to be used by the try-function below.
+        ---Adds stack trace plus formatting to the message and prints it.
+        ---@param errorMsg string
+        ---@param startDepth? integer default: 2 for use in xpcall
+        ---@param returnErrorMsg_yn? boolean lets errorHandler return its error message for further use.
+        ---@return string
+        function Debug.errorHandler(errorMsg, startDepth, returnErrorMsg_yn)
+            local toPrint = "|cff" ..
+                Debug.settings.colors.error .. "ERROR at " .. errorHandler(errorMsg, (startDepth or 2) + 1) .. "|r"
+            Debug.data.firstError = Debug.data.firstError or toPrint
+            if Debug.data.printErrors_yn then --don't print error, if execution of Debug.firstError() has disabled it.
+                print(toPrint)
+            end
+            return returnErrorMsg_yn and toPrint --[[@as string]]
+        end
+    end
 
     local processError = Debug and
         ---@param success boolean
-        ---@param errorMsg string?
+        ---@param errorMsg string
         function(success, errorMsg)
             if success then return end
-            print(errorMsg)
+            if _PROPAGATE_ERRORS_TO_START then
+                propagatedError = true
+                error(errorMsg)
+            else
+                Debug.errorHandler(errorMsg)
+            end
         end or DoNothing
-
-    ---@param func function
-    ---@param ... unknown
-    ---@return true, ...
-    ---@return false, string
-    local function try(func, ...)
-        return xpcall(func, errorHandler, ...)
-    end
 
     OnInit.root("LIGUI_CrashPrevention", function(require)
         local nativeGetPLayerAlliance = GetPlayerAlliance
@@ -362,10 +459,26 @@ OnInit.root("LIGUI", function(require)
         -- Coroutine recycler + Override coroutine.create to automatically setup threadData entry to carry over event responses
 
         local coroutine = coroutine
+        if Debug then -- restore original coroutine API
+            coroutine.create = Debug.original.coroutine.create
+            coroutine.wrap = Debug.original.coroutine.wrap
+        end
         local threadPool = { n = 0 } ---@type thread[]|{n: integer}
         local threadJobMap = setmetatable({}, { __mode = 'k' }) ---@type table<thread, fun(...):...>
         local threadDead = setmetatable({}, { __mode = 'k' }) ---@type table<thread, true>
         local args = { n = 0 } -- One table to pass all the data, ALL OF IT
+
+        local function coroutineErrorHandler(msg)
+            return errorHandler(msg, nil, 2)
+        end
+
+        ---@param func function
+        ---@param ... unknown
+        ---@return true, ...
+        ---@return false, string
+        local function try(func, ...)
+            return xpcall(func, coroutineErrorHandler, ...)
+        end
 
         ---@param ... unknown
         local function coroutineCallback(...)
@@ -373,7 +486,7 @@ OnInit.root("LIGUI", function(require)
             pack(args, ...) -- only for first time coroutine.resume call since native thread is created
             while true do
                 -- run job function
-                pack(args, xpcall(threadJobMap[thread], errorHandler, unpack(args)))
+                pack(args, try(threadJobMap[thread], unpack(args)))
 
                 -- mark coroutine as available
                 threadPool.n = threadPool.n + 1
@@ -402,17 +515,6 @@ OnInit.root("LIGUI", function(require)
             return thread
         end
 
-        ---@param status boolean
-        ---@param ... unknown
-        ---@return ...
-        local function processWrapResult(status, ...)
-            if status then
-                return ...
-            else
-                error(...)
-            end
-        end
-
         local setupThreadData = threadDataAPI.setupThreadData
         local clearThreadData = threadDataAPI.clearThreadData
 
@@ -432,19 +534,6 @@ OnInit.root("LIGUI", function(require)
                 return (threadDead[co] and 'dead') or coroutine.status(co)
             end,
 
-            ---@param co thread
-            ---@param ... any
-            ---@return boolean success
-            ---@return ...
-            resume = function(co, ...)
-                if threadDead[co] then return false, 'cannot resume dead coroutine' end
-                coroutine.resume(co, ...)
-                if coroutine.status(co) == 'dead' then
-                    clearThreadData(co)
-                end
-                return unpack(args) -- all data from resume should be in args anyways
-            end,
-
             yield = coroutine.yield,
             running = coroutine.running,
             isyieldable = coroutine.isyieldable,
@@ -454,19 +543,21 @@ OnInit.root("LIGUI", function(require)
                 local thread = getCoroutine(whichFunc)
                 setupThreadData(thread, coroutine.running())
                 return thread
+            end,
+
+            ---@param co thread
+            ---@param ... any
+            ---@return boolean success
+            ---@return ...
+            resume = function(co, ...)
+                if threadDead[co] then return false, 'cannot resume dead coroutine' end
+                local success, message = coroutine.resume(co, ...)
+                if coroutine.status(co) == 'dead' then
+                    clearThreadData(co)
+                end
+                return unpack(args) -- all data from resume should be in args anyways
             end
         }
-
-        if Debug and Debug.settings.USE_TRY_ON_COROUTINES then
-            local nonDebugCoroutineResume = _ENV.coroutine.resume
-            _ENV.coroutine.resume = function(co, ...)
-                local success, errorMsg = nonDebugCoroutineResume(co, ...)
-                if not success then
-                    print(errorMsg)
-                end
-                return unpack(args)
-            end
-        end
 
         ---@class LIGUI_CoroutineAPI
         local LIGUI_CoroutineAPI = {
@@ -684,6 +775,7 @@ OnInit.root("LIGUI", function(require)
         ---@class FakeBoolexpr: boolexpr, FakedType
         ---@field func fun(): boolean
 
+        -- todo: check if it works with ideal stack tracing + debug utils
         local filterUpvalue = nil ---@type fun(): boolean
         local nativeFilter ---@type filterfunc
 
@@ -1026,7 +1118,8 @@ OnInit.root("LIGUI", function(require)
                 for listener in pairs(self.listeners) do
                     if listener:evaluate() then
                         -- run in a coroutine to avoid TSA/PolledWait congesting every listener/trigger
-                        try(coroutine.wrap(listener.execute), listener)
+                        local thread = coroutine.create(listener.execute)
+                        processError(coroutine.resume(thread, listener))
                     end
                 end
             end
@@ -1090,7 +1183,6 @@ OnInit.root("LIGUI", function(require)
             ---@param event AbstractTriggerEvent
             ---@param eventResponseNames string[]
             local function processEventCallback(event, eventResponseNames)
-                debug("Process event callback")
                 local thread = coroutine.running()
                 local data = setupThreadData(thread)
                 data.GetTriggerEventId = event
@@ -1102,7 +1194,7 @@ OnInit.root("LIGUI", function(require)
                         data[name] = eventResponseMap[name]()
                     end
                 end
-                event:notifyListeners()
+                event.notifyListeners(event)
             end
 
             ---@param eventRegistrationNative fun(trigger: trigger, ...: unknown)
@@ -1754,9 +1846,6 @@ OnInit.root("LIGUI", function(require)
             return thisThread, data
         end
 
-        local processErrorForTriggerAction = (Debug and Debug.settings.USE_TRY_ON_TRIGGERADDACTION) and processError or
-            DoNothing
-
         ---@param withSleep boolean?
         function FakeTrigger:execute(withSleep)
             local parentThread = coroutine.running()
@@ -1770,13 +1859,13 @@ OnInit.root("LIGUI", function(require)
                         local actionThread, data = setupTriggerThreadAndData(self, action)
                         table.insert(threads, actionThread)
                         threadData[actionThread] = data
-                        processErrorForTriggerAction(coroutine.resume(actionThread))
+                        processError(coroutine.resume(actionThread))
                     end
                 end
                 if not threadsAllDone(threads) then
                     local function polledWaitCallback()
                         if threadsAllDone(threads) then
-                            processErrorForTriggerAction(coroutine.resume(parentThread))
+                            processError(coroutine.resume(parentThread))
                         end
                     end
                     for _, thread in ipairs(threads) do
@@ -1787,7 +1876,7 @@ OnInit.root("LIGUI", function(require)
             else
                 for action, enabled in pairs(self.actions) do
                     if enabled then
-                        processErrorForTriggerAction(coroutine.resume(setupTriggerThreadAndData(self, action)))
+                        processError(coroutine.resume(setupTriggerThreadAndData(self, action)))
                     end
                 end
             end
@@ -1914,8 +2003,6 @@ OnInit.root("LIGUI", function(require)
         local stopwatch = Stopwatch.create(false)
         OnInit.final(function() stopwatch:start() end)
 
-        local processError = (Debug and Debug.settings.USE_TRY_ON_TIMERSTART) and processError or DoNothing
-
         -- ============================
         --       Trigger Events
         -- ============================
@@ -1931,7 +2018,8 @@ OnInit.root("LIGUI", function(require)
         function FakeTimerEvent:notifyListeners()
             for listener in pairs(self.listeners) do
                 if listener:isEnabled() and listener:evaluate() then
-                    try(coroutine.wrap(listener.execute), listener)
+                    local thread = coroutine.create(listener.execute)
+                    processError(coroutine.resume(thread, listener))
                 end
             end
         end
@@ -1940,7 +2028,7 @@ OnInit.root("LIGUI", function(require)
 
         ---@param event FakeTimerEvent
         local function triggerTimeCallback(event)
-            try(coroutine.wrap(FakeTimerEvent.notifyListeners), event)
+            event:notifyListeners()
             if event.periodic then
                 event.timerQueueTaskId = TimerQueue:callDelayed(event.timeout, triggerTimeCallback, event)
             else
@@ -2156,7 +2244,7 @@ OnInit.root("LIGUI", function(require)
             if timerEvents then
                 for event, enabled in pairs(timerEvents) do
                     if enabled then
-                        try(coroutine.wrap(event.notifyListeners), event)
+                        event:notifyListeners()
                     end
                 end
             end
@@ -2992,7 +3080,6 @@ OnInit.root("LIGUI", function(require)
 
         local oldForForce = ForForce
         local oldEnumPlayer = GetEnumPlayer
-        local processError = (Debug and Debug.settings.USE_TRY_ON_ENUMFUNCS) and processError or DoNothing
 
         ---@param force FakeForce
         ---@param code fun(p: player)
@@ -3031,7 +3118,8 @@ OnInit.root("LIGUI", function(require)
             else
                 while i <= #force do
                     player = force[i]
-                    try(coroutine.wrap(code), player)
+                    local thread = coroutine.create(code)
+                    processError(coroutine.resume(thread, player))
                     if force.indexOf[player] then
                         i = i + 1
                     end
@@ -3240,8 +3328,6 @@ OnInit.root("LIGUI", function(require)
             return nativeGroupTargetOrderById(toNativeGroup(whichGroup), order, targetWidget)
         end
 
-        local processError = (Debug and Debug.settings.USE_TRY_ON_ENUMFUNCS) and processError or DoNothing
-
         ---@param group FakeGroup
         ---@param code fun(u: unit)
         ---@param waitOnSleep boolean?
@@ -3279,7 +3365,8 @@ OnInit.root("LIGUI", function(require)
             else
                 while i <= #group do
                     unit = group[i]
-                    try(coroutine.wrap(code), unit)
+                    local thread = coroutine.create(code)
+                    processError(coroutine.resume(thread, unit))
                     if group.indexOf[unit] then
                         i = i + 1
                     end
@@ -3585,6 +3672,7 @@ OnInit.root("LIGUI", function(require)
         do -- Rect + Boolexpr
             local toNativeFilter = boolexprAPI.toNativeFilter
 
+            -- todo: check if it works with ideal stack tracing + debug utils
             local oldGetFilterDestructable = GetFilterDestructable
             local oldGetEnumDestructable = GetEnumDestructable
             local oldEnumDestructablesInRect = EnumDestructablesInRect
@@ -3618,6 +3706,7 @@ OnInit.root("LIGUI", function(require)
                 oldEnumDestructablesInRect(toNativeRect(r), filterFunc, callback)
             end
 
+            -- todo: check if it works with ideal stack tracing + debug utils
             local oldEnumItemsInRect = EnumItemsInRect
             local oldGetFilterItem = GetFilterItem
             local oldGetEnumItem = GetEnumItem
@@ -4110,7 +4199,7 @@ OnInit.root("LIGUI", function(require)
         --[[---------------------------------------------------------------------------------------------
             RegisterAnyPlayerUnitEvent by Bribe
 
-            RegisterAnyPlayerUnitEvent cuts down on handle count for alread-registered events, plus has
+            RegisterAnyPlayerUnitEvent cuts down on handle count for already-registered events, plus has
             the benefit for Lua users to just use function calls.
 
             Adds a third parameter to the RegisterAnyPlayerUnitEvent function: "skip". If true, disables
@@ -4149,10 +4238,10 @@ OnInit.root("LIGUI", function(require)
                     oldBJ(t, event)
                     tStack[event], funcs = t, {}
                     fStack[event] = funcs
-                    TriggerAddCondition(t, Filter(function()
+                    TriggerAddAction(t, function()
                         for _, func in ipairs(funcs) do func() end
                         return true
-                    end))
+                    end)
                 end
                 funcs[insertAt] = userFunc
                 return function()
@@ -4179,7 +4268,8 @@ OnInit.root("LIGUI", function(require)
         function TriggerRegisterAnyUnitEventBJ(trig, event)
             if check(trig ~= nil, 'trig cannot be nil') then return nil end
             if check(event ~= nil, 'event cannot be nil') then return nil end
-            local removeFunc = RegisterAnyPlayerUnitEvent(event, function() if trig:isEnabled() then trig:execute() end end)
+            local removeFunc = RegisterAnyPlayerUnitEvent(event,
+                function() if trig:isEnabled() then trig:execute() end end)
             if _USE_GLOBAL_REMAP then
                 if not trigFuncs then
                     trigFuncs = __jarray()
@@ -4231,9 +4321,10 @@ OnInit.root("LIGUI", function(require)
             if GetIssuedOrderId() == UNDEFEND_ORDER_ID and not UnitAlive(unit) and allUnits[unit] and GetUnitAbilityLevel(unit, _REMOVE_ABIL) == 0 then
                 allUnits[unit] = nil
                 for _, listener in ipairs(eventListeners) do
-                    try(coroutine.wrap(listener), unit) -- we don't care about result
+                    local thread = coroutine.create(listener)
+                    processError(coroutine.resume(thread, unit)) -- we don't care about result
                 end
-                groupDBDeregisterUnit(unit)             -- this shouldn't throw errors
+                groupDBDeregisterUnit(unit)                      -- this shouldn't throw errors
             end
         end
 

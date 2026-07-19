@@ -2,6 +2,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "arg": [],
+            "name": "Debug.lua",
+            "program": "${workspaceFolder}/debug.lua",
+            "request": "launch",
+            "stopOnEntry": true,
+            "type": "lua"
+        },
+        {
             "name": "map2json",
             "program": "patchwork-mapconverter",
             "request": "launch",
