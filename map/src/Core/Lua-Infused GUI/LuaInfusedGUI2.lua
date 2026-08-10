@@ -1492,7 +1492,7 @@ OnInit.root("LIGUI", function(require)
                 { "GetTriggerPlayer", "GetEventPlayerChatString", "GetEventPlayerChatStringMatched" } -- todo: test EVENT_PLAYER_CHAT
             )
             EventRegistry.Death = defineEventType(TriggerRegisterDeathEvent, 2,
-                { "GetTriggerWidget", "GetTriggerDestructable", "GetTriggerUnit" } -- todo: needs a special thing?
+                { "GetTriggerWidget", "GetTriggerDestructable", "GetTriggerUnit" } -- todo: needs a special thing? what about item?
             )
             EventRegistry.UnitState = defineEventType(TriggerRegisterUnitStateEvent, 5,
                 unitEventResponseMap[EVENT_UNIT_STATE_LIMIT]) --todo: does GetTriggerUnit work for this?
