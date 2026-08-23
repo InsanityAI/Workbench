@@ -23,6 +23,10 @@ if Debug then Debug.beginFile "LuaInfusedGUI" end
 
     Provides GUI.loopArray for safe iteration over a __jarray
 
+    Update: 23 Aug 2026 by InsanityAI
+    Changes:
+        - Fixed MoveRectToLoc by swapping Rect and Location overrides
+
     Update: 24 May 2026 by InsanityAI & Marcielos
     Changes:
         - Groups now auto-remove units that were removed from the game
@@ -695,6 +699,183 @@ do
         GroupRemoveGroupEnum = nil
     end
 
+    --[========================[
+      • RECTS (REGIONS IN GUI) •
+    --]========================]
+    do
+        ---@class FakeRect: FakedType
+        ---@field [1] number minX
+        ---@field [2] number minY
+        ---@field [3] number maxX
+        ---@field [4] number maxY
+
+        local oldRect, rect = Rect, nil
+        ---@param minX number
+        ---@param minY number
+        ---@param maxX number
+        ---@param maxY number
+        ---@return FakeRect
+        function Rect(minX, minY, maxX, maxY)
+            if check(minX ~= nil, 'minX cannot be nil') then return { 0, 0, 0, 0, __faketype = "userdata" } end
+            if check(minY ~= nil, 'minY cannot be nil') then return { 0, 0, 0, 0, __faketype = "userdata" } end
+            if check(maxX ~= nil, 'maxX cannot be nil') then return { 0, 0, 0, 0, __faketype = "userdata" } end
+            if check(maxY ~= nil, 'maxY cannot be nil') then return { 0, 0, 0, 0, __faketype = "userdata" } end
+            return { minX, minY, maxX, maxY, __faketype = "userdata" }
+        end
+
+        local oldSetRect = SetRect
+        ---@param rect FakeRect
+        ---@param minX number
+        ---@param minY number
+        ---@param maxX number
+        ---@param maxY number
+        function SetRect(rect, minX, minY, maxX, maxY)
+            if check(rect ~= nil, 'rect cannot be nil') then return end
+            if check(minX ~= nil, 'minX cannot be nil') then return end
+            if check(minY ~= nil, 'minY cannot be nil') then return end
+            if check(maxX ~= nil, 'maxX cannot be nil') then return end
+            if check(maxY ~= nil, 'maxY cannot be nil') then return end
+            rect[1] = minX
+            rect[2] = minY
+            rect[3] = maxX
+            rect[4] = maxY
+        end
+
+        do
+            local oldWorld = GetWorldBounds
+            local getMinX = GetRectMinX
+            local getMinY = GetRectMinY
+            local getMaxX = GetRectMaxX
+            local getMaxY = GetRectMaxY
+            local remover = RemoveRect
+            RemoveRect = DoNothing
+            local newWorld
+
+            ---@return FakeRect
+            function GetWorldBounds()
+                if not newWorld then
+                    local w = oldWorld() --[[@as rect]]
+                    newWorld = Rect(getMinX(w), getMinY(w), getMaxX(w), getMaxY(w))
+                    remover(w)
+                end
+                return Rect(unpack(newWorld))
+            end
+
+            GetEntireMapRect = GetWorldBounds
+        end
+
+        ---@param rect FakeRect
+        ---@return number
+        function GetRectMinX(rect)
+            if check(rect ~= nil, 'rect cannot be nil') then return 0 end
+            return rect[1]
+        end
+
+        ---@param rect FakeRect
+        ---@return number
+        function GetRectMinY(rect)
+            if check(rect ~= nil, 'rect cannot be nil') then return 0 end
+            return rect[2]
+        end
+
+        ---@param rect FakeRect
+        ---@return number
+        function GetRectMaxX(rect)
+            if check(rect ~= nil, 'rect cannot be nil') then return 0 end
+            return rect[3]
+        end
+
+        ---@param rect FakeRect
+        ---@return number
+        function GetRectMaxY(rect)
+            if check(rect ~= nil, 'rect cannot be nil') then return 0 end
+            return rect[4]
+        end
+
+        ---@param rect FakeRect
+        ---@return number
+        function GetRectCenterX(rect)
+            if check(rect ~= nil, 'rect cannot be nil') then return 0 end
+            return (rect[1] + rect[3]) / 2
+        end
+
+        ---@param rect FakeRect
+        ---@return number
+        function GetRectCenterY(rect)
+            if check(rect ~= nil, 'rect cannot be nil') then return 0 end
+            return (rect[2] + rect[4]) / 2
+        end
+
+        ---@param rect FakeRect
+        ---@param x number
+        ---@param y number
+        function MoveRectTo(rect, x, y)
+            if check(rect ~= nil, 'rect cannot be nil') then return end
+            if check(x ~= nil, 'x cannot be nil') then return end
+            if check(y ~= nil, 'y cannot be nil') then return end
+            x = x - GetRectCenterX(rect)
+            y = y - GetRectCenterY(rect)
+            SetRect(rect, rect[1] + x, rect[2] + y, rect[3] + x, rect[4] + y)
+        end
+
+        ---@param varName string
+        ---@param index integer needed to determine which of the parameters calls for a rect.
+        local function hook(varName, index)
+            local old = _ENV[varName]
+            local func
+
+            local errorMsgIndex1 = 'Function ' .. varName .. '\'s argument #1 - rect cannot be nil!'
+            local errorMsgIndex2 = 'Function ' .. varName .. '\'s argument #2 - rect cannot be nil!'
+            local errorMsgIndex3 = 'Function ' .. varName .. '\'s argument #3 - rect cannot be nil!'
+            if index == 1 then
+                func = function(rct, ...)
+                    if check(rct ~= nil, errorMsgIndex1) then
+                        oldSetRect(rect --[[@as rect]], 0, 0, 0, 0)
+                    else
+                        oldSetRect(rect --[[@as rect]], unpack(rct))
+                    end
+                    return old(rect, ...)
+                end
+            elseif index == 2 then
+                func = function(a, rct, ...)
+                    if check(rct ~= nil, errorMsgIndex2) then
+                        oldSetRect(rect --[[@as rect]], 0, 0, 0, 0)
+                    else
+                        oldSetRect(rect --[[@as rect]], unpack(rct))
+                    end
+                    return old(a, rect, ...)
+                end
+            else --index==3
+                func = function(a, b, rct, ...)
+                    if check(rct ~= nil, errorMsgIndex3) then
+                        oldSetRect(rect --[[@as rect]], 0, 0, 0, 0)
+                    else
+                        oldSetRect(rect --[[@as rect]], unpack(rct))
+                    end
+                    return old(a, b, rect, ...)
+                end
+            end
+
+            ---@param ... unknown
+            _ENV[varName] = function(...)
+                if not rect then rect = oldRect(0, 0, 32, 32) end
+                _ENV[varName] = func
+                return func(...)
+            end
+        end
+        hook("EnumDestructablesInRect", 1)
+        hook("EnumItemsInRect", 1)
+        hook("AddWeatherEffect", 1)
+        hook("SetDoodadAnimationRect", 1)
+        hook("GroupEnumUnitsInRect", 2)
+        hook("GroupEnumUnitsInRectCounted", 2)
+        hook("RegionAddRect", 2)
+        hook("RegionClearRect", 2)
+        hook("SetBlightRect", 2)
+        hook("SetFogStateRect", 3)
+        hook("CreateFogModifierRect", 3)
+    end
+
     --[===========================[
       • LOCATIONS (POINTS IN GUI) •
     --]===========================]
@@ -887,182 +1068,6 @@ do
         end
     end
 
-    --[========================[
-      • RECTS (REGIONS IN GUI) •
-    --]========================]
-    do
-        ---@class FakeRect: FakedType
-        ---@field [1] number minX
-        ---@field [2] number minY
-        ---@field [3] number maxX
-        ---@field [4] number maxY
-
-        local oldRect, rect = Rect, nil
-        ---@param minX number
-        ---@param minY number
-        ---@param maxX number
-        ---@param maxY number
-        ---@return FakeRect
-        function Rect(minX, minY, maxX, maxY)
-            if check(minX ~= nil, 'minX cannot be nil') then return { 0, 0, 0, 0, __faketype = "userdata" } end
-            if check(minY ~= nil, 'minY cannot be nil') then return { 0, 0, 0, 0, __faketype = "userdata" } end
-            if check(maxX ~= nil, 'maxX cannot be nil') then return { 0, 0, 0, 0, __faketype = "userdata" } end
-            if check(maxY ~= nil, 'maxY cannot be nil') then return { 0, 0, 0, 0, __faketype = "userdata" } end
-            return { minX, minY, maxX, maxY, __faketype = "userdata" }
-        end
-
-        local oldSetRect = SetRect
-        ---@param rect FakeRect
-        ---@param minX number
-        ---@param minY number
-        ---@param maxX number
-        ---@param maxY number
-        function SetRect(rect, minX, minY, maxX, maxY)
-            if check(rect ~= nil, 'rect cannot be nil') then return end
-            if check(minX ~= nil, 'minX cannot be nil') then return end
-            if check(minY ~= nil, 'minY cannot be nil') then return end
-            if check(maxX ~= nil, 'maxX cannot be nil') then return end
-            if check(maxY ~= nil, 'maxY cannot be nil') then return end
-            rect[1] = minX
-            rect[2] = minY
-            rect[3] = maxX
-            rect[4] = maxY
-        end
-
-        do
-            local oldWorld = GetWorldBounds
-            local getMinX = GetRectMinX
-            local getMinY = GetRectMinY
-            local getMaxX = GetRectMaxX
-            local getMaxY = GetRectMaxY
-            local remover = RemoveRect
-            RemoveRect = DoNothing
-            local newWorld
-
-            ---@return FakeRect
-            function GetWorldBounds()
-                if not newWorld then
-                    local w = oldWorld() --[[@as rect]]
-                    newWorld = Rect(getMinX(w), getMinY(w), getMaxX(w), getMaxY(w))
-                    remover(w)
-                end
-                return Rect(unpack(newWorld))
-            end
-
-            GetEntireMapRect = GetWorldBounds
-        end
-
-        ---@param rect FakeRect
-        ---@return number
-        function GetRectMinX(rect)
-            if check(rect ~= nil, 'rect cannot be nil') then return 0 end
-            return rect[1]
-        end
-
-        ---@param rect FakeRect
-        ---@return number
-        function GetRectMinY(rect)
-            if check(rect ~= nil, 'rect cannot be nil') then return 0 end
-            return rect[2]
-        end
-
-        ---@param rect FakeRect
-        ---@return number
-        function GetRectMaxX(rect)
-            if check(rect ~= nil, 'rect cannot be nil') then return 0 end
-            return rect[3]
-        end
-
-        ---@param rect FakeRect
-        ---@return number
-        function GetRectMaxY(rect)
-            if check(rect ~= nil, 'rect cannot be nil') then return 0 end
-            return rect[4]
-        end
-
-        ---@param rect FakeRect
-        ---@return number
-        function GetRectCenterX(rect)
-            if check(rect ~= nil, 'rect cannot be nil') then return 0 end
-            return (rect[1] + rect[3]) / 2
-        end
-
-        ---@param rect FakeRect
-        ---@return number
-        function GetRectCenterY(rect)
-            if check(rect ~= nil, 'rect cannot be nil') then return 0 end
-            return (rect[2] + rect[4]) / 2
-        end
-
-        ---@param rect FakeRect
-        ---@param x number
-        ---@param y number
-        function MoveRectTo(rect, x, y)
-            if check(rect ~= nil, 'rect cannot be nil') then return end
-            if check(x ~= nil, 'x cannot be nil') then return end
-            if check(y ~= nil, 'y cannot be nil') then return end
-            x = x - GetRectCenterX(rect)
-            y = y - GetRectCenterY(rect)
-            SetRect(rect, rect[1] + x, rect[2] + y, rect[3] + x, rect[4] + y)
-        end
-
-        ---@param varName string
-        ---@param index integer needed to determine which of the parameters calls for a rect.
-        local function hook(varName, index)
-            local old = _ENV[varName]
-            local func
-
-            local errorMsgIndex1 = 'Function ' .. varName .. '\'s argument #1 - rect cannot be nil!'
-            local errorMsgIndex2 = 'Function ' .. varName .. '\'s argument #2 - rect cannot be nil!'
-            local errorMsgIndex3 = 'Function ' .. varName .. '\'s argument #3 - rect cannot be nil!'
-            if index == 1 then
-                func = function(rct, ...)
-                    if check(rct ~= nil, errorMsgIndex1) then
-                        oldSetRect(rect --[[@as rect]], 0, 0, 0, 0)
-                    else
-                        oldSetRect(rect --[[@as rect]], unpack(rct))
-                    end
-                    return old(rect, ...)
-                end
-            elseif index == 2 then
-                func = function(a, rct, ...)
-                    if check(rct ~= nil, errorMsgIndex2) then
-                        oldSetRect(rect --[[@as rect]], 0, 0, 0, 0)
-                    else
-                        oldSetRect(rect --[[@as rect]], unpack(rct))
-                    end
-                    return old(a, rect, ...)
-                end
-            else --index==3
-                func = function(a, b, rct, ...)
-                    if check(rct ~= nil, errorMsgIndex3) then
-                        oldSetRect(rect --[[@as rect]], 0, 0, 0, 0)
-                    else
-                        oldSetRect(rect --[[@as rect]], unpack(rct))
-                    end
-                    return old(a, b, rect, ...)
-                end
-            end
-
-            ---@param ... unknown
-            _ENV[varName] = function(...)
-                if not rect then rect = oldRect(0, 0, 32, 32) end
-                _ENV[varName] = func
-                return func(...)
-            end
-        end
-        hook("EnumDestructablesInRect", 1)
-        hook("EnumItemsInRect", 1)
-        hook("AddWeatherEffect", 1)
-        hook("SetDoodadAnimationRect", 1)
-        hook("GroupEnumUnitsInRect", 2)
-        hook("GroupEnumUnitsInRectCounted", 2)
-        hook("RegionAddRect", 2)
-        hook("RegionClearRect", 2)
-        hook("SetBlightRect", 2)
-        hook("SetFogStateRect", 3)
-        hook("CreateFogModifierRect", 3)
-    end
     --[===============================[
       • FORCES (PLAYER GROUPS IN GUI) •
     --]===============================]
